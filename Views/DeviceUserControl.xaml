@@ -1,0 +1,164 @@
+<UserControl x:Class="HITAPEX.Views.DeviceUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+             mc:Ignorable="d"
+             d:DesignHeight="924" d:DesignWidth="1342"
+             Background="Transparent"
+             Focusable="True"
+             Loaded="DeviceUserControl_Loaded">
+    <UserControl.Resources>
+        <Storyboard x:Key="FadeInAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Key="FadeOutAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:0.15">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Style x:Key="NavIconButtonStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="80"/>
+            <Setter Property="Height" Value="80"/>
+            <Setter Property="Margin" Value="0,0,0,19"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid>
+                            <Grid.Clip>
+                                <PathGeometry Figures="M0 5.96606V79.5475H74L80 73.5814V0H6L0 5.96606Z"/>
+                            </Grid.Clip>
+                            <Border Background="{fw:AcrylicBrush BackgroundGrid, TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
+                                <Border.OpacityMask>
+                                    <VisualBrush Stretch="Fill">
+                                        <VisualBrush.Visual>
+                                            <Path Data="M0 5.96606V79.5475H74L80 73.5814V0H6L0 5.96606Z" Fill="White" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Border.OpacityMask>
+                            </Border>
+
+                            <Path Data="M0 5.96606V79.5475H74L80 73.5814V0H6L0 5.96606Z" Opacity="0.2">
+                                <Path.Fill>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
+                                        <GradientStop Color="#607079" Offset="0"/>
+                                        <GradientStop Color="#3F4A50" Offset="0.4375"/>
+                                        <GradientStop Color="#282D30" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Path.Fill>
+                            </Path>
+
+                            <Path Data="M0 5.96606V79.5475H74L80 73.5814V0H6L0 5.96606Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                                <Path.Effect>
+                                    <BlurEffect Radius="45" RenderingBias="Performance"/>
+                                </Path.Effect>
+                            </Path>
+
+                            <Path x:Name="SelectedSvgGlow" 
+                          Visibility="Collapsed"
+                          Data="M6.6665 12.6331V86.2145H80.6665L86.6665 80.2484V6.66699H12.6665L6.6665 12.6331Z" 
+                          Opacity="0.4" Stretch="Fill">
+                                <Path.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                        <GradientStop Color="#731717" Offset="0.250247"/>
+                                        <GradientStop Color="#491B1B" Offset="0.395787"/>
+                                        <GradientStop Color="#1F1F1F" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Path.Fill>
+                                <Path.Effect>
+                                    <BlurEffect Radius="10" RenderingBias="Performance"/>
+                                </Path.Effect>
+                            </Path>
+
+                            <Path x:Name="BorderPath" 
+                          Data="M0 5.96606V79.5475H74L80 73.5814V0H6L0 5.96606Z" 
+                          Fill="Transparent" 
+                          StrokeThickness="1.5">
+                                <Path.Stroke>
+                                    <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
+                                        <GradientStop Color="#00EEEEEE" Offset="0"/>
+                                        <GradientStop Color="#4DEEEEEE" Offset="0.3"/>
+                                        <GradientStop Color="#4DEEEEEE" Offset="0.7"/>
+                                        <GradientStop Color="#00EEEEEE" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Path.Stroke>
+                            </Path>
+
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                            </Trigger>
+
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="BorderPath" Property="Stroke" Value="#C60E0E"/>
+                                <Setter TargetName="BorderPath" Property="StrokeThickness" Value="3"/>
+                                <Setter TargetName="BorderPath" Property="Opacity" Value="0.6"/>
+                                <Setter TargetName="SelectedSvgGlow" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="20,20,0,20">
+            <StackPanel VerticalAlignment="Top">
+                <RadioButton x:Name="BaseNavButton" GroupName="DeviceNav" IsChecked="True" 
+                             Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
+                    <svgc:SvgViewbox Source="/Assets/base.svg" Stretch="None"/>
+                </RadioButton>
+
+                <RadioButton x:Name="SteeringWheelNavButton" GroupName="DeviceNav" 
+                             Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
+                    <svgc:SvgViewbox Source="/Assets/steeringwheel.svg" Stretch="None"/>
+                </RadioButton>
+
+                <RadioButton x:Name="PedalNavButton" GroupName="DeviceNav" 
+                             Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
+                    <svgc:SvgViewbox Source="/Assets/pedal.svg" Stretch="None"/>
+                </RadioButton>
+
+                <Grid Width="2" Height="586" Margin="0,1,0,0">
+                    <Path Opacity="0.3" Data="M0 9.13379L2 11.1614V576.865L0 574.837V9.13379Z" Fill="#EEEEEE" Stretch="None"/>
+                    <Path Opacity="0.3" Data="M0 6.08887V8.11648L2 10.1441V8.11648L0 6.08887Z" Fill="#EEEEEE" Stretch="None"/>
+                    <Path Opacity="0.3" Data="M0 3.04492V5.07253L2 7.10014V5.07253L0 3.04492Z" Fill="#EEEEEE" Stretch="None"/>
+                    <Path Opacity="0.3" Data="M0 0V2.02761L2 4.05522V2.02761L0 0Z" Fill="#EEEEEE" Stretch="None"/>
+                    <Path Opacity="0.3" Data="M0 581.945V583.973L2 586.001V583.973L0 581.945Z" Fill="#EEEEEE" Stretch="None"/>
+                    <Path Opacity="0.3" Data="M0 578.9V580.928L2 582.956V580.928L0 578.9Z" Fill="#EEEEEE" Stretch="None"/>
+                    <Path Opacity="0.3" Data="M0 575.855V577.883L2 579.911V577.883L0 575.855Z" Fill="#EEEEEE" Stretch="None"/>
+                </Grid>
+            </StackPanel>
+        </StackPanel>
+
+        <Border Grid.Column="1" Background="Transparent" Margin="20,20,20,20">
+            <Grid x:Name="ContentGrid">
+                <ContentControl x:Name="ContentHost">
+                    <ContentControl.RenderTransform>
+                        <TranslateTransform X="0"/>
+                    </ContentControl.RenderTransform>
+                </ContentControl>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,47 @@
+<svg width="144" height="128" viewBox="0 0 144 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g opacity="0.2">
+<mask id="mask0_291_3380" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="144" height="128">
+<rect width="143.75" height="127.777" transform="matrix(1 0 0 -1 0 127.777)" fill="url(#paint0_linear_291_3380)"/>
+</mask>
+<g mask="url(#mask0_291_3380)">
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 15.9688 128.109)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 79.8594 128.109)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 47.915 128.109)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 111.805 128.109)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 0 112.136)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 0 80.1915)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 0 48.2472)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 15.9688 96.1622)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 15.9688 64.2189)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 15.9688 32.2745)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 63.8906 112.136)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 63.8896 80.1915)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 63.8906 48.2472)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 79.8594 96.1622)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 79.8594 64.2189)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 79.8594 32.2745)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 31.9434 112.136)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 31.9443 80.1915)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 31.9434 48.2472)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 47.915 96.1622)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 47.915 64.2189)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 47.915 32.2745)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 95.834 112.136)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 95.834 80.1915)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 95.834 48.2472)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 111.805 96.1622)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 111.805 64.2189)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 111.805 32.2745)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 127.78 112.136)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 127.78 80.1915)" fill="#EEEEEE"/>
+<rect width="15.9722" height="15.9722" transform="matrix(1 0 0 -1 127.78 48.2472)" fill="#EEEEEE"/>
+</g>
+</g>
+<defs>
+<linearGradient id="paint0_linear_291_3380" x1="85.4615" y1="-0.482706" x2="85.4615" y2="112.277" gradientUnits="userSpaceOnUse">
+<stop stop-opacity="0"/>
+<stop offset="0.379276"/>
+<stop offset="1" stop-opacity="0.1"/>
+</linearGradient>
+</defs>
+</svg>

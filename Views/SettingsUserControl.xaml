@@ -1,0 +1,1187 @@
+<UserControl x:Class="HITAPEX.Views.SettingsUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+             xmlns:controls="clr-namespace:HITAPEX.Controls"
+             mc:Ignorable="d"
+             d:DesignHeight="924" d:DesignWidth="1342"
+             Background="Transparent"
+             Focusable="True"
+             Loaded="SettingsUserControl_Loaded">
+
+    <UserControl.Resources>
+        <LinearGradientBrush x:Key="TabSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C60E0E" Offset="0"/>
+            <GradientStop Color="#600707" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="SettingsTabButtonStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Width" Value="440"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="440" Height="45">
+                            <Path x:Name="ButtonPath"
+                          Data="M23.0581 1.5H426.387C427.422 1.5 428.404 1.95812 429.069 2.75098L435.251 10.1211C436.242 11.3027 436.343 12.9941 435.5 14.2852L417.441 41.915C416.795 42.9039 415.693 43.4998 414.511 43.5H11.1822C10.1474 43.5 9.16553 43.0419 8.50052 42.249L2.31888 34.8789C1.32774 33.6973 1.2262 32.0059 2.06985 30.7148L20.1284 3.08496C20.7748 2.09607 21.8768 1.50016 23.0581 1.5Z"
+                          Stretch="Fill"
+                          Fill="Transparent"
+                          Stroke="{StaticResource TabSelectedGradient}"
+                          StrokeThickness="3"/>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Center"
+                                      TextElement.Foreground="#FFFFFF"
+                                      TextElement.FontWeight="Medium"
+                                      TextElement.FontSize="22"
+                                      TextElement.FontStyle="Italic"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
+                                <Setter TargetName="ContentPresenter" Property="TextElement.FontWeight" Value="Bold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SettingsTabButtonStyle2" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Width" Value="438"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="438" Height="45">
+                            <Path x:Name="ButtonPath"
+                          Data="M17.8864 1.5H421.475C422.515 1.5 423.501 1.96188 424.166 2.76074L430.299 10.1299C431.279 11.3079 431.378 12.9866 430.545 14.2725L412.626 41.9043C411.98 42.8993 410.875 43.4999 409.689 43.5H5.00848C2.23312 43.5 0.561859 40.4243 2.07196 38.0957L16.4626 15.9053C18.0113 13.517 17.8254 10.3989 16.0046 8.21094L15.196 7.23926C13.2984 4.9592 14.92 1.5 17.8864 1.5Z"
+                          Stretch="Fill"
+                          Fill="Transparent"
+                          Stroke="{StaticResource TabSelectedGradient}"
+                          StrokeThickness="3"/>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                      HorizontalAlignment="Center" 
+                                      VerticalAlignment="Center"
+                                      TextElement.Foreground="#FFFFFF"
+                                      TextElement.FontWeight="Medium"
+                                      TextElement.FontSize="22"
+                                      TextElement.FontStyle="Italic"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
+                                <Setter TargetName="ContentPresenter" Property="TextElement.FontWeight" Value="Bold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <DropShadowEffect x:Key="TitleIconShadow" 
+                          ShadowDepth="0" 
+                          BlurRadius="5" 
+                          Opacity="0.4" 
+                          Color="#C60E0E"/>
+
+        <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Margin" Value="10,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="SectionTitleContainerStyle" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="Margin" Value="0,10,0,10"/>
+        </Style>
+
+        <Style x:Key="RadioButtonStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Grid Width="22" Height="18" Margin="0,0,8,0">
+                                <Path x:Name="RadioOuter" Data="M20.8093 0.724774L20.6165 1.44828L16.6167 16.4484L16.4233 17.1738H0.942858L1.13574 16.4503L5.13549 1.45016L5.32888 0.724774H20.8093Z" Stroke="#C60E0E" StrokeThickness="1.5" Fill="Transparent" Stretch="Fill"/>
+                                <Path x:Name="RadioInner" Data="M15 0H3.5L0 13H11.5167L15 0Z" Fill="#C60E0E" Stretch="Fill" Margin="3,2.3" Visibility="Collapsed"/>
+                            </Grid>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="RadioInner" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Grid Width="22" Height="18" Margin="0,0,8,0">
+                                <Path x:Name="CheckBoxOuter" Data="M20.8093 0.724774L20.6165 1.44828L16.6167 16.4484L16.4233 17.1738H0.942858L1.13574 16.4503L5.13549 1.45016L5.32888 0.724774H20.8093Z" Stroke="#C60E0E" StrokeThickness="1.5" Fill="Transparent" Stretch="Fill"/>
+                                <Path x:Name="CheckBoxInner" Data="M15 0H3.5L0 13H11.5167L15 0Z" Fill="#C60E0E" Stretch="Fill" Margin="3,2.3" Visibility="Collapsed"/>
+                            </Grid>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckBoxInner" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <!--<Setter Property="Cursor" Value="Hand"/>-->
+            <Setter Property="Width" Value="450"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Path Data="M455 5H11L5 11V43H6.8H449L455 37V5Z" Fill="#EEEEEE" Opacity="0.2" Stretch="Fill"/>
+
+                            <ToggleButton x:Name="ToggleButton" Background="Transparent" BorderThickness="0" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Cursor="Hand">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <ContentPresenter x:Name="ContentSite" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" IsHitTestVisible="False"/>
+
+                            <Path x:Name="Arrow" Data="M13.0605 1.06055L7.06055 7.06055L1.06055 1.06055" Stroke="#EEEEEE" StrokeThickness="1.5" HorizontalAlignment="Right" Margin="0,0,16,0" VerticalAlignment="Center" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5" Width="15" Height="8">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Path.RenderTransform>
+                            </Path>
+
+                            <Popup x:Name="Popup" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Placement="Bottom" VerticalOffset="-5" PopupAnimation="Fade">
+                                <Grid Width="{TemplateBinding ActualWidth}">
+
+                                    <Rectangle>
+                                        <Rectangle.Fill>
+                                            <DrawingBrush Stretch="Fill">
+                                                <DrawingBrush.Drawing>
+                                                    <DrawingGroup>
+                                                        <GeometryDrawing Brush="#474747" Geometry="M5 11L449 11L455 5V96.9669L449 103H5L5.06055 87.0968L5 11Z" />
+                                                        <GeometryDrawing Geometry="M5 11 L449 11 L455 5">
+                                                            <GeometryDrawing.Pen>
+                                                                <Pen Brush="#EEEEEE" Thickness="1.5" />
+                                                            </GeometryDrawing.Pen>
+                                                        </GeometryDrawing>
+                                                    </DrawingGroup>
+                                                </DrawingBrush.Drawing>
+                                            </DrawingBrush>
+                                        </Rectangle.Fill>
+                                        <Rectangle.Effect>
+                                            <DropShadowEffect Color="#000000" Opacity="0.25" BlurRadius="5" ShadowDepth="0"/>
+                                        </Rectangle.Effect>
+                                    </Rectangle>
+
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,15,0,5" HorizontalAlignment="Left">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Arrow" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="180" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Arrow" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="434"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="8,2.5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="21"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Path x:Name="CheckMark" Grid.Column="0" Data="M9.75 0.75L4.35262 8.75L0.75 5.75364" Stroke="#EEEEEE" StrokeThickness="1.5" Stretch="None" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Hidden"/>
+
+                                <ContentPresenter Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            </Grid>
+                        </Border>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="ItemBorder" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#C60E0E" Offset="0"/>
+                                            <GradientStop Color="#600707" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="ItemBorder" Property="Background">
+                                    <Setter.Value>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#C60E0E" Offset="0"/>
+                                            <GradientStop Color="#600707" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Setter.Value>
+                                </Setter>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="80"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="Background" Value="#C60E0E"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#A50C0C"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#8A0A0A"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#CCCCCC"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="UpdateButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="122"/>
+            <Setter Property="Height" Value="27"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Width="122" Height="27">
+                            <Path x:Name="ButtonBackground"
+                                  Data="M0 6V27H116L122 21V0H6L0 6Z"
+                                  Stretch="Fill"
+                                  Fill="#EEEEEE"
+                                  Opacity="0.3"/>
+                            <Path x:Name="ProgressBackground"
+                                  Data="M0 6V27H116L122 21V0H6L0 6Z"
+                                  Stretch="Fill">
+                                <Path.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                        <GradientStop Color="#600707" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Path.Fill>
+                                <Path.Clip>
+                                    <PathGeometry Figures="M-500,0 L0,0 L0,21 L-6,27 L-500,27 Z">
+                                        <PathGeometry.Transform>
+                                            <TranslateTransform x:Name="ProgressClipTransform" X="122"/>
+                                        </PathGeometry.Transform>
+                                    </PathGeometry>
+                                </Path.Clip>
+                            </Path>
+                            <TextBlock x:Name="ButtonText"
+                                       Text="{TemplateBinding Content}"
+                                       Foreground="#FFFFFF"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="Bold"
+                                       FontStyle="Italic"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="LinkButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <TextBlock x:Name="LinkText"
+                                   Text="{TemplateBinding Content}"
+                                   Foreground="{TemplateBinding Foreground}"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   TextDecorations="Underline"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+
+        <Storyboard x:Key="FadeInStoryboard">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                             From="0" To="1"
+                             Duration="0:0:0.2"/>
+        </Storyboard>
+
+        <Style x:Key="FirmwareListItemStyle" TargetType="ContentControl">
+            <Setter Property="Margin" Value="0,0,0,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid>
+                            <Border Background="{fw:AcrylicBrush TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}" />
+
+                            <Rectangle Opacity="0.2">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
+                                        <GradientStop Color="#607079" Offset="0"/>
+                                        <GradientStop Color="#3F4A50" Offset="0.4375"/>
+                                        <GradientStop Color="#282D30" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+
+                            <Rectangle Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                                <Rectangle.Effect>
+                                    <BlurEffect Radius="45" RenderingBias="Performance"/>
+                                </Rectangle.Effect>
+                            </Rectangle>
+
+                            <Grid IsHitTestVisible="False">
+                                <Rectangle HorizontalAlignment="Left" Width="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#767676" Offset="0"/>
+                                            <GradientStop Color="#767676" Offset="0.7"/>
+                                            <GradientStop Color="#00767676" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                                <Rectangle VerticalAlignment="Bottom" Height="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#00767676" Offset="0"/>
+                                            <GradientStop Color="#767676" Offset="0.023"/>
+                                            <GradientStop Color="#767676" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                                <Rectangle HorizontalAlignment="Right" Width="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#00767676" Offset="0"/>
+                                            <GradientStop Color="#767676" Offset="0.3"/>
+                                            <GradientStop Color="#767676" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                                <Rectangle VerticalAlignment="Top" Height="1">
+                                    <Rectangle.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#767676" Offset="0"/>
+                                            <GradientStop Color="#767676" Offset="0.977"/>
+                                            <GradientStop Color="#00767676" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Rectangle.Fill>
+                                </Rectangle>
+                            </Grid>
+
+                            <ContentPresenter/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,7">
+            <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,0" VerticalAlignment="Bottom"/>
+            <Grid Height="26">
+                <TextBlock Text="设 置" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+            </Grid>
+        </StackPanel>
+
+        <Border Grid.Row="1" Height="1" Background="#99383838" Margin="0"/>
+
+        <Grid Grid.Row="2" HorizontalAlignment="Left" Margin="0,20,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <RadioButton x:Name="SystemSettingsTab"
+                             Content="系 统 设 置"
+                             Style="{StaticResource SettingsTabButtonStyle}"
+                             GroupName="SettingsTabs"
+                             IsChecked="True"
+                             Checked="Tab_Checked"
+                             Tag="SystemSettings"
+                             Margin="0,0,-8,0"/>
+                <RadioButton x:Name="FirmwareUpdateTab"
+                             Content="固 件 更 新"
+                             Style="{StaticResource SettingsTabButtonStyle2}"
+                             GroupName="SettingsTabs"
+                             Checked="Tab_Checked"
+                             Tag="FirmwareUpdate"
+                             Margin="0,0,-8,0"/>
+                <RadioButton x:Name="AccountSettingsTab"
+                             Content="账 户 设 置"
+                             Style="{StaticResource SettingsTabButtonStyle2}"
+                             GroupName="SettingsTabs"
+                             Checked="Tab_Checked"
+                             Tag="AccountSettings"/>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer Grid.Row="3"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Margin="0,20,0,0">
+            <Grid x:Name="ContentContainer" Margin="0">
+                <Grid x:Name="SystemSettingsContent" Visibility="Visible">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0">
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}" Margin="0,0,0,16">
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    </Grid>
+                                    <TextBlock Text="软 件 设 置" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <CheckBox x:Name="AutoStartCheckBox"
+                                          Content="开机自启动"
+                                          Style="{StaticResource CheckBoxStyle}"
+                                          Checked="AutoStartCheckBox_Changed"
+                                          Unchecked="AutoStartCheckBox_Changed"
+                                          AutomationProperties.Name="开机自启动"/>
+                                <CheckBox x:Name="StartMinimizedCheckBox"
+                                          Content="启动后最小化到托盘"
+                                          Style="{StaticResource CheckBoxStyle}"
+                                          Checked="StartMinimizedCheckBox_Changed"
+                                          Unchecked="StartMinimizedCheckBox_Changed"
+                                          AutomationProperties.Name="启动后最小化到托盘"/>
+                                <CheckBox x:Name="CloseMinimizedCheckBox"
+                                          Content="关闭软件后最小化到托盘"
+                                          Style="{StaticResource CheckBoxStyle}"
+                                          Checked="CloseMinimizedCheckBox_Changed"
+                                          Unchecked="CloseMinimizedCheckBox_Changed"
+                                          AutomationProperties.Name="关闭软件后最小化到托盘"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    </Grid>
+                                    <TextBlock Text="语言设置" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <ComboBox x:Name="LanguageComboBox"
+                                          Style="{StaticResource ComboBoxStyle}"
+                                          Width="450"
+                                          HorizontalAlignment="Left"
+                                          SelectionChanged="LanguageComboBox_SelectionChanged"
+                                          AutomationProperties.Name="选择应用程序显示语言">
+                                    <ComboBoxItem Content="简体中文" Style="{StaticResource ComboBoxItemStyle}" Tag="zh-CN"/>
+                                    <ComboBoxItem Content="English" Style="{StaticResource ComboBoxItemStyle}" Tag="en-US"/>
+                                    <ComboBoxItem Content="日本語" Style="{StaticResource ComboBoxItemStyle}" Tag="ja-JP"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    </Grid>
+                                    <TextBlock Text="自定义主题" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <ComboBox x:Name="ThemeComboBox"
+                                          Style="{StaticResource ComboBoxStyle}"
+                                          Width="450"
+                                          HorizontalAlignment="Left"
+                                          SelectionChanged="ThemeComboBox_SelectionChanged"
+                                          AutomationProperties.Name="选择应用程序主题样式">
+                                    <ComboBoxItem Style="{StaticResource ComboBoxItemStyle}" Tag="Dark">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Rectangle Width="18" Height="18">
+                                                <Rectangle.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                                        <GradientStop Color="#1E1A1A" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Rectangle.Fill>
+                                            </Rectangle>
+                                            <TextBlock Text="暗夜红" Margin="5,0,0,0"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem Content="浅色主题" Style="{StaticResource ComboBoxItemStyle}" Tag="Light"/>
+                                    <ComboBoxItem Content="跟随系统" Style="{StaticResource ComboBoxItemStyle}" Tag="System"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="620" HorizontalAlignment="Left" Margin="0,0,0,10">
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    </Grid>
+                                    <TextBlock Text="版本更新" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="当前软件版本 " Foreground="#EEEEEE" FontSize="16" FontWeight="Regular"/>
+                                            <TextBlock x:Name="CurrentVersionText" 
+                                                       Text="V 1.0.0" 
+                                                       Foreground="#EEEEEE" 
+                                                       FontSize="16"
+                                                       FontWeight="Bold"
+                                                       FontFamily="{StaticResource OrbitronFont}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                            <TextBlock Text="上次检查更新 " Foreground="#66EEEEEE" FontSize="16" FontWeight="Regular"/>
+                                            <TextBlock x:Name="LastCheckTimeText" 
+                                                       Text="未检查" 
+                                                       Foreground="#66EEEEEE" 
+                                                       FontSize="16"
+                                                       FontWeight="Bold"
+                                                       FontFamily="{StaticResource OrbitronFont}"/>
+                                        </StackPanel>
+                                        <StackPanel x:Name="NewVersionPanel" 
+                                                    Orientation="Horizontal" 
+                                                    Margin="0,8,0,0"
+                                                    Visibility="Collapsed">
+                                            <TextBlock Text="检测到新版本 " Foreground="#C60E0E" FontSize="16" FontWeight="Bold"/>
+                                            <TextBlock x:Name="NewVersionText" 
+                                                       Text="V 1.1.1" 
+                                                       Foreground="#EEEEEE" 
+                                                       FontSize="16"
+                                                       FontWeight="Bold"
+                                                       FontFamily="{StaticResource OrbitronFont}"/>
+                                            <Button x:Name="ViewUpdateLogButton"
+                                                    Content="查看更新日志"
+                                                    Style="{StaticResource LinkButtonStyle}"
+                                                    FontSize="16"
+                                                    FontWeight="Regular"
+                                                    Click="ViewUpdateLogButton_Click"
+                                                    AutomationProperties.Name="查看更新日志"
+                                                    Margin="10,0,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Button x:Name="CheckUpdateButton"
+                                            Grid.Column="1"
+                                            Content="检 查 更 新"
+                                            Style="{StaticResource UpdateButtonStyle}"
+                                            FontSize="16"
+                                            Click="CheckUpdateButton_Click"
+                                            AutomationProperties.Name="检 查 更 新"
+                                            VerticalAlignment="Top"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="620" Margin="0,0,0,0" HorizontalAlignment="Left">
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    </Grid>
+                                    <TextBlock Text="关于我们" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                                        <TextBlock Text="深圳市乘物游心科技有限公司"
+                                                   Foreground="#EEEEEE"
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"
+                                                   Margin="0,0,0,10"/>
+                                        
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                            <svgc:SvgViewbox Source="/Assets/Group126548118.svg" Width="16" Height="12" Margin="0,0,10,0"/>
+                                            <controls:SkipInkTextBlock Text="support@chengyou.com" FontSize="16" FontWeight="Regular" FontFamily="{StaticResource OrbitronFont}" Foreground="#EEEEEE" UnderlineBrush="#EEEEEE" Cursor="Hand"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button x:Name="DouyinButton"
+                                                    Width="37" Height="37"
+                                                    Margin="0,0,10,0"
+                                                    Cursor="Hand"
+                                                    Click="SocialMediaButton_Click"
+                                                    Tag="douyin"
+                                                    AutomationProperties.Name="抖音">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Background="Transparent">
+                                                            <svgc:SvgViewbox Source="/Assets/images1.svg" Width="37" Height="37"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            
+                                            <Button x:Name="XiaohongshuButton"
+                                                    Width="37" Height="37"
+                                                    Margin="0,0,10,0"
+                                                    Cursor="Hand"
+                                                    Click="SocialMediaButton_Click"
+                                                    Tag="xiaohongshu"
+                                                    AutomationProperties.Name="小红书">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Background="Transparent">
+                                                            <svgc:SvgViewbox Source="/Assets/images2.svg" Width="37" Height="37"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            
+                                            <Button x:Name="WeiboButton"
+                                                    Width="37" Height="37"
+                                                    Margin="0,0,10,0"
+                                                    Cursor="Hand"
+                                                    Click="SocialMediaButton_Click"
+                                                    Tag="weibo"
+                                                    AutomationProperties.Name="微博">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Background="Transparent">
+                                                            <svgc:SvgViewbox Source="/Assets/images3.svg" Width="37" Height="37"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            
+                                            <Button x:Name="WechatButton"
+                                                    Width="37" Height="37"
+                                                    Margin="0,0,10,0"
+                                                    Cursor="Hand"
+                                                    Click="SocialMediaButton_Click"
+                                                    Tag="wechat"
+                                                    AutomationProperties.Name="微信">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Background="Transparent">
+                                                            <svgc:SvgViewbox Source="/Assets/images4.svg" Width="37" Height="37"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            
+                                            <Button x:Name="BilibiliButton"
+                                                    Width="37" Height="37"
+                                                    Cursor="Hand"
+                                                    Click="SocialMediaButton_Click"
+                                                    Tag="bilibili"
+                                                    AutomationProperties.Name="哔哩哔哩">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Background="Transparent">
+                                                            <svgc:SvgViewbox Source="/Assets/images5.svg" Width="37" Height="37"/>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="1" 
+                                                VerticalAlignment="Top"
+                                                Margin="0,0,0,0">
+                                        <TextBlock Text="售后客服"
+                                                   Foreground="#FFFFFF"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Center"
+                                                   Margin="0,0,0,10"/>
+                                        <Border Width="67" Height="67" Background="Transparent">
+                                            <svgc:SvgViewbox Source="/Assets/images6.svg" Stretch="Fill"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    
+                    <Border Grid.Column="1" Margin="102,0,0,0" VerticalAlignment="Top">
+                        <StackPanel>
+                            <StackPanel Style="{StaticResource SectionTitleContainerStyle}" Margin="0,0,0,20">
+                                <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                    <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                </Grid>
+                                <TextBlock Text="版权声明" Style="{StaticResource SectionTitleStyle}"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,0" >
+                                <Border Width="401" Height="97" Background="#D9D9D9" HorizontalAlignment="Left" Margin="0,0,0,20">
+                                    <TextBlock Text="HITAPEX" Foreground="#000000" FontSize="28" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}"  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                
+                                <TextBlock Text="本软件内容受法律保护，未经授权不得复制或使用。"
+                                           Foreground="#EEEEEE"
+                                           FontSize="16"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,10"/>
+                                <TextBlock Text="© 2026 [名称] All Rights Reserved."
+                                           Foreground="#EEEEEE"
+                                           FontFamily="{StaticResource OrbitronFont}"
+                                           FontSize="16"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid x:Name="FirmwareUpdateContent" Visibility="Collapsed">
+                    <StackPanel>
+                        <Border Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="FirmwareCheckUpdateButton"
+                                        Grid.Column="0"
+                                        Content="检 查 更 新"
+                                        Style="{StaticResource UpdateButtonStyle}"
+                                        FontSize="16"
+                                        Click="FirmwareCheckUpdateButton_Click"
+                                        AutomationProperties.Name="检查固件更新"/>
+                            </Grid>
+                        </Border>
+
+                        <Border Margin="0,0,0,20">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="上次检查更新 " Foreground="#66EEEEEE" FontSize="18" FontWeight="Regular"/>
+                                <TextBlock x:Name="FirmwareLastCheckTimeText" 
+                                           Text="未检查" 
+                                           Foreground="#66EEEEEE" 
+                                           FontSize="18"
+                                           FontWeight="Regular"
+                                           FontFamily="{StaticResource OrbitronFont}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border>
+                            <StackPanel>
+                                <ContentControl Style="{StaticResource FirmwareListItemStyle}">
+                                    <Grid Margin="0,0,0,0" Width="1302" Height="40">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="187"/>
+                                            <ColumnDefinition Width="244"/>
+                                            <ColumnDefinition Width="327"/>
+                                            <ColumnDefinition Width="202"/>
+                                            <ColumnDefinition Width="185"/>
+                                            <ColumnDefinition Width="157"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9" Margin="20,0,0,0">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            </Grid>
+                                            <TextBlock Text="设 备" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            </Grid>
+                                            <TextBlock Text="型 号" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            </Grid>
+                                            <TextBlock Text="设 备 序 列 号" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal">
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            </Grid>
+                                            <TextBlock Text="当 前 版 本" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="4" Orientation="Horizontal">
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            </Grid>
+                                            <TextBlock Text="状 态" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="5" Orientation="Horizontal">
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            </Grid>
+                                            <TextBlock Text="更 新" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </ContentControl>
+
+                                <ItemsControl x:Name="DeviceListItems">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <ContentControl Style="{StaticResource FirmwareListItemStyle}" Width="1302" Height="100">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="187"/>
+                                                        <ColumnDefinition Width="244"/>
+                                                        <ColumnDefinition Width="327"/>
+                                                        <ColumnDefinition Width="202"/>
+                                                        <ColumnDefinition Width="185"/>
+                                                        <ColumnDefinition Width="157"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <svgc:SvgViewbox Grid.Column="0" Source="/Assets/Intersect.svg" Width="81" Height="81" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                                    <TextBlock Grid.Column="0" 
+                                                           Text="{Binding DeviceType}" 
+                                                           Foreground="#EEEEEE" 
+                                                           FontSize="16"
+                                                           Margin="34,0,0,0"
+                                                           VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" 
+                                                           Text="{Binding Model}" 
+                                                           Foreground="#EEEEEE" 
+                                                           FontSize="16"
+                                                           FontFamily="{StaticResource OrbitronFont}"
+                                                           VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" 
+                                                           Text="{Binding SerialNumber}" 
+                                                           Foreground="#EEEEEE" 
+                                                           FontSize="16"
+                                                           FontFamily="{StaticResource OrbitronFont}"
+                                                           VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="3" 
+                                                           Text="{Binding CurrentVersion}" 
+                                                           Foreground="#EEEEEE" 
+                                                           FontSize="16"
+                                                           FontFamily="{StaticResource OrbitronFont}"
+                                                           VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="4" 
+                                                           Text="{Binding Status}" 
+                                                           Foreground="#EEEEEE"
+                                                           FontSize="16"
+                                                           FontFamily="{StaticResource OrbitronFont}"
+                                                           VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="5"
+                                                         Content="更 新"
+                                                         Width="122"
+                                                         Height="36"
+                                                         FontSize="18"
+                                                         FontWeight="Bold"
+                                                         Foreground="#FFFFFF"
+                                                         BorderThickness="0"
+                                                         Cursor="Hand"
+                                                         Command="{Binding UpdateCommand}"
+                                                         HorizontalAlignment="Left">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Grid Width="122" Height="36">
+                                                                    <Path Data="M0 6V36H116L122 30V0H6L0 6Z"
+                                                                      Stretch="Fill"
+                                                                      Fill="{Binding ButtonBackground}"
+                                                                      Stroke="Transparent"
+                                                                      StrokeThickness="0"/>
+                                                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                                                  VerticalAlignment="Center"
+                                                                                  Margin="0,0,0,0"/>
+                                                                </Grid>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+                                                </Grid>
+                                            </ContentControl>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <Grid x:Name="AccountSettingsContent" Visibility="Collapsed">
+                    <StackPanel>
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                    </Grid>
+                                    <TextBlock Text="账户信息" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0"
+                                            Width="60" Height="60"
+                                            CornerRadius="30"
+                                            Background="#F0F0F0"
+                                            Margin="0,0,16,0">
+                                        <TextBlock Text="A"
+                                                   FontSize="24"
+                                                   FontWeight="Bold"
+                                                   Foreground="#C60E0E"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock x:Name="UsernameText" 
+                                                   Text="Alex_Racer" 
+                                                   Foreground="#333333" 
+                                                   FontSize="16"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="EmailText" 
+                                                   Text="alex.racer@example.com" 
+                                                   Foreground="#666666" 
+                                                   FontSize="13"
+                                                   Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Button Content="编辑资料"
+                                        Style="{StaticResource LinkButtonStyle}"
+                                        Click="EditProfileButton_Click"
+                                        AutomationProperties.Name="编辑资料"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                    </Grid>
+                                    <TextBlock Text="安全设置" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="修改密码" Foreground="#333333" FontSize="13"/>
+                                        <TextBlock Text="定期更改密码可以提高账户安全性" 
+                                                   Foreground="#666666" 
+                                                   FontSize="12"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="1"
+                                            Content="修改"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Click="ChangePasswordButton_Click"
+                                            AutomationProperties.Name="修改密码"/>
+                                </Grid>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="两步验证" Foreground="#333333" FontSize="13"/>
+                                        <TextBlock Text="为您的账户添加额外的安全保护" 
+                                                   Foreground="#666666" 
+                                                   FontSize="12"
+                                                   Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1"
+                                               x:Name="TwoFactorStatusText"
+                                               Text="未开启"
+                                               Foreground="#999999"
+                                               FontSize="13"
+                                               VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                    </Grid>
+                                    <TextBlock Text="登录设备" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                        <TextBlock Text="当前设备" Foreground="#333333" FontSize="13"/>
+                                        <Border Background="#E8F5E9"
+                                                CornerRadius="4"
+                                                Padding="6,2"
+                                                Margin="8,0,0,0">
+                                            <TextBlock Text="在线" Foreground="#4CAF50" FontSize="11"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1"
+                                               Text="Windows PC"
+                                               Foreground="#666666"
+                                               FontSize="12"/>
+                                </Grid>
+                                <TextBlock Text="最后活动：刚刚"
+                                           Foreground="#999999"
+                                           FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Margin="0,0,0,0">
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
+                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
+                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
+                                    </Grid>
+                                    <TextBlock Text="账户操作" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+                                <Button Content="退出登录"
+                                        Style="{StaticResource LinkButtonStyle}"
+                                        Foreground="#C60E0E"
+                                        Click="LogoutButton_Click"
+                                        AutomationProperties.Name="退出登录"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
