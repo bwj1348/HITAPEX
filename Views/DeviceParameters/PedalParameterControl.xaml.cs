@@ -706,17 +706,17 @@ public partial class PedalParameterControl : UserControl
         if (!isDragging || draggingThumb == null || trackCanvas == null) return;
 
         var position = e.GetPosition(trackCanvas);
-        var x = Math.Max(0, Math.Min(240, position.X));
+        var x = Math.Max(0, Math.Min(227, position.X));
 
         if (draggingThumb == "Left")
         {
-            double thumbLeft = Math.Max(0, Math.Min(103, x - 5.5));
-            deadZoneLeft = Math.Round(thumbLeft / 103.0 * 15.0, 1);
+            double centerX = Math.Max(0, Math.Min(100, x));
+            deadZoneLeft = Math.Round(centerX / 100.0 * 15.0, 1);
         }
         else
         {
-            double thumbLeft = Math.Max(126, Math.Min(229, x - 5.5));
-            deadZoneRight = Math.Round((229.0 - thumbLeft) / 103.0 * 15.0, 1);
+            double centerX = Math.Max(126, Math.Min(227, x));
+            deadZoneRight = Math.Round((227.0 - centerX) / 101.0 * 15.0, 1);
         }
 
         updateDisplay();
@@ -739,16 +739,16 @@ public partial class PedalParameterControl : UserControl
             || leftProgress == null || rightProgress == null
             || leftLabel == null || rightLabel == null) return;
 
-        double leftProgressWidth = deadZoneLeft / 15.0 * 114.0;
-        double leftThumbPos = deadZoneLeft / 15.0 * 103.0;
+        double leftProgressWidth = deadZoneLeft / 15.0 * 100.0;
+        double leftThumbPos = deadZoneLeft / 15.0 * 100.0 - 4.5;
         leftProgress.Width = leftProgressWidth;
         Canvas.SetLeft(leftThumb, leftThumbPos);
         leftLabel.Text = $"{deadZoneLeft:F0}%";
 
-        double rightProgressWidth = deadZoneRight / 15.0 * 114.0;
-        double rightThumbPos = 229.0 - deadZoneRight / 15.0 * 103.0;
+        double rightProgressWidth = deadZoneRight / 15.0 * 101.0;
+        double rightThumbPos = 222.5 - deadZoneRight / 15.0 * 101.0;
         rightProgress.Width = rightProgressWidth;
-        Canvas.SetLeft(rightProgress, 240.0 - rightProgressWidth);
+        Canvas.SetLeft(rightProgress, 227.0 - rightProgressWidth);
         Canvas.SetLeft(rightThumb, rightThumbPos);
         rightLabel.Text = $"{100.0 - deadZoneRight:F0}%";
     }

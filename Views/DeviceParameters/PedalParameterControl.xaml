@@ -192,11 +192,12 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- 第一行：设备信息区 -->
-        <Grid Grid.Row="0" Margin="0,0,0,20">
+        <Grid Grid.Row="0" Margin="0,0,0,19">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -263,7 +264,7 @@
         </Grid>
 
         <!-- 第二行：预设管理区 -->
-        <Grid Grid.Row="1" Margin="0,0,0,20">
+        <Grid Grid.Row="1" Margin="0,0,0,19">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -363,22 +364,20 @@
         </Grid>
 
         <!-- 第三行：一般设置区 -->
-        <Border Grid.Row="2" Height="45" Background="#33EEEEEE" Margin="0,0,0,20">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="15,0,0,0">
-                    <TextBlock Text="一 般 设 置" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,3"/>
-                    <Path Data="M3 0H129L126 3H0L3 0Z" Fill="#C60E0E" Width="129" Height="3" Stretch="Fill"/>
-                </StackPanel>
-                <Border Grid.Column="1" Width="1" Height="32" CornerRadius="1" Background="#4DEEEEEE" VerticalAlignment="Center" Margin="10,0,0,0"/>
-            </Grid>
-        </Border>
+        <Grid Grid.Row="2" Width="246" Height="45" Margin="0,0,0,19" HorizontalAlignment="Left">
+            <Path Data="M15.068 1.5H236.476C237.802 1.50012 239.013 2.24907 239.606 3.43457L243.262 10.7471C243.692 11.6067 243.75 12.6056 243.422 13.5088L233.353 41.1963C232.85 42.5793 231.536 43.4999 230.064 43.5H8.65591C7.33044 43.4999 6.1189 42.7509 5.52603 41.5654L1.86978 34.2529C1.43998 33.3933 1.38216 32.3944 1.7106 31.4912L11.779 3.80371C12.282 2.4207 13.5964 1.50008 15.068 1.5Z">
+                <Path.Fill>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#C60E0E" Offset="0"/>
+                        <GradientStop Color="#600707" Offset="1"/>
+                    </LinearGradientBrush>
+                </Path.Fill>
+            </Path>
+            <TextBlock Text="踏板设置" FontSize="18" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
 
         <!-- 第四行：曲线调节区 -->
-        <Grid Grid.Row="3" Margin="0,0,0,16">
+        <Grid Grid.Row="3" Margin="0,0,0,19">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="12"/>
@@ -388,89 +387,23 @@
             </Grid.ColumnDefinitions>
 
             <!-- 离合器 -->
-            <Grid Grid.Column="0" Width="387" Height="684" ClipToBounds="True">
+            <Grid Grid.Column="0" Width="387" Height="654" ClipToBounds="True">
                 <Grid.Clip>
-                    <PathGeometry Figures="M0 12V684H375L387 672V0H12L0 12Z"/>
+                    <PathGeometry Figures="M0 12V654H375L387 642V0H12L0 12Z"/>
                 </Grid.Clip>
 
-                <!-- 亚克力背景层 -->
-                <Border Background="{fw:AcrylicBrush TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
-                    <Border.OpacityMask>
-                        <VisualBrush Stretch="Fill">
-                            <VisualBrush.Visual>
-                                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Fill="White" />
-                            </VisualBrush.Visual>
-                        </VisualBrush>
-                    </Border.OpacityMask>
-                </Border>
-
-                <!-- 渐变填充层 -->
-                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Opacity="0.2">
+                <!-- 边框和背景 -->
+                <Path Data="M0 12V654H375L387 642V0H12L0 12Z" Stroke="#33EEEEEE" StrokeThickness="2">
                     <Path.Fill>
                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                            <GradientStop Color="#607079" Offset="0"/>
-                            <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                            <GradientStop Color="#282D30" Offset="1"/>
+                            <GradientStop Color="#33607079" Offset="0"/>
+                            <GradientStop Color="#333F4A50" Offset="0.44"/>
+                            <GradientStop Color="#33282D30" Offset="1"/>
                         </LinearGradientBrush>
                     </Path.Fill>
                 </Path>
 
-                <!-- 阴影描边层 -->
-                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
-                    <Path.Effect>
-                        <BlurEffect Radius="45" RenderingBias="Performance"/>
-                    </Path.Effect>
-                </Path>
-
-                <!-- 各边高光线 -->
-                <Grid IsHitTestVisible="False">
-                    <!-- 左边 -->
-                    <Path Data="M0 12 L0 684" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.9"/>
-                                <GradientStop Color="#00EEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 底边 -->
-                    <Path Data="M0 684 L375 684" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.2"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 右边 -->
-                    <Path Data="M387 0 L387 672" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.1"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 顶边 -->
-                    <Path Data="M12 0 L387 0" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.8"/>
-                                <GradientStop Color="#00EEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 左上切角 -->
-                    <Path Data="M0 12 L12 0" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                    <!-- 右下切角 -->
-                    <Path Data="M375 684 L387 672" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                </Grid>
-
-                <Grid Margin="21,21,21,21">
+                <Grid Margin="20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -522,7 +455,7 @@
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
-                    <Grid Grid.Row="2" Margin="0,0,0,20">
+                    <Grid Grid.Row="2" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -683,7 +616,7 @@
                     </Canvas>
 
                     <!-- 第六行：死区调整 -->
-                    <Grid Grid.Row="5" Margin="0,0,0,20">
+                    <Grid Grid.Row="5" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -707,19 +640,19 @@
                     <Grid Grid.Row="6" Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="52"/>
-                            <ColumnDefinition Width="240"/>
-                            <ColumnDefinition Width="53"/>
+                            <ColumnDefinition Width="227"/>
+                            <ColumnDefinition Width="66"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" x:Name="ClutchDeadZoneLeftLabel" Text="0%" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}" VerticalAlignment="Center" />
                         <Grid Grid.Column="1" Margin="0" VerticalAlignment="Center">
                             <Viewbox Height="24" Stretch="Fill">
-                                <Canvas x:Name="DeadZoneTrackCanvas" Width="240" Height="24" SnapsToDevicePixels="True">
+                                <Canvas x:Name="DeadZoneTrackCanvas" Width="227" Height="24" SnapsToDevicePixels="True">
                                     <!-- SVG 轨迹背景 -->
-                                    <Path Data="M114 0H2L2 3H112L114 0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M238 0H127.998L125.998 3H238V0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M116 0L113.995 3H116L118 0H116Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M120 0L117.999 3H120L122 0H120Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M124 0L122 3H124L126 0H124Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M107 0L105 3H107L109 0H107Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M112 0L110 3H112L114 0H112Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M117 0L115 3H117L119 0H117Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M100 0H0L0.00137329 3H98L100 0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M227 0H126L124 3H227V0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
 
                                     <!-- 左侧进度覆盖（从左到右渐变） -->
                                     <Rectangle x:Name="ClutchDeadZoneLeftProgress" Canvas.Left="0" Canvas.Top="10.5"
@@ -733,7 +666,7 @@
                                     </Rectangle>
 
                                     <!-- 右侧进度覆盖（从右到左渐变） -->
-                                    <Rectangle x:Name="ClutchDeadZoneRightProgress" Canvas.Left="240" Canvas.Top="10.5"
+                                    <Rectangle x:Name="ClutchDeadZoneRightProgress" Canvas.Left="227" Canvas.Top="10.5"
                                                Width="0" Height="3">
                                         <Rectangle.Fill>
                                             <LinearGradientBrush StartPoint="1,0" EndPoint="0,0">
@@ -744,14 +677,14 @@
                                     </Rectangle>
 
                                     <!-- 左侧滑块 -->
-                                    <Ellipse x:Name="ClutchDeadZoneLeftThumb" Width="11" Height="11"
+                                    <Ellipse x:Name="ClutchDeadZoneLeftThumb" Width="9" Height="9"
                                              Fill="#FFC800" Cursor="Hand"
-                                             Canvas.Left="0" Canvas.Top="6.5"/>
+                                             Canvas.Left="-4.5" Canvas.Top="7.5"/>
 
                                     <!-- 右侧滑块 -->
-                                    <Ellipse x:Name="ClutchDeadZoneRightThumb" Width="11" Height="11"
+                                    <Ellipse x:Name="ClutchDeadZoneRightThumb" Width="9" Height="9"
                                              Fill="#FFC800" Cursor="Hand"
-                                             Canvas.Left="229" Canvas.Top="6.5"/>
+                                             Canvas.Left="222.5" Canvas.Top="7.5"/>
                                 </Canvas>
                             </Viewbox>
                         </Grid>
@@ -759,7 +692,7 @@
                     </Grid>
 
                     <!-- 第八行：当前位置 -->
-                    <Grid Grid.Row="7" Margin="0,0,0,20">
+                    <Grid Grid.Row="7" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
@@ -862,89 +795,23 @@
             </Grid>
 
             <!-- 刹车 -->
-            <Grid Grid.Column="2" Width="387" Height="684" ClipToBounds="True">
+            <Grid Grid.Column="2" Width="387" Height="654" ClipToBounds="True">
                 <Grid.Clip>
-                    <PathGeometry Figures="M0 12V684H375L387 672V0H12L0 12Z"/>
+                    <PathGeometry Figures="M0 12V654H375L387 642V0H12L0 12Z"/>
                 </Grid.Clip>
 
-                <!-- 亚克力背景层 -->
-                <Border Background="{fw:AcrylicBrush TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
-                    <Border.OpacityMask>
-                        <VisualBrush Stretch="Fill">
-                            <VisualBrush.Visual>
-                                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Fill="White" />
-                            </VisualBrush.Visual>
-                        </VisualBrush>
-                    </Border.OpacityMask>
-                </Border>
-
-                <!-- 渐变填充层 -->
-                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Opacity="0.2">
+                <!-- 边框和背景 -->
+                <Path Data="M0 12V654H375L387 642V0H12L0 12Z" Stroke="#33EEEEEE" StrokeThickness="2">
                     <Path.Fill>
                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                            <GradientStop Color="#607079" Offset="0"/>
-                            <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                            <GradientStop Color="#282D30" Offset="1"/>
+                            <GradientStop Color="#33607079" Offset="0"/>
+                            <GradientStop Color="#333F4A50" Offset="0.44"/>
+                            <GradientStop Color="#33282D30" Offset="1"/>
                         </LinearGradientBrush>
                     </Path.Fill>
                 </Path>
 
-                <!-- 阴影描边层 -->
-                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
-                    <Path.Effect>
-                        <BlurEffect Radius="45" RenderingBias="Performance"/>
-                    </Path.Effect>
-                </Path>
-
-                <!-- 各边高光线 -->
-                <Grid IsHitTestVisible="False">
-                    <!-- 左边 -->
-                    <Path Data="M0 12 L0 684" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.9"/>
-                                <GradientStop Color="#00EEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 底边 -->
-                    <Path Data="M0 684 L375 684" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.2"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 右边 -->
-                    <Path Data="M387 0 L387 672" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.1"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 顶边 -->
-                    <Path Data="M12 0 L387 0" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.8"/>
-                                <GradientStop Color="#00EEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 左上切角 -->
-                    <Path Data="M0 12 L12 0" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                    <!-- 右下切角 -->
-                    <Path Data="M375 684 L387 672" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                </Grid>
-
-                <Grid Margin="21,21,21,21">
+                <Grid Margin="20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -996,7 +863,7 @@
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
-                    <Grid Grid.Row="2" Margin="0,0,0,20">
+                    <Grid Grid.Row="2" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -1157,7 +1024,7 @@
                     </Canvas>
 
                     <!-- 第六行：死区调整 -->
-                    <Grid Grid.Row="5" Margin="0,0,0,20">
+                    <Grid Grid.Row="5" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -1181,19 +1048,19 @@
                     <Grid Grid.Row="6" Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="52"/>
-                            <ColumnDefinition Width="240"/>
-                            <ColumnDefinition Width="53"/>
+                            <ColumnDefinition Width="227"/>
+                            <ColumnDefinition Width="66"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" x:Name="BrakeDeadZoneLeftLabel" Text="0%" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}" VerticalAlignment="Center" />
                         <Grid Grid.Column="1" Margin="0" VerticalAlignment="Center">
                             <Viewbox Height="24" Stretch="Fill">
-                                <Canvas x:Name="BrakeDeadZoneTrackCanvas" Width="240" Height="24" SnapsToDevicePixels="True">
+                                <Canvas x:Name="BrakeDeadZoneTrackCanvas" Width="227" Height="24" SnapsToDevicePixels="True">
                                     <!-- SVG 轨迹背景 -->
-                                    <Path Data="M114 0H2L2 3H112L114 0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M238 0H127.998L125.998 3H238V0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M116 0L113.995 3H116L118 0H116Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M120 0L117.999 3H120L122 0H120Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M124 0L122 3H124L126 0H124Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M107 0L105 3H107L109 0H107Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M112 0L110 3H112L114 0H112Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M117 0L115 3H117L119 0H117Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M100 0H0L0.00137329 3H98L100 0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M227 0H126L124 3H227V0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
 
                                     <!-- 左侧进度覆盖（从左到右渐变） -->
                                     <Rectangle x:Name="BrakeDeadZoneLeftProgress" Canvas.Left="0" Canvas.Top="10.5"
@@ -1207,7 +1074,7 @@
                                     </Rectangle>
 
                                     <!-- 右侧进度覆盖（从右到左渐变） -->
-                                    <Rectangle x:Name="BrakeDeadZoneRightProgress" Canvas.Left="240" Canvas.Top="10.5"
+                                    <Rectangle x:Name="BrakeDeadZoneRightProgress" Canvas.Left="227" Canvas.Top="10.5"
                                                Width="0" Height="3">
                                         <Rectangle.Fill>
                                             <LinearGradientBrush StartPoint="1,0" EndPoint="0,0">
@@ -1218,14 +1085,14 @@
                                     </Rectangle>
 
                                     <!-- 左侧滑块 -->
-                                    <Ellipse x:Name="BrakeDeadZoneLeftThumb" Width="11" Height="11"
+                                    <Ellipse x:Name="BrakeDeadZoneLeftThumb" Width="9" Height="9"
                                              Fill="#C60E0E" Cursor="Hand"
-                                             Canvas.Left="0" Canvas.Top="6.5"/>
+                                             Canvas.Left="-4.5" Canvas.Top="7.5"/>
 
                                     <!-- 右侧滑块 -->
-                                    <Ellipse x:Name="BrakeDeadZoneRightThumb" Width="11" Height="11"
+                                    <Ellipse x:Name="BrakeDeadZoneRightThumb" Width="9" Height="9"
                                              Fill="#C60E0E" Cursor="Hand"
-                                             Canvas.Left="229" Canvas.Top="6.5"/>
+                                             Canvas.Left="222.5" Canvas.Top="7.5"/>
                                 </Canvas>
                             </Viewbox>
                         </Grid>
@@ -1233,7 +1100,7 @@
                     </Grid>
 
                     <!-- 第八行：当前位置 -->
-                    <Grid Grid.Row="7" Margin="0,0,0,20">
+                    <Grid Grid.Row="7" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
@@ -1336,89 +1203,23 @@
             </Grid>
 
             <!-- 油门 -->
-            <Grid Grid.Column="4" Width="387" Height="684" ClipToBounds="True">
+            <Grid Grid.Column="4" Width="387" Height="654" ClipToBounds="True">
                 <Grid.Clip>
-                    <PathGeometry Figures="M0 12V684H375L387 672V0H12L0 12Z"/>
+                    <PathGeometry Figures="M0 12V654H375L387 642V0H12L0 12Z"/>
                 </Grid.Clip>
 
-                <!-- 亚克力背景层 -->
-                <Border Background="{fw:AcrylicBrush TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
-                    <Border.OpacityMask>
-                        <VisualBrush Stretch="Fill">
-                            <VisualBrush.Visual>
-                                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Fill="White" />
-                            </VisualBrush.Visual>
-                        </VisualBrush>
-                    </Border.OpacityMask>
-                </Border>
-
-                <!-- 渐变填充层 -->
-                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Opacity="0.2">
+                <!-- 边框和背景 -->
+                <Path Data="M0 12V654H375L387 642V0H12L0 12Z" Stroke="#33EEEEEE" StrokeThickness="2">
                     <Path.Fill>
                         <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                            <GradientStop Color="#607079" Offset="0"/>
-                            <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                            <GradientStop Color="#282D30" Offset="1"/>
+                            <GradientStop Color="#33607079" Offset="0"/>
+                            <GradientStop Color="#333F4A50" Offset="0.44"/>
+                            <GradientStop Color="#33282D30" Offset="1"/>
                         </LinearGradientBrush>
                     </Path.Fill>
                 </Path>
 
-                <!-- 阴影描边层 -->
-                <Path Data="M0 12V684H375L387 672V0H12L0 12Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
-                    <Path.Effect>
-                        <BlurEffect Radius="45" RenderingBias="Performance"/>
-                    </Path.Effect>
-                </Path>
-
-                <!-- 各边高光线 -->
-                <Grid IsHitTestVisible="False">
-                    <!-- 左边 -->
-                    <Path Data="M0 12 L0 684" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.9"/>
-                                <GradientStop Color="#00EEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 底边 -->
-                    <Path Data="M0 684 L375 684" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.2"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 右边 -->
-                    <Path Data="M387 0 L387 672" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.1"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 顶边 -->
-                    <Path Data="M12 0 L387 0" StrokeThickness="1.5">
-                        <Path.Stroke>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                <GradientStop Color="#4DEEEEEE" Offset="0.8"/>
-                                <GradientStop Color="#00EEEEEE" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Path.Stroke>
-                    </Path>
-                    <!-- 左上切角 -->
-                    <Path Data="M0 12 L12 0" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                    <!-- 右下切角 -->
-                    <Path Data="M375 684 L387 672" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                </Grid>
-
-                <Grid Margin="21,21,21,21">
+                <Grid Margin="20">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -1470,7 +1271,7 @@
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
-                    <Grid Grid.Row="2" Margin="0,0,0,20">
+                    <Grid Grid.Row="2" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -1631,7 +1432,7 @@
                     </Canvas>
 
                     <!-- 第六行：死区调整 -->
-                    <Grid Grid.Row="5" Margin="0,0,0,20">
+                    <Grid Grid.Row="5" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
@@ -1655,19 +1456,19 @@
                     <Grid Grid.Row="6" Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="52"/>
-                            <ColumnDefinition Width="240"/>
-                            <ColumnDefinition Width="53"/>
+                            <ColumnDefinition Width="227"/>
+                            <ColumnDefinition Width="66"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" x:Name="ThrottleDeadZoneLeftLabel" Text="0%" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}" VerticalAlignment="Center" />
                         <Grid Grid.Column="1" Margin="0" VerticalAlignment="Center">
                             <Viewbox Height="24" Stretch="Fill">
-                                <Canvas x:Name="ThrottleDeadZoneTrackCanvas" Width="240" Height="24" SnapsToDevicePixels="True">
+                                <Canvas x:Name="ThrottleDeadZoneTrackCanvas" Width="227" Height="24" SnapsToDevicePixels="True">
                                     <!-- SVG 轨迹背景 -->
-                                    <Path Data="M114 0H2L2 3H112L114 0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M238 0H127.998L125.998 3H238V0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M116 0L113.995 3H116L118 0H116Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M120 0L117.999 3H120L122 0H120Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
-                                    <Path Data="M124 0L122 3H124L126 0H124Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M107 0L105 3H107L109 0H107Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M112 0L110 3H112L114 0H112Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M117 0L115 3H117L119 0H117Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M100 0H0L0.00137329 3H98L100 0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
+                                    <Path Data="M227 0H126L124 3H227V0Z" Fill="#EEEEEE" Canvas.Top="10.5"/>
 
                                     <!-- 左侧进度覆盖（从左到右渐变） -->
                                     <Rectangle x:Name="ThrottleDeadZoneLeftProgress" Canvas.Left="0" Canvas.Top="10.5"
@@ -1681,7 +1482,7 @@
                                     </Rectangle>
 
                                     <!-- 右侧进度覆盖（从右到左渐变） -->
-                                    <Rectangle x:Name="ThrottleDeadZoneRightProgress" Canvas.Left="240" Canvas.Top="10.5"
+                                    <Rectangle x:Name="ThrottleDeadZoneRightProgress" Canvas.Left="227" Canvas.Top="10.5"
                                                Width="0" Height="3">
                                         <Rectangle.Fill>
                                             <LinearGradientBrush StartPoint="1,0" EndPoint="0,0">
@@ -1692,14 +1493,14 @@
                                     </Rectangle>
 
                                     <!-- 左侧滑块 -->
-                                    <Ellipse x:Name="ThrottleDeadZoneLeftThumb" Width="11" Height="11"
+                                    <Ellipse x:Name="ThrottleDeadZoneLeftThumb" Width="9" Height="9"
                                              Fill="#16C642" Cursor="Hand"
-                                             Canvas.Left="0" Canvas.Top="6.5"/>
+                                             Canvas.Left="-4.5" Canvas.Top="7.5"/>
 
                                     <!-- 右侧滑块 -->
-                                    <Ellipse x:Name="ThrottleDeadZoneRightThumb" Width="11" Height="11"
+                                    <Ellipse x:Name="ThrottleDeadZoneRightThumb" Width="9" Height="9"
                                              Fill="#16C642" Cursor="Hand"
-                                             Canvas.Left="229" Canvas.Top="6.5"/>
+                                             Canvas.Left="222.5" Canvas.Top="7.5"/>
                                 </Canvas>
                             </Viewbox>
                         </Grid>
@@ -1707,7 +1508,7 @@
                     </Grid>
 
                     <!-- 第八行：当前位置 -->
-                    <Grid Grid.Row="7" Margin="0,0,0,20">
+                    <Grid Grid.Row="7" Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
@@ -1808,6 +1609,30 @@
                     </Grid>
                 </Grid>
             </Grid>
+        </Grid>
+
+        <!-- 第五行：校准按钮 -->
+        <Grid Grid.Row="4" Width="256" Height="35" Margin="0,0,0,0" HorizontalAlignment="Center" Cursor="Hand">
+            <Path Data="M6 0H256V29L250 35H0V6L6 0Z">
+                <Path.Fill>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#C60E0E" Offset="0"/>
+                        <GradientStop Color="#600707" Offset="1"/>
+                    </LinearGradientBrush>
+                </Path.Fill>
+            </Path>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                    <Canvas Width="17" Height="17">
+                        <Path Data="M12.2891 0.75H14.5968C14.9028 0.75 15.1963 0.871566 15.4126 1.08795C15.629 1.30434 15.7506 1.59783 15.7506 1.90385V4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                        <Path Data="M0.75 4.21154V1.90385C0.75 1.59783 0.871566 1.30434 1.08795 1.08795C1.30434 0.871566 1.59783 0.75 1.90385 0.75H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                        <Path Data="M12.2891 15.7506H14.5968C14.9028 15.7506 15.1963 15.629 15.4126 15.4126C15.629 15.1963 15.7506 14.9028 15.7506 14.5968V12.2891" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                        <Path Data="M0.75 12.2881V14.5958C0.75 14.9018 0.871566 15.1953 1.08795 15.4117C1.30434 15.6281 1.59783 15.7496 1.90385 15.7496H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                        <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                    </Canvas>
+                </Viewbox>
+                <TextBlock Text="校 准" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
         </Grid>
 
     </Grid>
