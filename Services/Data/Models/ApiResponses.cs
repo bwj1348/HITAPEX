@@ -1,0 +1,42 @@
+using System.Text.Json.Serialization;
+
+namespace HITAPEX.Services.Data.Models;
+
+public class ApiResponse<T>
+{
+    [JsonPropertyName("data")]
+    public T Data { get; set; } = default!;
+}
+
+public class GameApiDto
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("cover_image")]
+    public MediaAssetDto? CoverImage { get; set; }
+
+    [JsonPropertyName("bg_image")]
+    public MediaAssetDto? BgImage { get; set; }
+
+    [JsonPropertyName("steam_id")]
+    public string SteamId { get; set; } = "";
+}
+
+public class MediaAssetDto
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = "";
+}

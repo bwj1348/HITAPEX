@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using SharpVectors.Dom.Css;
 
 namespace HITAPEX.Helpers;
 
@@ -218,12 +219,12 @@ public class TrayIcon : IDisposable
 
     public void Dispose()
     {
-        Visible = false;
-        _hwndSource.RemoveHook(WndProc);
+        try { Visible = false; } catch { }
+        try { _hwndSource.RemoveHook(WndProc); } catch { }
         _icon?.Dispose();
     }
 
-    [DllImport("shell32.dll")]
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern bool Shell_NotifyIcon(int dwMessage, ref NOTIFYICONDATA lpData);
 
     [DllImport("user32.dll")]
@@ -253,7 +254,7 @@ public class TrayIcon : IDisposable
         public int Y;
     }
 
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct NOTIFYICONDATA
     {
         public uint cbSize;

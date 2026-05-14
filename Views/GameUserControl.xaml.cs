@@ -4,12 +4,15 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using HITAPEX.Controls;
 using HITAPEX.Models;
+using HITAPEX.Services.Data;
+using HITAPEX.Services.Data.Api;
 using Microsoft.Win32;
 using System.IO;
 
@@ -30,6 +33,8 @@ public partial class GameUserControl : UserControl
     private bool _isPinning = false;
     private bool _isLoading = false;
     private GameItem? _selectedGame;
+    private GameDataService? _gameDataService;
+    private CancellationTokenSource? _loadGamesCts;
     
     private DispatcherTimer? _telemetryAnimationTimer;
     private Random? _random;
@@ -50,132 +55,67 @@ public partial class GameUserControl : UserControl
         UpdateScrollbarThumb();
     }
 
-    private void InitializeGameList()
+    private async void InitializeGameList()
     {
+        _gameDataService = new GameDataService();
+
         _allGameList = new ObservableCollection<GameItem>();
         _filteredGameList = new ObservableCollection<GameItem>();
-        
-        var games = new[]
-        {
-            new GameItem
-            {
-                Name = "FORZA 5",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = true,
-                LaunchPath = @"C:\Games\Forza5\Forza5.exe",
-                Description = "《极限竞速：地平线5》（Forza Horizon 5）是一款由Playground Games开发、以墨西哥为背景的开放世界赛车游戏。该游戏全面支持简体/繁体中文界面以及中文普通话语音，玩家可在Steam、Microsoft Store、Xbox及PS5平台上享受完全本地化的中文竞速体验。",
-                Version = "v1.0",
-                LastPlayed = "2024-01-20",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "iRacing",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = true,
-                LaunchPath = @"C:\Games\iRacing\iRacing.exe",
-                Description = "iRacing是一款专业级在线赛车模拟平台，提供最真实的赛车物理和竞技体验。支持多种赛车类型和全球知名赛道。",
-                Version = "2024.1",
-                LastPlayed = "2024-01-10",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "rFactor 2",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = false,
-                LaunchPath = "",
-                Description = "rFactor 2是一款高度可定制的赛车模拟器，支持丰富的Mod内容和真实的物理引擎。",
-                Version = "未安装",
-                LastPlayed = "-",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "Project CARS 2",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = true,
-                LaunchPath = @"C:\Games\PCARS2\PCARS2.exe",
-                Description = "Project CARS 2提供超过180种车辆和60个赛道，支持多种赛车类型和动态天气系统。",
-                Version = "v7.0",
-                LastPlayed = "2024-01-08",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "F1 2023",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = true,
-                LaunchPath = @"C:\Games\F123\F1_23.exe",
-                Description = "F1 2023是官方授权的一级方程式赛车游戏，包含所有官方车队、车手和赛道。",
-                Version = "v1.15",
-                LastPlayed = "2024-01-12",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "Automobilista 2",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = false,
-                LaunchPath = "",
-                Description = "Automobilista 2是巴西赛车模拟游戏，提供丰富的巴西赛道和车辆内容。",
-                Version = "未安装",
-                LastPlayed = "-",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "RaceRoom",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = true,
-                LaunchPath = @"C:\Games\RaceRoom\RaceRoom.exe",
-                Description = "RaceRoom是一款免费赛车模拟游戏，提供多种赛车和赛道内容。",
-                Version = "v1.20",
-                LastPlayed = "2024-01-05",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "Gran Turismo 7",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = false,
-                LaunchPath = "",
-                Description = "Gran Turismo 7是PlayStation平台的旗舰赛车游戏，提供超过400种车辆。",
-                Version = "未安装",
-                LastPlayed = "-",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "Forza Motorsport",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = true,
-                LaunchPath = @"C:\Games\Forza\ForzaMotorsport.exe",
-                Description = "Forza Motorsport是Xbox Game Studios开发的赛车模拟游戏，提供超过500种车辆。",
-                Version = "v1.0",
-                LastPlayed = "2024-01-14",
-                IsPinned = false
-            },
-            new GameItem
-            {
-                Name = "Richard Burns Rally",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = true,
-                LaunchPath = @"C:\Games\RBR\RBR.exe",
-                Description = "Richard Burns Rally是一款经典的拉力赛模拟游戏，以真实的物理引擎著称。",
-                Version = "v1.02",
-                LastPlayed = "2024-01-11",
-                IsPinned = false
-            }
-        };
+        GameListItemsControl.ItemsSource = _filteredGameList;
 
-        foreach (var game in games)
+        ShowLoadingState();
+        await LoadGamesAsync();
+        HideLoadingState();
+
+        if (_allGameList.Count > 0)
+            SelectGame(_allGameList[0]);
+    }
+
+    private async Task LoadGamesAsync(bool forceRefresh = false)
+    {
+        if (_gameDataService == null) return;
+
+        _loadGamesCts?.Cancel();
+        _loadGamesCts = new CancellationTokenSource();
+
+        try
         {
-            _allGameList.Add(game);
+            var games = await _gameDataService.GetGamesAsync(forceRefresh, _loadGamesCts.Token);
+            _gameDataService.EnrichWithInstallStatus(games);
+
+            _allGameList?.Clear();
+            foreach (var game in games)
+                _allGameList?.Add(game);
+
+            ApplyFilter(_currentFilter);
         }
+        catch (GameServiceException ex) when (ex.IsClientError)
+        {
+            ApplyFilter(_currentFilter);
+        }
+        catch (Exception)
+        {
+            var cached = _gameDataService.GetCachedGames();
+            if (cached != null && cached.Count > 0)
+            {
+                _allGameList?.Clear();
+                foreach (var game in cached)
+                    _allGameList?.Add(game);
+                ApplyFilter(_currentFilter);
+            }
+        }
+    }
 
-        ApplyFilter(_currentFilter);
-        SelectGame(_allGameList[0]);
+    private void ShowLoadingState()
+    {
+        if (LoadingOverlay != null)
+            LoadingOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void HideLoadingState()
+    {
+        if (LoadingOverlay != null)
+            LoadingOverlay.Visibility = Visibility.Collapsed;
     }
 
     private void ApplyFilter(GameFilterType filter)
@@ -201,6 +141,7 @@ public partial class GameUserControl : UserControl
         GameListItemsControl.ItemsSource = _filteredGameList;
         _currentFilter = filter;
 
+        GameScrollViewer.ScrollToHorizontalOffset(0);
         Dispatcher.BeginInvoke(() => UpdateScrollbarThumb(), DispatcherPriority.Loaded);
     }
 
@@ -210,6 +151,20 @@ public partial class GameUserControl : UserControl
         GameTitleText.Text = game.Name;
         GameTitleText2.Text = game.Name;
         GameDescriptionText.Text = game.Description;
+
+        if (!string.IsNullOrEmpty(game.BgImageUrl))
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(game.BgImageUrl);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            BackgroundGrid.Source = bitmap;
+        }
+        else
+        {
+            BackgroundGrid.Source = null;
+        }
 
         if (!string.IsNullOrEmpty(game.LaunchPath))
         {
@@ -254,14 +209,16 @@ public partial class GameUserControl : UserControl
         if (_isLoading) return;
 
         _isLoading = true;
-        LoadingOverlay.Visibility = Visibility.Visible;
+        ShowLoadingState();
 
-        await Task.Delay(1500);
+        _gameDataService?.InvalidateCache();
+        await LoadGamesAsync(forceRefresh: true);
 
-        InitializeGameList();
+        if (_allGameList != null && _allGameList.Count > 0)
+            SelectGame(_allGameList[0]);
 
         _isLoading = false;
-        LoadingOverlay.Visibility = Visibility.Collapsed;
+        HideLoadingState();
     }
 
     private void LaunchGameButton_Click(object sender, MouseButtonEventArgs e)
@@ -580,6 +537,7 @@ public partial class GameUserControl : UserControl
         if (extentWidth <= viewportWidth)
         {
             ScrollbarThumb.Width = ScrollbarTrack.ActualWidth;
+            ResetThumbPosition();
             return;
         }
 
@@ -596,6 +554,21 @@ public partial class GameUserControl : UserControl
                 if (transform is TranslateTransform translateTransform)
                 {
                     translateTransform.X = thumbPosition;
+                    break;
+                }
+            }
+        }
+    }
+
+    private void ResetThumbPosition()
+    {
+        if (ScrollbarThumb?.RenderTransform is TransformGroup transformGroup)
+        {
+            foreach (var transform in transformGroup.Children)
+            {
+                if (transform is TranslateTransform translateTransform)
+                {
+                    translateTransform.X = 0;
                     break;
                 }
             }
@@ -657,6 +630,14 @@ public partial class GameUserControl : UserControl
     private void TelemetryAnimationTimer_Tick(object? sender, EventArgs e)
     {
         _packetCount += _random!.Next(1, 5);
+    }
+
+    private void CardRoot_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
+        {
+            SelectGame(gameItem);
+        }
     }
 
     private void CardRoot_MouseEnter(object sender, MouseEventArgs e)

@@ -117,7 +117,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
-        <Image x:Name="BackgroundGrid" Source="/Assets/OriginalImage.png" Stretch="UniformToFill" Grid.RowSpan="3" Width="1285" Height="723" VerticalAlignment="Top" Margin="0,23,0,0">
+        <Image x:Name="BackgroundGrid" Stretch="Fill" Grid.RowSpan="3" Width="1285" Height="723" VerticalAlignment="Top" Margin="0,23,0,0">
             <Image.OpacityMask>
                 <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
                     <GradientStop Color="#E6FFFFFF" Offset="0"/>
@@ -152,7 +152,7 @@
 
                     <Grid Grid.Row="0" Height="82" Margin="0,0,0,20">
                         <Canvas ClipToBounds="False">
-                            <TextBlock x:Name="GameTitleText2" Text="FORZA 5" FontSize="64" FontWeight="Black" 
+                            <TextBlock x:Name="GameTitleText2" Text="" FontSize="64" FontWeight="Black" 
                                        FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic" Margin="5,5,0,0">
                                 <TextBlock.Effect>
                                     <DropShadowEffect Color="#FF003C" BlurRadius="5" ShadowDepth="0" Opacity="1"/>
@@ -165,15 +165,14 @@
                                 </TextBlock.Foreground>
                             </TextBlock>
 
-                            <TextBlock x:Name="GameTitleText" Text="FORZA 5" FontSize="64" FontWeight="Black" 
+                            <TextBlock x:Name="GameTitleText" Text="" FontSize="64" FontWeight="Black" 
                                        Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic"
                                        TextTrimming="None" TextWrapping="NoWrap"/>
                         </Canvas>
                     </Grid>
 
                     <Border Grid.Row="1"  Margin="0,0,0,40">
-                        <TextBlock x:Name="GameDescriptionText" 
-                                   Text="《极限竞速：地平线5》（Forza Horizon 5）是一款由Playground Games开发、以墨西哥为背景的开放世界赛车游戏。该游戏全面支持简体/繁体中文界面以及中文普通话语音，玩家可在Steam、Microsoft Store、Xbox及PS5平台上享受完全本地化的中文竞速体验。" 
+                        <TextBlock x:Name="GameDescriptionText" Text=""
                                    FontSize="16" 
                                    Foreground="#EEEEEE" 
                                    TextWrapping="Wrap"
@@ -1081,7 +1080,7 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Grid x:Name="CardRoot" Width="220" Height="226" MouseEnter="CardRoot_MouseEnter" MouseLeave="CardRoot_MouseLeave">
+                                    <Grid x:Name="CardRoot" Width="220" Height="226" MouseEnter="CardRoot_MouseEnter" MouseLeave="CardRoot_MouseLeave" MouseLeftButtonDown="CardRoot_MouseLeftButtonDown">
                                         <Grid.Style>
                                             <Style TargetType="Grid">
                                                 <Setter Property="Margin" Value="0,20,-30,0"/>
@@ -1217,7 +1216,7 @@
                                                 </PathGeometry>
                                             </Grid.Clip>
                                             
-                                            <Image Source="{Binding ImagePath}" Stretch="UniformToFill"/>
+                                            <Image Source="{Binding ImagePath}" Stretch="Fill"/>
                                             
                                             <Grid>
                                                 <Grid.Background>
@@ -1406,7 +1405,7 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <Grid x:Name="LoadingOverlay" Visibility="Collapsed" Background="#CC000000">
+                    <Grid x:Name="LoadingOverlay" Visibility="Collapsed" Background="#991B1B1B" MinHeight="246">
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <Path Data="M25 0 A25 25 0 0 1 50 25" Stroke="#C60E0E" StrokeThickness="3" Fill="Transparent" Width="50" Height="50" RenderTransformOrigin="0.5,0.5">
                                 <Path.RenderTransform>

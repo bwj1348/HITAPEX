@@ -507,318 +507,279 @@
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                
-                <ScrollViewer x:Name="GameScrollViewer" Grid.Row="0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" 
+
+                <ScrollViewer x:Name="GameScrollViewer" Grid.Row="0" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled"
                               PreviewMouseWheel="GameScrollViewer_PreviewMouseWheel" ScrollChanged="GameScrollViewer_ScrollChanged">
-                    <ItemsControl x:Name="GameListItemsControl" Margin="0,0,30,0">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid x:Name="CardRoot" Width="220" Height="226">
 
-                                    <Grid.Style>
-                                        <Style TargetType="Grid">
-                                            <Setter Property="Margin" Value="0,20,-30,0"/>
+                    <Grid>
+                        <ItemsControl x:Name="GameListItemsControl" Margin="0,0,30,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid x:Name="CardRoot" Width="220" Height="226" MouseEnter="CardRoot_MouseEnter" MouseLeave="CardRoot_MouseLeave">
 
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Trigger.EnterActions>
-                                                        <BeginStoryboard>
-                                                            <Storyboard>
-                                                                <ThicknessAnimation Storyboard.TargetProperty="Margin" To="0,20,-21.88,0" Duration="0:0:0.3">
-                                                                    <ThicknessAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </ThicknessAnimation.EasingFunction>
-                                                                </ThicknessAnimation>
-                                                            </Storyboard>
-                                                        </BeginStoryboard>
-                                                    </Trigger.EnterActions>
-                                                    <Trigger.ExitActions>
-                                                        <BeginStoryboard>
-                                                            <Storyboard>
-                                                                <ThicknessAnimation Storyboard.TargetProperty="Margin" To="0,20,-30,0" Duration="0:0:0.3">
-                                                                    <ThicknessAnimation.EasingFunction>
-                                                                        <CubicEase EasingMode="EaseOut"/>
-                                                                    </ThicknessAnimation.EasingFunction>
-                                                                </ThicknessAnimation>
-                                                            </Storyboard>
-                                                        </BeginStoryboard>
-                                                    </Trigger.ExitActions>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Grid.Style>
-                                    
-                                    <Path x:Name="HitBox" 
-                                          Data="M43.8861,0 L219.9181,0 L176.032,226 L0,226 Z" 
-                                          Fill="Transparent" 
-                                          Stretch="Fill"/>
-                                    
-                                    <Path Data="M43.8861,0 L219.9181,0 L176.032,226 L0,226 Z" Fill="#C60E0E" Stretch="Fill" RenderTransformOrigin="0.5,0.5">
-                                        <Path.RenderTransform>
-                                            <TranslateTransform X="0" Y="0"/>
-                                        </Path.RenderTransform>
-                                        <Path.Style>
-                                            <Style TargetType="Path">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True">
-                                                        <DataTrigger.EnterActions>
-                                                            <BeginStoryboard>
-                                                                <Storyboard>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="2.33" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
-                                                                            <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="-12" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
-                                                                            <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
-                                                                </Storyboard>
-                                                            </BeginStoryboard>
-                                                        </DataTrigger.EnterActions>
-                                                        <DataTrigger.ExitActions>
-                                                            <BeginStoryboard>
-                                                                <Storyboard>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="0" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
-                                                                            <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="0" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
-                                                                            <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
-                                                                </Storyboard>
-                                                            </BeginStoryboard>
-                                                        </DataTrigger.ExitActions>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Path.Style>
-                                    </Path>
-                                    
-                                    <Grid RenderTransformOrigin="0.5,0.5">
-                                        <Grid.RenderTransform>
-                                            <TranslateTransform X="0" Y="0"/>
-                                        </Grid.RenderTransform>
                                         <Grid.Style>
                                             <Style TargetType="Grid">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True">
-                                                        <DataTrigger.EnterActions>
+                                                <Setter Property="Margin" Value="0,20,-30,0"/>
+
+                                                <!--<Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Trigger.EnterActions>
                                                             <BeginStoryboard>
                                                                 <Storyboard>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="12" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
+                                                                    <ThicknessAnimation Storyboard.TargetProperty="Margin" To="0,20,-21.88,0" Duration="0:0:0.3">
+                                                                        <ThicknessAnimation.EasingFunction>
                                                                             <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="-20" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
-                                                                            <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
+                                                                        </ThicknessAnimation.EasingFunction>
+                                                                    </ThicknessAnimation>
                                                                 </Storyboard>
                                                             </BeginStoryboard>
-                                                        </DataTrigger.EnterActions>
-                                                        <DataTrigger.ExitActions>
+                                                        </Trigger.EnterActions>
+                                                        <Trigger.ExitActions>
                                                             <BeginStoryboard>
                                                                 <Storyboard>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="0" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
+                                                                    <ThicknessAnimation Storyboard.TargetProperty="Margin" To="0,20,-30,0" Duration="0:0:0.3">
+                                                                        <ThicknessAnimation.EasingFunction>
                                                                             <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
-                                                                    <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="0" Duration="0:0:0.3">
-                                                                        <DoubleAnimation.EasingFunction>
-                                                                            <CubicEase EasingMode="EaseOut"/>
-                                                                        </DoubleAnimation.EasingFunction>
-                                                                    </DoubleAnimation>
+                                                                        </ThicknessAnimation.EasingFunction>
+                                                                    </ThicknessAnimation>
                                                                 </Storyboard>
                                                             </BeginStoryboard>
-                                                        </DataTrigger.ExitActions>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
+                                                        </Trigger.ExitActions>
+                                                    </Trigger>
+                                                </Style.Triggers>-->
                                             </Style>
                                         </Grid.Style>
-                                        <Grid.Clip>
-                                            <PathGeometry>
-                                                <PathFigure StartPoint="43.8861,0">
-                                                    <LineSegment Point="219.9181,0"/>
-                                                    <LineSegment Point="176.032,226"/>
-                                                    <LineSegment Point="0,226"/>
-                                                    <LineSegment Point="43.8861,0"/>
-                                                </PathFigure>
-                                            </PathGeometry>
-                                        </Grid.Clip>
-                                        
-                                        <Image Source="{Binding ImagePath}" Stretch="UniformToFill"/>
-                                        
-                                        <Grid>
-                                            <Grid.Background>
-                                                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                                    <GradientStop Color="#CC242424" Offset="0"/>
-                                                    <GradientStop Color="#00A6A6A6" Offset="0.5"/>
-                                                    <GradientStop Color="#CC242424" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Grid.Background>
-                                        </Grid>
 
-                                        <Grid x:Name="OverlayGradient" IsHitTestVisible="False">
-                                            <Grid.Background>
-                                                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                                    <GradientStop Color="#80121212" Offset="0"/>
-                                                    <GradientStop Color="#4D121212" Offset="0.5"/>
-                                                    <GradientStop Color="#80121212" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Grid.Background>
+                                        <Path x:Name="HitBox"
+                                              Data="M43.8861,0 L219.9181,0 L176.032,226 L0,226 Z"
+                                              Fill="Transparent"
+                                              Stretch="Fill"/>
 
-                                            <Grid.Style>
-                                                <Style TargetType="Grid">
-                                                    <Setter Property="Opacity" Value="0"/>
-
+                                        <Path Data="M43.8861,0 L219.9181,0 L176.032,226 L0,226 Z" Fill="#C60E0E" Stretch="Fill" RenderTransformOrigin="0.5,0.5">
+                                            <Path.RenderTransform>
+                                                <TranslateTransform X="0" Y="0"/>
+                                            </Path.RenderTransform>
+                                            <Path.Style>
+                                                <Style TargetType="Path">
                                                     <Style.Triggers>
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl}, Path=IsMouseOver}" Value="True"/>
-                                                                <Condition Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="False"/>
-                                                            </MultiDataTrigger.Conditions>
-
-                                                            <MultiDataTrigger.EnterActions>
+                                                        <DataTrigger Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True">
+                                                            <DataTrigger.EnterActions>
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
-                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.3">
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="2.33" Duration="0:0:0.3">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="-12" Duration="0:0:0.3">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
                                                                             </DoubleAnimation.EasingFunction>
                                                                         </DoubleAnimation>
                                                                     </Storyboard>
                                                                 </BeginStoryboard>
-                                                            </MultiDataTrigger.EnterActions>
-
-                                                            <MultiDataTrigger.ExitActions>
+                                                            </DataTrigger.EnterActions>
+                                                            <DataTrigger.ExitActions>
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
-                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.3">
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="0" Duration="0:0:0.3">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="0" Duration="0:0:0.3">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
                                                                             </DoubleAnimation.EasingFunction>
                                                                         </DoubleAnimation>
                                                                     </Storyboard>
                                                                 </BeginStoryboard>
-                                                            </MultiDataTrigger.ExitActions>
-
-                                                        </MultiDataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Grid.Style>
-                                        </Grid>
-
-                                        <Grid x:Name="PinButtonContainer" Background="Transparent" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,15,15,0" Panel.ZIndex="100" Cursor="Hand" MouseLeftButtonDown="PinButton_Click">
-                                            <Grid.Style>
-                                                <Style TargetType="Grid">
-                                                    <Setter Property="Opacity" Value="0"/>
-
-                                                    <Setter Property="ToolTipService.Placement" Value="Left"/>
-                                                    <Setter Property="ToolTipService.VerticalOffset" Value="0"/>
-                                                    <Setter Property="ToolTipService.HorizontalOffset" Value="-5"/>
-
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsPinned}" Value="True">
-                                                            <Setter Property="Opacity" Value="1"/>
-                                                            <Setter Property="ToolTip">
-                                                                <Setter.Value>
-                                                                    <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
-                                                                        <ToolTip.Content>
-                                                                            <TextBlock Text="从置顶移除"/>
-                                                                        </ToolTip.Content>
-                                                                    </ToolTip>
-                                                                </Setter.Value>
-                                                            </Setter>
+                                                            </DataTrigger.ExitActions>
                                                         </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Path.Style>
+                                        </Path>
 
-                                                        <MultiDataTrigger>
-                                                            <MultiDataTrigger.Conditions>
-                                                                <Condition Binding="{Binding IsPinned}" Value="False"/>
-                                                                <Condition Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True"/>
-                                                            </MultiDataTrigger.Conditions>
-
-                                                            <Setter Property="Opacity" Value="1"/>
-                                                            <Setter Property="ToolTip">
-                                                                <Setter.Value>
-                                                                    <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
-                                                                        <ToolTip.Content>
-                                                                            <TextBlock Text="添加到置顶"/>
-                                                                        </ToolTip.Content>
-                                                                    </ToolTip>
-                                                                </Setter.Value>
-                                                            </Setter>
-                                                        </MultiDataTrigger>
+                                        <Grid RenderTransformOrigin="0.5,0.5">
+                                            <Grid.RenderTransform>
+                                                <TranslateTransform X="0" Y="0"/>
+                                            </Grid.RenderTransform>
+                                            <Grid.Style>
+                                                <Style TargetType="Grid">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True">
+                                                            <DataTrigger.EnterActions>
+                                                                <BeginStoryboard>
+                                                                    <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="12" Duration="0:0:0.3">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="-20" Duration="0:0:0.3">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </DataTrigger.EnterActions>
+                                                            <DataTrigger.ExitActions>
+                                                                <BeginStoryboard>
+                                                                    <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="0" Duration="0:0:0.3">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.Y)" To="0" Duration="0:0:0.3">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </DataTrigger.ExitActions>
+                                                        </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Grid.Style>
+                                            <Grid.Clip>
+                                                <PathGeometry>
+                                                    <PathFigure StartPoint="43.8861,0">
+                                                        <LineSegment Point="219.9181,0"/>
+                                                        <LineSegment Point="176.032,226"/>
+                                                        <LineSegment Point="0,226"/>
+                                                        <LineSegment Point="43.8861,0"/>
+                                                    </PathFigure>
+                                                </PathGeometry>
+                                            </Grid.Clip>
 
-                                            <Path Data="M5.16667 0L31 0L26.2639 27L0 27L5.16667 0Z" Stretch="Fill" Width="31" Height="27">
-                                                <Path.Style>
-                                                    <Style TargetType="Path">
-                                                        <Setter Property="Fill">
-                                                            <Setter.Value>
-                                                                <SolidColorBrush Color="#000000" Opacity="0.3"/>
-                                                            </Setter.Value>
-                                                        </Setter>
+                                            <Image Source="{Binding ImagePath}" Stretch="Fill"/>
+
+                                            <Grid>
+                                                <Grid.Background>
+                                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                                        <GradientStop Color="#CC242424" Offset="0"/>
+                                                        <GradientStop Color="#00A6A6A6" Offset="0.5"/>
+                                                        <GradientStop Color="#CC242424" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Grid.Background>
+                                            </Grid>
+
+                                            <Grid x:Name="OverlayGradient" IsHitTestVisible="False">
+                                                <Grid.Background>
+                                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                                        <GradientStop Color="#80121212" Offset="0"/>
+                                                        <GradientStop Color="#4D121212" Offset="0.5"/>
+                                                        <GradientStop Color="#80121212" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Grid.Background>
+
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
+                                                        <Setter Property="Opacity" Value="0"/>
+
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsPinned}" Value="True">
-                                                                <Setter Property="Fill">
-                                                                    <Setter.Value>
-                                                                        <SolidColorBrush Color="#000000" Opacity="0.6"/>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                            </DataTrigger>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding RelativeSource={RelativeSource AncestorType=ItemsControl}, Path=IsMouseOver}" Value="True"/>
+                                                                    <Condition Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="False"/>
+                                                                </MultiDataTrigger.Conditions>
+
+                                                                <MultiDataTrigger.EnterActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.3">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </MultiDataTrigger.EnterActions>
+
+                                                                <MultiDataTrigger.ExitActions>
+                                                                    <BeginStoryboard>
+                                                                        <Storyboard>
+                                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.3">
+                                                                                <DoubleAnimation.EasingFunction>
+                                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                                </DoubleAnimation.EasingFunction>
+                                                                            </DoubleAnimation>
+                                                                        </Storyboard>
+                                                                    </BeginStoryboard>
+                                                                </MultiDataTrigger.ExitActions>
+
+                                                            </MultiDataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </Path.Style>
-                                            </Path>
+                                                </Grid.Style>
+                                            </Grid>
 
-                                            <svgc:SvgViewbox Source="/Assets/Vector1231.svg" Width="12" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0">
-                                                <svgc:SvgViewbox.Style>
-                                                    <Style TargetType="svgc:SvgViewbox">
-                                                        <Setter Property="Opacity" Value="0.5"/>
+                                            <Grid x:Name="PinButtonContainer" Background="Transparent" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,15,15,0" Panel.ZIndex="100" Cursor="Hand" MouseLeftButtonDown="PinButton_Click">
+                                                <Grid.Style>
+                                                    <Style TargetType="Grid">
+                                                        <Setter Property="Opacity" Value="0"/>
+
+                                                        <Setter Property="ToolTipService.Placement" Value="Left"/>
+                                                        <Setter Property="ToolTipService.VerticalOffset" Value="0"/>
+                                                        <Setter Property="ToolTipService.HorizontalOffset" Value="-5"/>
+
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsPinned}" Value="True">
                                                                 <Setter Property="Opacity" Value="1"/>
+                                                                <Setter Property="ToolTip">
+                                                                    <Setter.Value>
+                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
+                                                                            <ToolTip.Content>
+                                                                                <TextBlock Text="从置顶移除"/>
+                                                                            </ToolTip.Content>
+                                                                        </ToolTip>
+                                                                    </Setter.Value>
+                                                                </Setter>
                                                             </DataTrigger>
+
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsPinned}" Value="False"/>
+                                                                    <Condition Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True"/>
+                                                                </MultiDataTrigger.Conditions>
+
+                                                                <Setter Property="Opacity" Value="1"/>
+                                                                <Setter Property="ToolTip">
+                                                                    <Setter.Value>
+                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
+                                                                            <ToolTip.Content>
+                                                                                <TextBlock Text="添加到置顶"/>
+                                                                            </ToolTip.Content>
+                                                                        </ToolTip>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </MultiDataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </svgc:SvgViewbox.Style>
-                                            </svgc:SvgViewbox>
-                                        </Grid>
-                                        
-                                        <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="20,0,0,12">
-                                            <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="Bold" FontStyle="Italic" Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" TextTrimming="CharacterEllipsis" Margin="7,0,0,2.6"/>
-                                            
-                                            <Grid Height="24" Cursor="Hand" MouseLeftButtonDown="LaunchButton_Click">
-                                                <Path Data="M 6,0 L 149,0 L 143,24 L 0,24 Z" Stretch="Uniform" Width="149" Height="24">
+                                                </Grid.Style>
+
+                                                <Path Data="M5.16667 0L31 0L26.2639 27L0 27L5.16667 0Z" Stretch="Fill" Width="31" Height="27">
                                                     <Path.Style>
                                                         <Style TargetType="Path">
+                                                            <Setter Property="Fill">
+                                                                <Setter.Value>
+                                                                    <SolidColorBrush Color="#000000" Opacity="0.3"/>
+                                                                </Setter.Value>
+                                                            </Setter>
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                                                <DataTrigger Binding="{Binding IsPinned}" Value="True">
                                                                     <Setter Property="Fill">
                                                                         <Setter.Value>
-                                                                            <SolidColorBrush Color="#C60E0E" Opacity="0.5"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding IsInstalled}" Value="False">
-                                                                    <Setter Property="Fill">
-                                                                        <Setter.Value>
-                                                                            <SolidColorBrush Color="#B5B5B5" Opacity="0.5"/>
+                                                                            <SolidColorBrush Color="#000000" Opacity="0.6"/>
                                                                         </Setter.Value>
                                                                     </Setter>
                                                                 </DataTrigger>
@@ -826,33 +787,101 @@
                                                         </Style>
                                                     </Path.Style>
                                                 </Path>
-                                                
-                                                <svgc:SvgViewbox Source="/Assets/Group126547700.svg" Stretch="None"/>
-                                                
-                                                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" FontStyle="italic">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
+
+                                                <svgc:SvgViewbox Source="/Assets/Vector1231.svg" Width="12" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0">
+                                                    <svgc:SvgViewbox.Style>
+                                                        <Style TargetType="svgc:SvgViewbox">
+                                                            <Setter Property="Opacity" Value="0.5"/>
                                                             <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsInstalled}" Value="True">
-                                                                    <Setter Property="Text" Value="启 动"/>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding IsInstalled}" Value="False">
-                                                                    <Setter Property="Text" Value="未 安 装"/>
+                                                                <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                                                                    <Setter Property="Opacity" Value="1"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
+                                                    </svgc:SvgViewbox.Style>
+                                                </svgc:SvgViewbox>
                                             </Grid>
-                                        </StackPanel>
-                                        
+
+                                            <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="20,0,0,12">
+                                                <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="Bold" FontStyle="Italic" Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" TextTrimming="CharacterEllipsis" Margin="7,0,0,2.6" HorizontalAlignment="Left" Width="145"/>
+
+                                                <Grid Height="24" Cursor="Hand" MouseLeftButtonDown="LaunchButton_Click" HorizontalAlignment="Left">
+                                                    <Path Data="M 6,0 L 149,0 L 143,24 L 0,24 Z" Stretch="Uniform" Width="149" Height="24">
+                                                        <Path.Style>
+                                                            <Style TargetType="Path">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                                                        <Setter Property="Fill">
+                                                                            <Setter.Value>
+                                                                                <SolidColorBrush Color="#C60E0E" Opacity="0.5"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsInstalled}" Value="False">
+                                                                        <Setter Property="Fill">
+                                                                            <Setter.Value>
+                                                                                <SolidColorBrush Color="#B5B5B5" Opacity="0.5"/>
+                                                                            </Setter.Value>
+                                                                        </Setter>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Path.Style>
+                                                    </Path>
+
+                                                    <svgc:SvgViewbox Source="/Assets/Group126547700.svg" Stretch="None"/>
+
+                                                    <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" FontStyle="italic">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                                                        <Setter Property="Text" Value="启 动"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsInstalled}" Value="False">
+                                                                        <Setter Property="Text" Value="未 安 装"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </StackPanel>
+
+                                        </Grid>
                                     </Grid>
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Grid x:Name="GameLoadingOverlay" Visibility="Collapsed" Background="#991B1B1B" MinHeight="246">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Path Data="M25 0 A25 25 0 0 1 50 25" Stroke="#C60E0E" StrokeThickness="3" Fill="Transparent" Width="50" Height="50" RenderTransformOrigin="0.5,0.5">
+                                    <Path.RenderTransform>
+                                        <RotateTransform x:Name="HomeLoadingRotate" Angle="0"/>
+                                    </Path.RenderTransform>
+                                    <Path.Style>
+                                        <Style TargetType="Path">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Visibility, ElementName=GameLoadingOverlay}" Value="Visible">
+                                                    <DataTrigger.EnterActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard RepeatBehavior="Forever">
+                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" From="0" To="360" Duration="0:0:1"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </DataTrigger.EnterActions>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Path.Style>
+                                </Path>
+                                <TextBlock Text="正在加载游戏列表..." FontSize="14" Foreground="#EEEEEE" Margin="0,12,0,0" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
                 </ScrollViewer>
-                
+
                 <Grid Grid.Row="1" Margin="0,10,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

@@ -9,6 +9,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using HITAPEX.Controls;
 using HITAPEX.Models;
+using HITAPEX.Services.Data;
+using HITAPEX.Services.Data.Api;
 
 namespace HITAPEX.Views;
 
@@ -36,6 +38,8 @@ public partial class HomeUserControl : UserControl
     
     private ObservableCollection<GameItem>? _gameList;
     private bool _isPinning = false;
+    private GameDataService? _gameDataService;
+    private CancellationTokenSource? _loadGamesCts;
     
     private double _forceFeedbackValue = 75;
     private DispatcherTimer? _forceFeedbackAnimationTimer;
@@ -94,22 +98,68 @@ public partial class HomeUserControl : UserControl
         InitializeGameList();
     }
 
-    private void InitializeGameList()
+    private async void InitializeGameList()
     {
+        _gameDataService = new GameDataService();
+
         _gameList = new ObservableCollection<GameItem>();
-        for (int i = 0; i < 10; i++)
-        {
-            _gameList.Add(new GameItem
-            {
-                Name = $"Game {i + 1}",
-                ImagePath = "/Assets/Rectangle 24845.png",
-                IsInstalled = i % 2 == 0,
-                IsPinned = false
-            });
-        }
         GameListItemsControl.ItemsSource = _gameList;
-        
+
+        ShowGameLoadingState();
+        await LoadGamesAsync();
+
         Dispatcher.BeginInvoke(() => UpdateScrollbarThumb(), DispatcherPriority.Loaded);
+    }
+
+    private async Task LoadGamesAsync(bool forceRefresh = false)
+    {
+        if (_gameDataService == null) return;
+
+        _loadGamesCts?.Cancel();
+        _loadGamesCts = new CancellationTokenSource();
+
+        try
+        {
+            var games = await _gameDataService.GetGamesAsync(forceRefresh, _loadGamesCts.Token);
+            _gameDataService.EnrichWithInstallStatus(games);
+
+            _gameList?.Clear();
+            foreach (var game in games)
+            {
+                _gameList?.Add(game);
+            }
+
+            HideGameLoadingState();
+        }
+        catch (GameServiceException ex) when (ex.IsClientError)
+        {
+            HideGameLoadingState();
+            // Client error — API returned 4xx, show empty state with retry
+        }
+        catch (Exception)
+        {
+            HideGameLoadingState();
+            // Network error — keep any cached data if available
+            var cached = _gameDataService.GetCachedGames();
+            if (cached != null && cached.Count > 0)
+            {
+                _gameList?.Clear();
+                foreach (var game in cached)
+                    _gameList?.Add(game);
+            }
+        }
+    }
+
+    private void ShowGameLoadingState()
+    {
+        if (GameLoadingOverlay != null)
+            GameLoadingOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void HideGameLoadingState()
+    {
+        if (GameLoadingOverlay != null)
+            GameLoadingOverlay.Visibility = Visibility.Collapsed;
     }
 
     private void PinButton_Click(object sender, MouseButtonEventArgs e)
@@ -280,6 +330,7 @@ public partial class HomeUserControl : UserControl
         if (extentWidth <= viewportWidth)
         {
             ScrollbarThumb.Width = ScrollbarTrack.ActualWidth;
+            ResetThumbPosition();
             return;
         }
         
@@ -296,6 +347,21 @@ public partial class HomeUserControl : UserControl
                 if (transform is TranslateTransform translateTransform)
                 {
                     translateTransform.X = thumbPosition;
+                    break;
+                }
+            }
+        }
+    }
+
+    private void ResetThumbPosition()
+    {
+        if (ScrollbarThumb?.RenderTransform is TransformGroup transformGroup)
+        {
+            foreach (var transform in transformGroup.Children)
+            {
+                if (transform is TranslateTransform translateTransform)
+                {
+                    translateTransform.X = 0;
                     break;
                 }
             }
@@ -873,6 +939,59 @@ public partial class HomeUserControl : UserControl
             });
             
             dialog.Show();
+        }
+    }
+
+    private void CardRoot_MouseEnter(object sender, MouseEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
+        {
+            int hoveredIndex = _gameList?.IndexOf(gameItem) ?? -1;
+            if (hoveredIndex >= 0)
+            {
+                ShiftRightSiblings(hoveredIndex, 8.12);
+            }
+        }
+    }
+
+    private void CardRoot_MouseLeave(object sender, MouseEventArgs e)
+    {
+        if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
+        {
+            int hoveredIndex = _gameList?.IndexOf(gameItem) ?? -1;
+            if (hoveredIndex >= 0)
+            {
+                ShiftRightSiblings(hoveredIndex, 0);
+            }
+        }
+    }
+
+    private void ShiftRightSiblings(int startIndex, double offsetX)
+    {
+        if (GameListItemsControl == null || _gameList == null) return;
+
+        var duration = new Duration(TimeSpan.FromSeconds(0.3));
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        for (int i = startIndex + 1; i < _gameList.Count; i++)
+        {
+            if (GameListItemsControl.ItemContainerGenerator.ContainerFromIndex(i) is UIElement container)
+            {
+                if (container.RenderTransform is not TranslateTransform)
+                {
+                    container.RenderTransform = new TranslateTransform();
+                }
+
+                var transform = (TranslateTransform)container.RenderTransform;
+                var anim = new DoubleAnimation
+                {
+                    To = offsetX,
+                    Duration = duration,
+                    EasingFunction = easing
+                };
+
+                transform.BeginAnimation(TranslateTransform.XProperty, anim);
+            }
         }
     }
 }

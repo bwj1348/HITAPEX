@@ -44,6 +44,9 @@ public partial class MainWindow : Window
 
         Closing += (s, e) =>
         {
+            if (App.IsSessionEnding)
+                return;
+
             if (Properties.Settings.Default.CloseMinimizedToTray)
             {
                 e.Cancel = true;
