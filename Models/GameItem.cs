@@ -15,6 +15,7 @@ public class GameItem : INotifyPropertyChanged
     public string Description { get; set; } = "";
     public string Version { get; set; } = "";
     public string LastPlayed { get; set; } = "";
+    public DateTime? LastLaunchTime { get; set; }
     
     private bool _isPinned;
     public bool IsPinned

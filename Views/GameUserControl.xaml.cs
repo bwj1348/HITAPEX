@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using HITAPEX.Controls;
 using HITAPEX.Models;
+using HITAPEX.Services;
 using HITAPEX.Services.Data;
 using HITAPEX.Services.Data.Api;
 using Microsoft.Win32;
@@ -67,8 +68,8 @@ public partial class GameUserControl : UserControl
         await LoadGamesAsync();
         HideLoadingState();
 
-        if (_allGameList.Count > 0)
-            SelectGame(_allGameList[0]);
+        if (_filteredGameList is { Count: > 0 })
+            SelectGame(_filteredGameList[0]);
     }
 
     private async Task LoadGamesAsync(bool forceRefresh = false)
@@ -131,7 +132,11 @@ public partial class GameUserControl : UserControl
             _ => _allGameList
         };
 
-        var sortedFiltered = filtered.OrderByDescending(g => g.IsPinned).ThenBy(g => _allGameList.IndexOf(g));
+        var sortedFiltered = filtered
+            .OrderByDescending(g => g.IsPinned)
+            .ThenByDescending(g => g.IsInstalled)
+            .ThenByDescending(g => g.LastLaunchTime ?? DateTime.MinValue)
+            .ThenBy(g => g.Name);
 
         foreach (var game in sortedFiltered)
         {
@@ -152,6 +157,8 @@ public partial class GameUserControl : UserControl
         GameTitleText2.Text = game.Name;
         GameDescriptionText.Text = game.Description;
 
+        BackgroundGrid.Source = null;
+
         if (!string.IsNullOrEmpty(game.BgImageUrl))
         {
             var bitmap = new BitmapImage();
@@ -160,10 +167,6 @@ public partial class GameUserControl : UserControl
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.EndInit();
             BackgroundGrid.Source = bitmap;
-        }
-        else
-        {
-            BackgroundGrid.Source = null;
         }
 
         if (!string.IsNullOrEmpty(game.LaunchPath))
@@ -201,6 +204,9 @@ public partial class GameUserControl : UserControl
                 _ => GameFilterType.All
             };
             ApplyFilter(filter);
+
+            if (_filteredGameList != null && _filteredGameList.Count > 0)
+                SelectGame(_filteredGameList[0]);
         }
     }
 
@@ -211,11 +217,17 @@ public partial class GameUserControl : UserControl
         _isLoading = true;
         ShowLoadingState();
 
+        var previousGameId = _selectedGame?.Id;
         _gameDataService?.InvalidateCache();
         await LoadGamesAsync(forceRefresh: true);
 
-        if (_allGameList != null && _allGameList.Count > 0)
-            SelectGame(_allGameList[0]);
+        if (_filteredGameList is { Count: > 0 })
+        {
+            var keepSelected = previousGameId != null
+                ? _filteredGameList.FirstOrDefault(g => g.Id == previousGameId)
+                : null;
+            SelectGame(keepSelected ?? _filteredGameList[0]);
+        }
 
         _isLoading = false;
         HideLoadingState();
@@ -224,34 +236,13 @@ public partial class GameUserControl : UserControl
     private void LaunchGameButton_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        
+
         if (_selectedGame == null) return;
 
-        if (_selectedGame.IsInstalled && !string.IsNullOrEmpty(_selectedGame.LaunchPath))
-        {
-            if (!File.Exists(_selectedGame.LaunchPath))
-            {
-                ShowLaunchErrorDialog();
-                return;
-            }
+        if (GameLauncher.Launch(_selectedGame))
+            return;
 
-            try
-            {
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = _selectedGame.LaunchPath,
-                    UseShellExecute = true
-                });
-            }
-            catch
-            {
-                ShowLaunchErrorDialog();
-            }
-        }
-        else
-        {
-            ShowLaunchErrorDialog();
-        }
+        ShowLaunchErrorDialog();
     }
 
     private void LaunchModeRadio_Changed(object sender, RoutedEventArgs e)
@@ -490,25 +481,10 @@ public partial class GameUserControl : UserControl
         {
             SelectGame(gameItem);
 
-            if (gameItem.IsInstalled && !string.IsNullOrEmpty(gameItem.LaunchPath))
-            {
-                try
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = gameItem.LaunchPath,
-                        UseShellExecute = true
-                    });
-                }
-                catch
-                {
-                    ShowLaunchErrorDialog();
-                }
-            }
-            else
-            {
-                ShowLaunchErrorDialog();
-            }
+            if (GameLauncher.Launch(gameItem))
+                return;
+
+            ShowLaunchErrorDialog();
         }
     }
 

@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using HITAPEX.Controls;
 using HITAPEX.Models;
+using HITAPEX.Services;
 using HITAPEX.Services.Data;
 using HITAPEX.Services.Data.Api;
 
@@ -123,8 +124,14 @@ public partial class HomeUserControl : UserControl
             var games = await _gameDataService.GetGamesAsync(forceRefresh, _loadGamesCts.Token);
             _gameDataService.EnrichWithInstallStatus(games);
 
+            var sorted = games
+                .OrderByDescending(g => g.IsPinned)
+                .ThenByDescending(g => g.IsInstalled)
+                .ThenByDescending(g => g.LastLaunchTime ?? DateTime.MinValue)
+                .ThenBy(g => g.Name);
+
             _gameList?.Clear();
-            foreach (var game in games)
+            foreach (var game in sorted)
             {
                 _gameList?.Add(game);
             }
@@ -134,17 +141,21 @@ public partial class HomeUserControl : UserControl
         catch (GameServiceException ex) when (ex.IsClientError)
         {
             HideGameLoadingState();
-            // Client error — API returned 4xx, show empty state with retry
         }
         catch (Exception)
         {
             HideGameLoadingState();
-            // Network error — keep any cached data if available
             var cached = _gameDataService.GetCachedGames();
             if (cached != null && cached.Count > 0)
             {
+                var sorted = cached
+                    .OrderByDescending(g => g.IsPinned)
+                    .ThenByDescending(g => g.IsInstalled)
+                    .ThenByDescending(g => g.LastLaunchTime ?? DateTime.MinValue)
+                    .ThenBy(g => g.Name);
+
                 _gameList?.Clear();
-                foreach (var game in cached)
+                foreach (var game in sorted)
                     _gameList?.Add(game);
             }
         }
@@ -906,15 +917,26 @@ public partial class HomeUserControl : UserControl
     private void LaunchButton_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        
+
+        if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
+        {
+            if (GameLauncher.Launch(gameItem))
+                return;
+        }
+
+        ShowLaunchErrorDialog();
+    }
+
+    private void ShowLaunchErrorDialog()
+    {
         if (Window.GetWindow(this) is MainWindow mainWindow)
         {
             var dialog = mainWindow.GlobalDialogControl;
-            
+
             dialog.Title = "启动失败";
             dialog.ShowIcon = true;
             dialog.ClearButtons();
-            
+
             dialog.DialogContent = new TextBlock
             {
                 Text = "游戏启动失败，请确认游戏已安装且启动路径正确，或尝试重新设置路径后再试。",
@@ -925,19 +947,18 @@ public partial class HomeUserControl : UserControl
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
                 FontWeight = FontWeights.Regular
-                
             };
-            
+
             dialog.AddButton("重 新 启 动", (s, args) =>
             {
                 dialog.Hide();
             }, isPrimary: true);
-            
+
             dialog.AddButton("取 消", (s, args) =>
             {
                 dialog.Hide();
             });
-            
+
             dialog.Show();
         }
     }

@@ -8,6 +8,7 @@ public class SteamInstallInfo
     public bool IsInstalled { get; set; }
     public string? InstallDir { get; set; }
     public string? LibraryPath { get; set; }
+    public DateTime? LastPlayed { get; set; }
 }
 
 public class SteamInstallService
@@ -34,11 +35,13 @@ public class SteamInstallService
             if (File.Exists(manifestPath))
             {
                 var installDir = ParseManifestInstallDir(manifestPath);
+                var lastPlayed = ParseManifestTimestamp(manifestPath);
                 return new SteamInstallInfo
                 {
                     IsInstalled = true,
                     InstallDir = installDir != null ? Path.Combine(library, "steamapps", "common", installDir) : null,
-                    LibraryPath = library
+                    LibraryPath = library,
+                    LastPlayed = lastPlayed
                 };
             }
         }
@@ -117,7 +120,30 @@ public class SteamInstallService
                 {
                     var parts = trimmed.Split('\t');
                     if (parts.Length >= 2)
-                        return parts[1].Trim('"');
+                        return parts[^1].Trim('"');
+                }
+            }
+        }
+        catch
+        {
+            // Manifest parse failure
+        }
+        return null;
+    }
+
+    private static DateTime? ParseManifestTimestamp(string manifestPath)
+    {
+        try
+        {
+            var lines = File.ReadAllLines(manifestPath);
+            foreach (var line in lines)
+            {
+                var trimmed = line.Trim();
+                if (trimmed.StartsWith("\"LastPlayed\""))
+                {
+                    var parts = trimmed.Split('\t');
+                    if (parts.Length >= 2 && long.TryParse(parts[^1].Trim('"'), out var unixTime))
+                        return DateTimeOffset.FromUnixTimeSeconds(unixTime).LocalDateTime;
                 }
             }
         }

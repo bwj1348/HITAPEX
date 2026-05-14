@@ -53,6 +53,8 @@ public class GameDataService : IDisposable
             if (!string.IsNullOrWhiteSpace(game.SteamId) && installInfo.TryGetValue(game.SteamId, out var info))
             {
                 game.IsInstalled = info.IsInstalled;
+                if (!game.LastLaunchTime.HasValue || info.LastPlayed > game.LastLaunchTime.Value)
+                    game.LastLaunchTime = info.LastPlayed;
                 if (info.IsInstalled && info.InstallDir != null)
                 {
                     game.LaunchPath = info.InstallDir;
