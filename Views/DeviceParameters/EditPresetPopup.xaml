@@ -370,43 +370,25 @@
                                                 <PathGeometry Figures="M350 0H6L0 6V358H344L350 352V0Z"/>
                                             </Grid.Clip>
 
-                                            <Border Grid.Column="1" Background="{fw:AcrylicBrush BackgroundGrid, TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
-                                                <Border.OpacityMask>
-                                                    <VisualBrush Stretch="Fill">
-                                                        <VisualBrush.Visual>
-                                                            <Path Data="M350 0H6L0 6V358H344L350 352V0Z" Fill="White" />
-                                                        </VisualBrush.Visual>
-                                                    </VisualBrush>
-                                                </Border.OpacityMask>
-                                            </Border>
-
-                                            <Path Grid.Column="1" Data="M350 0H6L0 6V358H344L350 352V0Z" Opacity="0.2">
+                                            <Path Grid.Column="1" Data="M350 0H6L0 6V358H344L350 352V0Z" Stroke="#33EEEEEE" StrokeThickness="2">
                                                 <Path.Fill>
                                                     <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                                                        <GradientStop Color="#607079" Offset="0"/>
-                                                        <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                                                        <GradientStop Color="#282D30" Offset="1"/>
+                                                        <GradientStop Color="#33607079" Offset="0"/>
+                                                        <GradientStop Color="#333F4A50" Offset="0.44"/>
+                                                        <GradientStop Color="#33282D30" Offset="1"/>
                                                     </LinearGradientBrush>
                                                 </Path.Fill>
                                             </Path>
 
-                                            <Path Grid.Column="1" Data="M350 0H6L0 6V358H344L350 352V0Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                                            <Path Grid.Column="1" Data="M350 0H6L0 6V358H344L350 352V0Z" Fill="Transparent" Stroke="#CC232323" StrokeThickness="15">
                                                 <Path.Effect>
                                                     <BlurEffect Radius="45" RenderingBias="Performance"/>
                                                 </Path.Effect>
+                                                <Path.CacheMode>
+                                                    <BitmapCache RenderAtScale="1" SnapsToDevicePixels="True"/>
+                                                </Path.CacheMode>
                                             </Path>
 
-                                            <!-- 边框 -->
-                                            <Path Grid.Column="1" Data="M350 0H6L0 6V358H344L350 352V0Z" Fill="Transparent" Stretch="Fill" Width="350" Height="358">
-                                                <Path.Stroke>
-                                                    <LinearGradientBrush StartPoint="1,0" EndPoint="0,1">
-                                                        <GradientStop Color="#00767676" Offset="0"/>
-                                                        <GradientStop Color="#767676" Offset="0.15"/>
-                                                        <GradientStop Color="#767676" Offset="0.85"/>
-                                                        <GradientStop Color="#00767676" Offset="1"/>
-                                                    </LinearGradientBrush>
-                                                </Path.Stroke>
-                                            </Path>
                                             <!-- 游戏列表 -->
                                             <ScrollViewer x:Name="AllGamesScrollViewer" Grid.Column="1"
                                                           VerticalScrollBarVisibility="Auto"
@@ -475,41 +457,23 @@
                                             <PathGeometry Figures="M385 0H6L0 6V358H379L385 352L385 0Z"/>
                                         </Grid.Clip>
 
-                                        <Border Grid.Column="1" Background="{fw:AcrylicBrush BackgroundGrid, TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
-                                            <Border.OpacityMask>
-                                                <VisualBrush Stretch="Fill">
-                                                    <VisualBrush.Visual>
-                                                        <Path Data="M385 0H6L0 6V358H379L385 352L385 0Z" Fill="White" />
-                                                    </VisualBrush.Visual>
-                                                </VisualBrush>
-                                            </Border.OpacityMask>
-                                        </Border>
-
-                                        <Path Grid.Column="1" Data="M385 0H6L0 6V358H379L385 352L385 0Z" Opacity="0.2">
+                                        <Path Grid.Column="1" Data="M385 0H6L0 6V358H379L385 352L385 0Z" Stroke="#33EEEEEE" StrokeThickness="2">
                                             <Path.Fill>
                                                 <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                                                    <GradientStop Color="#607079" Offset="0"/>
-                                                    <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                                                    <GradientStop Color="#282D30" Offset="1"/>
+                                                    <GradientStop Color="#33607079" Offset="0"/>
+                                                    <GradientStop Color="#333F4A50" Offset="0.44"/>
+                                                    <GradientStop Color="#33282D30" Offset="1"/>
                                                 </LinearGradientBrush>
                                             </Path.Fill>
                                         </Path>
 
-                                        <Path Grid.Column="1" Data="M385 0H6L0 6V358H379L385 352L385 0Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                                        <Path Grid.Column="1" Data="M385 0H6L0 6V358H379L385 352L385 0Z" Fill="Transparent" Stroke="#CC232323" StrokeThickness="15">
                                             <Path.Effect>
                                                 <BlurEffect Radius="45" RenderingBias="Performance"/>
                                             </Path.Effect>
-                                        </Path>
-                                        <!-- 边框 -->
-                                        <Path Data="M385 0H6L0 6V358H379L385 352L385 0Z" Fill="Transparent" Stretch="Fill" Width="385" Height="358" VerticalAlignment="Top">
-                                            <Path.Stroke>
-                                                <LinearGradientBrush StartPoint="1,0" EndPoint="0,1">
-                                                    <GradientStop Color="#00767676" Offset="0"/>
-                                                    <GradientStop Color="#767676" Offset="0.15"/>
-                                                    <GradientStop Color="#767676" Offset="0.85"/>
-                                                    <GradientStop Color="#00767676" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Path.Stroke>
+                                            <Path.CacheMode>
+                                                <BitmapCache RenderAtScale="1" SnapsToDevicePixels="True"/>
+                                            </Path.CacheMode>
                                         </Path>
 
                                         <!-- 已选游戏列表 -->

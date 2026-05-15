@@ -715,8 +715,8 @@ public partial class PedalParameterControl : UserControl
         }
         else
         {
-            double centerX = Math.Max(126, Math.Min(227, x));
-            deadZoneRight = Math.Round((227.0 - centerX) / 101.0 * 15.0, 1);
+            double centerX = Math.Max(124, Math.Min(227, x));
+            deadZoneRight = Math.Round((227.0 - centerX) / 103.0 * 15.0, 1);
         }
 
         updateDisplay();
@@ -745,8 +745,8 @@ public partial class PedalParameterControl : UserControl
         Canvas.SetLeft(leftThumb, leftThumbPos);
         leftLabel.Text = $"{deadZoneLeft:F0}%";
 
-        double rightProgressWidth = deadZoneRight / 15.0 * 101.0;
-        double rightThumbPos = 222.5 - deadZoneRight / 15.0 * 101.0;
+        double rightProgressWidth = deadZoneRight / 15.0 * 103.0;
+        double rightThumbPos = 222.5 - deadZoneRight / 15.0 * 103.0;
         rightProgress.Width = rightProgressWidth;
         Canvas.SetLeft(rightProgress, 227.0 - rightProgressWidth);
         Canvas.SetLeft(rightThumb, rightThumbPos);

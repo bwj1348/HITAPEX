@@ -4,7 +4,6 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
-             xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
              xmlns:local="clr-namespace:HITAPEX.Views.DeviceParameters"
              mc:Ignorable="d"
              d:DesignHeight="884" d:DesignWidth="1202"
@@ -379,11 +378,11 @@
         <!-- 第四行：曲线调节区 -->
         <Grid Grid.Row="3" Margin="0,0,0,19">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="387"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="387"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="12"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="387"/>
             </Grid.ColumnDefinitions>
 
             <!-- 离合器 -->
@@ -423,15 +422,7 @@
                                 <Grid.Effect>
                                     <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
                                 </Grid.Effect>
-                                <Path Data="M0 2L2 0H4L0 4V2Z">
-                                    <Path.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C60E0E" Offset="0"/>
-                                            <GradientStop Color="#600707" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Path.Fill>
-                                </Path>
-                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z">
+                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
                                     <Path.Fill>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                             <GradientStop Color="#C60E0E" Offset="0"/>
@@ -829,17 +820,9 @@
                         <Viewbox Width="8" Height="26" Margin="0,0,10,0">
                             <Grid Width="8" Height="26" Opacity="0.9">
                                 <Grid.Effect>
-                                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#EF4444" Opacity="0.4"/>
+                                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
                                 </Grid.Effect>
-                                <Path Data="M0 2L2 0H4L0 4V2Z">
-                                    <Path.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C60E0E" Offset="0"/>
-                                            <GradientStop Color="#600707" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Path.Fill>
-                                </Path>
-                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z">
+                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
                                     <Path.Fill>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                             <GradientStop Color="#C60E0E" Offset="0"/>
@@ -1237,17 +1220,9 @@
                         <Viewbox Width="8" Height="26" Margin="0,0,10,0">
                             <Grid Width="8" Height="26" Opacity="0.9">
                                 <Grid.Effect>
-                                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#22C55E" Opacity="0.4"/>
+                                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
                                 </Grid.Effect>
-                                <Path Data="M0 2L2 0H4L0 4V2Z">
-                                    <Path.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C60E0E" Offset="0"/>
-                                            <GradientStop Color="#600707" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Path.Fill>
-                                </Path>
-                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z">
+                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
                                     <Path.Fill>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                             <GradientStop Color="#C60E0E" Offset="0"/>

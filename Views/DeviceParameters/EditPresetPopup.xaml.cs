@@ -525,24 +525,32 @@ public partial class EditPresetPopup : UserControl
     {
         OverlayBackground.Opacity = 0;
         PopupPanel.Opacity = 0;
-        PopupPanel.RenderTransform = new ScaleTransform(0.92, 0.92,
+        PopupPanel.RenderTransform = new ScaleTransform(0.94, 0.94,
             PopupPanel.Width / 2, PopupPanel.Height / 2);
+        PopupPanel.CacheMode = new BitmapCache();
+        PopupPanel.IsHitTestVisible = false;
 
-        var overlayFade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200))
+        DoubleAnimation overlayFade = new(0, 1, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        var panelFade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(250))
+        DoubleAnimation panelFade = new(0, 1, TimeSpan.FromMilliseconds(220))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        var scaleX = new DoubleAnimation(0.92, 1, TimeSpan.FromMilliseconds(300))
+        DoubleAnimation scaleX = new(0.94, 1, TimeSpan.FromMilliseconds(260))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        var scaleY = new DoubleAnimation(0.92, 1, TimeSpan.FromMilliseconds(300))
+        DoubleAnimation scaleY = new(0.94, 1, TimeSpan.FromMilliseconds(260))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        scaleX.Completed += (_, _) =>
+        {
+            PopupPanel.CacheMode = null;
+            PopupPanel.IsHitTestVisible = true;
         };
 
         OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
@@ -557,24 +565,31 @@ public partial class EditPresetPopup : UserControl
             PopupPanel.RenderTransform = st = new ScaleTransform(1, 1,
                 PopupPanel.Width / 2, PopupPanel.Height / 2);
 
-        var overlayFade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200))
+        PopupPanel.CacheMode = new BitmapCache();
+        PopupPanel.IsHitTestVisible = false;
+
+        DoubleAnimation overlayFade = new(1, 0, TimeSpan.FromMilliseconds(160))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
-        var panelFade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200))
+        DoubleAnimation panelFade = new(1, 0, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
-        var scaleX = new DoubleAnimation(1, 0.92, TimeSpan.FromMilliseconds(250))
+        DoubleAnimation scaleX = new(1, 0.94, TimeSpan.FromMilliseconds(240))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
-        var scaleY = new DoubleAnimation(1, 0.92, TimeSpan.FromMilliseconds(250))
+        DoubleAnimation scaleY = new(1, 0.94, TimeSpan.FromMilliseconds(240))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
 
-        panelFade.Completed += (_, _) => onCompleted();
+        panelFade.Completed += (_, _) =>
+        {
+            PopupPanel.CacheMode = null;
+            onCompleted();
+        };
 
         OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
         PopupPanel.BeginAnimation(OpacityProperty, panelFade);

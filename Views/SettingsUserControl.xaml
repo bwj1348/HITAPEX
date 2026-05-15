@@ -426,62 +426,21 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
                         <Grid>
-                            <Border Background="{fw:AcrylicBrush TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}" />
-
-                            <Rectangle Opacity="0.2">
+                            <Rectangle Stroke="#33EEEEEE" StrokeThickness="1">
                                 <Rectangle.Fill>
                                     <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                                        <GradientStop Color="#607079" Offset="0"/>
-                                        <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                                        <GradientStop Color="#282D30" Offset="1"/>
+                                        <GradientStop Color="#33607079" Offset="0"/>
+                                        <GradientStop Color="#333F4A50" Offset="0.44"/>
+                                        <GradientStop Color="#33282D30" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Rectangle.Fill>
                             </Rectangle>
 
-                            <Rectangle Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                            <Rectangle Fill="Transparent" Stroke="#CC232323" StrokeThickness="15">
                                 <Rectangle.Effect>
                                     <BlurEffect Radius="45" RenderingBias="Performance"/>
                                 </Rectangle.Effect>
                             </Rectangle>
-
-                            <Grid IsHitTestVisible="False">
-                                <Rectangle HorizontalAlignment="Left" Width="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.7"/>
-                                            <GradientStop Color="#00767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle VerticalAlignment="Bottom" Height="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#00767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.023"/>
-                                            <GradientStop Color="#767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle HorizontalAlignment="Right" Width="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#00767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.3"/>
-                                            <GradientStop Color="#767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle VerticalAlignment="Top" Height="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.977"/>
-                                            <GradientStop Color="#00767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                            </Grid>
 
                             <ContentPresenter/>
                         </Grid>
@@ -549,9 +508,8 @@
                         <Border>
                             <StackPanel>
                                 <StackPanel Style="{StaticResource SectionTitleContainerStyle}" Margin="0,0,0,16">
-                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
                                     <TextBlock Text="软 件 设 置" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
@@ -579,9 +537,8 @@
                         <Border>
                             <StackPanel>
                                 <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
                                     <TextBlock Text="语言设置" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
@@ -601,9 +558,8 @@
                         <Border>
                             <StackPanel>
                                 <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
                                     <TextBlock Text="自定义主题" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
@@ -635,9 +591,8 @@
                         <Border Width="620" HorizontalAlignment="Left" Margin="0,0,0,10">
                             <StackPanel>
                                 <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
                                     <TextBlock Text="版本更新" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
@@ -701,9 +656,8 @@
                         <Border Width="620" Margin="0,0,0,0" HorizontalAlignment="Left">
                             <StackPanel>
                                 <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                        <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
                                     <TextBlock Text="关于我们" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
@@ -828,9 +782,8 @@
                     <Border Grid.Column="1" Margin="102,0,0,0" VerticalAlignment="Top">
                         <StackPanel>
                             <StackPanel Style="{StaticResource SectionTitleContainerStyle}" Margin="0,0,0,20">
-                                <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                    <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                    <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                 </Grid>
                                 <TextBlock Text="版权声明" Style="{StaticResource SectionTitleStyle}"/>
                             </StackPanel>
@@ -897,49 +850,43 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9" Margin="20,0,0,0">
-                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Margin="20,0,0,0">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
                                             <TextBlock Text="设 备" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
                                             <TextBlock Text="型 号" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="2" Orientation="Horizontal">
-                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
                                             <TextBlock Text="设 备 序 列 号" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="3" Orientation="Horizontal">
-                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
                                             <TextBlock Text="当 前 版 本" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="4" Orientation="Horizontal">
-                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
                                             <TextBlock Text="状 态" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="5" Orientation="Horizontal">
-                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                                <Path Data="M0 2L2 0H4L0 4V2Z" Fill="{StaticResource TabSelectedGradient}"/>
-                                                <Path Data="M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                            <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
                                             <TextBlock Text="更 新" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>

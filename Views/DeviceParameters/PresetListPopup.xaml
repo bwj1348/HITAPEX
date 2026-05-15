@@ -319,7 +319,7 @@
             </Setter>
         </Style>
 
-        <!-- 官方预设项样式（参照 FirmwareListItemStyle） -->
+        <!-- 官方预设项样式 -->
         <Style x:Key="OfficialPresetItemStyle" TargetType="ContentControl">
             <Setter Property="Width" Value="477"/>
             <Setter Property="Height" Value="68"/>
@@ -329,67 +329,16 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
                         <Grid>
-                            <Border x:Name="ItemBackground"
-                                    Background="{fw:AcrylicBrush TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}"
-                                    BorderThickness="0"/>
-
-                            <Rectangle x:Name="GradientOverlay" Opacity="0.2">
+                            <!-- 渐变背景 + 矩形边框 -->
+                            <Rectangle x:Name="BgRect" Stroke="#33EEEEEE" StrokeThickness="1">
                                 <Rectangle.Fill>
                                     <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                                        <GradientStop Color="#607079" Offset="0"/>
-                                        <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                                        <GradientStop Color="#282D30" Offset="1"/>
+                                        <GradientStop Color="#33607079" Offset="0"/>
+                                        <GradientStop Color="#333F4A50" Offset="0.44"/>
+                                        <GradientStop Color="#33282D30" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Rectangle.Fill>
                             </Rectangle>
-
-                            <Rectangle x:Name="GlowBorder" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
-                                <Rectangle.Effect>
-                                    <BlurEffect Radius="45" RenderingBias="Performance"/>
-                                </Rectangle.Effect>
-                                <Rectangle.CacheMode>
-                                    <BitmapCache RenderAtScale="1" EnableClearType="False"/>
-                                </Rectangle.CacheMode>
-                            </Rectangle>
-
-                            <Grid IsHitTestVisible="False">
-                                <Rectangle x:Name="BorderLineLeft" HorizontalAlignment="Left" Width="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.6"/>
-                                            <GradientStop Color="#00767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle x:Name="BorderLineBottom" VerticalAlignment="Bottom" Height="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#00767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.057"/>
-                                            <GradientStop Color="#767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle x:Name="BorderLineRight" HorizontalAlignment="Right" Width="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#00767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.4"/>
-                                            <GradientStop Color="#767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle x:Name="BorderLineTop" VerticalAlignment="Top" Height="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.943"/>
-                                            <GradientStop Color="#00767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                            </Grid>
 
                             <ContentPresenter/>
                         </Grid>
@@ -397,22 +346,13 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Panel.ZIndex" Value="99"/>
-                                <Setter TargetName="BorderLineLeft" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineLeft" Property="Width" Value="2"/>
-                                <Setter TargetName="BorderLineBottom" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineBottom" Property="Height" Value="2"/>
-                                <Setter TargetName="BorderLineRight" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineRight" Property="Width" Value="2"/>
-                                <Setter TargetName="BorderLineTop" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineTop" Property="Height" Value="2"/>
-                                <Setter TargetName="GlowBorder" Property="Opacity" Value="0"/>
-                                <Setter TargetName="ItemBackground" Property="Background">
+                                <Setter TargetName="BgRect" Property="Stroke" Value="#99C60E0E"/>
+                                <Setter TargetName="BgRect" Property="Fill">
                                     <Setter.Value>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#5CC60E0E" Offset="0"/>
-                                            <GradientStop Color="#52731717" Offset="0.52"/>
-                                            <GradientStop Color="#47491B1B" Offset="0.8"/>
-                                            <GradientStop Color="#3D1F1F1F" Offset="1"/>
+                                            <GradientStop Color="#33600707" Offset="0"/>
+                                            <GradientStop Color="#33C60E0E" Offset="0.5"/>
+                                            <GradientStop Color="#33600707" Offset="1"/>
                                         </LinearGradientBrush>
                                     </Setter.Value>
                                 </Setter>
@@ -423,7 +363,7 @@
             </Setter>
         </Style>
 
-        <!-- 个人预设项样式（可变宽度） -->
+        <!-- 个人预设项样式 -->
         <Style x:Key="PersonalPresetItemStyle" TargetType="ContentControl">
             <Setter Property="Width" Value="477"/>
             <Setter Property="MinHeight" Value="68"/>
@@ -433,67 +373,16 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ContentControl">
                         <Grid>
-                            <Border x:Name="ItemBackground"
-                                    Background="{fw:AcrylicBrush TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}"
-                                    BorderThickness="0"/>
-
-                            <Rectangle x:Name="GradientOverlay" Opacity="0.2">
+                            <!-- 渐变背景 + 矩形边框 -->
+                            <Rectangle x:Name="BgRect" Stroke="#33EEEEEE" StrokeThickness="1">
                                 <Rectangle.Fill>
                                     <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                                        <GradientStop Color="#607079" Offset="0"/>
-                                        <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                                        <GradientStop Color="#282D30" Offset="1"/>
+                                        <GradientStop Color="#33607079" Offset="0"/>
+                                        <GradientStop Color="#333F4A50" Offset="0.44"/>
+                                        <GradientStop Color="#33282D30" Offset="1"/>
                                     </LinearGradientBrush>
                                 </Rectangle.Fill>
                             </Rectangle>
-
-                            <Rectangle x:Name="GlowBorder" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
-                                <Rectangle.Effect>
-                                    <BlurEffect Radius="45" RenderingBias="Performance"/>
-                                </Rectangle.Effect>
-                                <Rectangle.CacheMode>
-                                    <BitmapCache RenderAtScale="1" EnableClearType="False"/>
-                                </Rectangle.CacheMode>
-                            </Rectangle>
-
-                            <Grid IsHitTestVisible="False">
-                                <Rectangle x:Name="BorderLineLeft" HorizontalAlignment="Left" Width="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.6"/>
-                                            <GradientStop Color="#00767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle x:Name="BorderLineBottom" VerticalAlignment="Bottom" Height="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#00767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.057"/>
-                                            <GradientStop Color="#767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle x:Name="BorderLineRight" HorizontalAlignment="Right" Width="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#00767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.4"/>
-                                            <GradientStop Color="#767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                                <Rectangle x:Name="BorderLineTop" VerticalAlignment="Top" Height="1">
-                                    <Rectangle.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#767676" Offset="0"/>
-                                            <GradientStop Color="#767676" Offset="0.943"/>
-                                            <GradientStop Color="#00767676" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.Fill>
-                                </Rectangle>
-                            </Grid>
 
                             <ContentPresenter VerticalAlignment="Top" Margin="20"/>
                         </Grid>
@@ -501,22 +390,13 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Panel.ZIndex" Value="99"/>
-                                <Setter TargetName="BorderLineLeft" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineLeft" Property="Width" Value="2"/>
-                                <Setter TargetName="BorderLineBottom" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineBottom" Property="Height" Value="2"/>
-                                <Setter TargetName="BorderLineRight" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineRight" Property="Width" Value="2"/>
-                                <Setter TargetName="BorderLineTop" Property="Fill" Value="#99C60E0E"/>
-                                <Setter TargetName="BorderLineTop" Property="Height" Value="2"/>
-                                <Setter TargetName="GlowBorder" Property="Opacity" Value="0"/>
-                                <Setter TargetName="ItemBackground" Property="Background">
+                                <Setter TargetName="BgRect" Property="Stroke" Value="#99C60E0E"/>
+                                <Setter TargetName="BgRect" Property="Fill">
                                     <Setter.Value>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#5CC60E0E" Offset="0"/>
-                                            <GradientStop Color="#52731717" Offset="0.52"/>
-                                            <GradientStop Color="#47491B1B" Offset="0.8"/>
-                                            <GradientStop Color="#3D1F1F1F" Offset="1"/>
+                                            <GradientStop Color="#33600707" Offset="0"/>
+                                            <GradientStop Color="#33C60E0E" Offset="0.5"/>
+                                            <GradientStop Color="#33600707" Offset="1"/>
                                         </LinearGradientBrush>
                                     </Setter.Value>
                                 </Setter>
@@ -588,8 +468,7 @@
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
-                <svgc:SvgViewbox Source="/Assets/Group126548717.svg" Stretch="Fill"
-                                 Opacity="0.67"/>
+                <svgc:SvgViewbox Source="/Assets/Group126548717.svg" Stretch="Fill"/>
 
                 <!-- 内容层 -->
                 <Grid Margin="20">

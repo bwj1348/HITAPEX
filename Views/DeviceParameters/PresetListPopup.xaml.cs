@@ -142,24 +142,27 @@ public partial class PresetListPopup : UserControl
     {
         OverlayBackground.Opacity = 0;
         PopupPanel.Opacity = 0;
-        PopupPanel.RenderTransform = new TranslateTransform(80, 0);
+        PopupPanel.RenderTransform = new TranslateTransform(PopupPanel.Width, 0);
+        PopupPanel.IsHitTestVisible = false;
 
-        var overlayFade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(200))
+        DoubleAnimation slideIn = new(PopupPanel.Width, 0, TimeSpan.FromMilliseconds(300))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        var panelFade = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(300))
+        DoubleAnimation panelFade = new(0, 1, TimeSpan.FromMilliseconds(220))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        var slideIn = new DoubleAnimation(80, 0, TimeSpan.FromMilliseconds(350))
+        DoubleAnimation overlayFade = new(0, 1, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
 
-        OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
-        PopupPanel.BeginAnimation(OpacityProperty, panelFade);
+        panelFade.Completed += (_, _) => { PopupPanel.IsHitTestVisible = true; };
+
         PopupPanel.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideIn);
+        PopupPanel.BeginAnimation(OpacityProperty, panelFade);
+        OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
     }
 
     private void AnimateOut(Action onCompleted)
@@ -167,24 +170,26 @@ public partial class PresetListPopup : UserControl
         if (PopupPanel.RenderTransform is not TranslateTransform translate)
             PopupPanel.RenderTransform = translate = new TranslateTransform(0, 0);
 
-        var overlayFade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200))
+        PopupPanel.IsHitTestVisible = false;
+
+        DoubleAnimation slideOut = new(translate.X, PopupPanel.Width, TimeSpan.FromMilliseconds(260))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
-        var panelFade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(250))
+        DoubleAnimation panelFade = new(1, 0, TimeSpan.FromMilliseconds(200))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
-        var slideOut = new DoubleAnimation(0, 80, TimeSpan.FromMilliseconds(300))
+        DoubleAnimation overlayFade = new(1, 0, TimeSpan.FromMilliseconds(160))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
 
-        panelFade.Completed += (_, _) => onCompleted();
+        panelFade.Completed += (_, _) => { onCompleted(); };
 
-        OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
-        PopupPanel.BeginAnimation(OpacityProperty, panelFade);
         translate.BeginAnimation(TranslateTransform.XProperty, slideOut);
+        PopupPanel.BeginAnimation(OpacityProperty, panelFade);
+        OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
     }
 
     // ══════════════════════════════════════════
@@ -366,10 +371,8 @@ public partial class PresetListPopup : UserControl
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(0, 0, 0, 0)
         };
-        var ip1 = new Path { Data = Geometry.Parse("M0 2L2 0H4L0 4V2Z"), Fill = accentBrush };
-        var ip2 = new Path { Data = Geometry.Parse("M8 0H6L0 6V26H5L8 23V0Z"), Fill = accentBrush };
-        iconGrid.Children.Add(ip1);
-        iconGrid.Children.Add(ip2);
+        var ip = new Path { Data = Geometry.Parse("M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z"), Fill = accentBrush };
+        iconGrid.Children.Add(ip);
         Grid.SetColumn(iconGrid, 0);
         mainGrid.Children.Add(iconGrid);
 
@@ -569,10 +572,8 @@ public partial class PresetListPopup : UserControl
         headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         var detailIconGrid = new Grid { Width = 8, Height = 26, Effect = iconEffect, Opacity = 0.9, VerticalAlignment = VerticalAlignment.Top };
-        var dp1 = new Path { Data = Geometry.Parse("M0 2L2 0H4L0 4V2Z"), Fill = accentBrush };
-        var dp2 = new Path { Data = Geometry.Parse("M8 0H6L0 6V26H5L8 23V0Z"), Fill = accentBrush };
-        detailIconGrid.Children.Add(dp1);
-        detailIconGrid.Children.Add(dp2);
+        var dp = new Path { Data = Geometry.Parse("M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z"), Fill = accentBrush };
+        detailIconGrid.Children.Add(dp);
         Grid.SetColumn(detailIconGrid, 0);
         headerRow.Children.Add(detailIconGrid);
 
@@ -593,83 +594,22 @@ public partial class PresetListPopup : UserControl
         _detailGamesPanel = new WrapPanel { Margin = new Thickness(0, 20, 0, 0) };
         _detailContentStack.Children.Add(_detailGamesPanel);
 
-        // Background layers
-        var bgGlow = new Path
-        {
-            Fill = Brushes.Transparent,
-            Stroke = new SolidColorBrush(Color.FromArgb(0xFF, 0x23, 0x23, 0x23)),
-            StrokeThickness = 12,
-            Opacity = 0.8,
-            Effect = new BlurEffect { Radius = 45, RenderingBias = RenderingBias.Performance }
-        };
-        var bgBase = new Path { Fill = (Brush)FindResource("DetailPopupBaseBrush") };
-        var bgGradient = new Path
-        {
-            Opacity = 0.2,
-            Fill = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0.5), EndPoint = new Point(1.8, 0.5),
-                GradientStops =
-                [
-                    new GradientStop(Color.FromArgb(0xFF, 0x60, 0x70, 0x79), 0),
-                    new GradientStop(Color.FromArgb(0xFF, 0x3F, 0x4A, 0x50), 0.4375),
-                    new GradientStop(Color.FromArgb(0xFF, 0x28, 0x2D, 0x30), 1),
-                ]
-            }
-        };
-        _detailPolygonPaths = [bgGlow, bgBase, bgGradient];
+        // Background — simple solid color
+        var bgBase = new Path { Fill = new SolidColorBrush(Color.FromArgb(0xFF, 0x1B, 0x1B, 0x1B)) };
+        _detailPolygonPaths = [bgBase];
 
-        var borderTopLeft = new Path { Stroke = new SolidColorBrush(Color.FromArgb(0xFF, 0x76, 0x76, 0x76)), StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
-        var borderTop = new Path
-        {
-            Stroke = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0), EndPoint = new Point(1, 0),
-                GradientStops = [new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 0), new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 0.8), new GradientStop(Color.FromArgb(0x00, 0x76, 0x76, 0x76), 1)]
-            },
-            StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat
-        };
-        var borderRight = new Path
-        {
-            Stroke = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0), EndPoint = new Point(0, 1),
-                GradientStops = [new GradientStop(Color.FromArgb(0x00, 0x76, 0x76, 0x76), 0), new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 0.4), new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 1)]
-            },
-            StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat
-        };
-        var borderBottomRight = new Path { Stroke = new SolidColorBrush(Color.FromArgb(0xFF, 0x76, 0x76, 0x76)), StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
-        var borderBottom = new Path
-        {
-            Stroke = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 0), EndPoint = new Point(1, 0),
-                GradientStops = [new GradientStop(Color.FromArgb(0x00, 0x76, 0x76, 0x76), 0), new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 0.2), new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 1)]
-            },
-            StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat
-        };
-        var borderLeft = new Path
-        {
-            Stroke = new LinearGradientBrush
-            {
-                StartPoint = new Point(0, 1), EndPoint = new Point(0, 0),
-                GradientStops = [new GradientStop(Color.FromArgb(0x00, 0x76, 0x76, 0x76), 0), new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 0.4), new GradientStop(Color.FromArgb(0xFF, 0x76, 0x76, 0x76), 1)]
-            },
-            StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat
-        };
+        // Border segments — simple solid strokes
+        var borderStroke = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE));
+        var borderTopLeft = new Path { Stroke = borderStroke, StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
+        var borderTop = new Path { Stroke = borderStroke, StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
+        var borderRight = new Path { Stroke = borderStroke, StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
+        var borderBottomRight = new Path { Stroke = borderStroke, StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
+        var borderBottom = new Path { Stroke = borderStroke, StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
+        var borderLeft = new Path { Stroke = borderStroke, StrokeThickness = 1, StrokeStartLineCap = PenLineCap.Flat, StrokeEndLineCap = PenLineCap.Flat };
         _detailBorderSegments = [borderTopLeft, borderTop, borderRight, borderBottomRight, borderBottom, borderLeft];
 
         _detailRootGrid = new Grid { Width = 358 };
-        _detailRootGrid.Effect = new DropShadowEffect
-        {
-            Color = Color.FromArgb(0x99, 0x00, 0x00, 0x00),
-            BlurRadius = 20,
-            ShadowDepth = 2,
-            Opacity = 0.6
-        };
-        _detailRootGrid.Children.Add(bgGlow);
         _detailRootGrid.Children.Add(bgBase);
-        _detailRootGrid.Children.Add(bgGradient);
         foreach (var bs in _detailBorderSegments)
             _detailRootGrid.Children.Add(bs);
         _detailRootGrid.Children.Add(_detailContentStack);
