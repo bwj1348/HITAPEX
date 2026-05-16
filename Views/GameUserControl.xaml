@@ -116,9 +116,10 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
-        <Image x:Name="BackgroundGrid" Stretch="Fill" Grid.RowSpan="3" Width="1285" Height="723" VerticalAlignment="Top" Margin="0,23,0,0">
-            <Image.OpacityMask>
+
+        <Border x:Name="BackgroundGrid" Grid.RowSpan="3" Width="1285" Height="723" VerticalAlignment="Top" Margin="0,23,0,0" Background="Transparent">
+
+            <Border.OpacityMask>
                 <RadialGradientBrush Center="0.5,0.5" GradientOrigin="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
                     <GradientStop Color="#E6FFFFFF" Offset="0"/>
                     <GradientStop Color="#D9FFFFFF" Offset="0.35"/>
@@ -132,8 +133,10 @@
                     <GradientStop Color="#0DFFFFFF" Offset="0.98"/>
                     <GradientStop Color="#00FFFFFF" Offset="1"/>
                 </RadialGradientBrush>
-            </Image.OpacityMask>
-        </Image>
+            </Border.OpacityMask>
+
+            <Image x:Name="GameBackgroundImage" Stretch="Fill"/>
+        </Border>
 
         <Grid Grid.Row="0" Margin="20">
             <Grid.ColumnDefinitions>
@@ -540,17 +543,17 @@
                                                                 </Border.OpacityMask>
                                                             </Border>
 
-                                                            <Path Data="M0 9V102H321L330 93V0H9L0 9Z" Opacity="0.2">
+                                                            <Path Data="M0 9V102H321L330 93V0H9L0 9Z" >
                                                                 <Path.Fill>
                                                                     <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
-                                                                        <GradientStop Color="#607079" Offset="0"/>
-                                                                        <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                                                                        <GradientStop Color="#282D30" Offset="1"/>
+                                                                        <GradientStop Color="#33607079" Offset="0"/>
+                                                                        <GradientStop Color="#333F4A50" Offset="0.4375"/>
+                                                                        <GradientStop Color="#33282D30" Offset="1"/>
                                                                     </LinearGradientBrush>
                                                                 </Path.Fill>
                                                             </Path>
 
-                                                            <Path Data="M0 9V102H321L330 93V0H9L0 9Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                                                            <Path Data="M0 9V102H321L330 93V0H9L0 9Z" Fill="Transparent" Stroke="#CC232323" StrokeThickness="15">
                                                                 <Path.Effect>
                                                                     <BlurEffect Radius="45" RenderingBias="Performance"/>
                                                                 </Path.Effect>
@@ -1121,11 +1124,17 @@
                                             </Path.RenderTransform>
                                             <Path.Style>
                                                 <Style TargetType="Path">
+                                                    <Setter Property="Opacity" Value="0"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True">
                                                             <DataTrigger.EnterActions>
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
                                                                         <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="2.33" Duration="0:0:0.3">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
@@ -1142,6 +1151,11 @@
                                                             <DataTrigger.ExitActions>
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
                                                                         <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="0" Duration="0:0:0.3">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
@@ -1216,7 +1230,7 @@
                                                 </PathGeometry>
                                             </Grid.Clip>
                                             
-                                            <Image Source="{Binding ImagePath}" Stretch="Fill"/>
+                                            <Image Source="{Binding CoverImageUrl}" Stretch="Fill"/>
                                             
                                             <Grid>
                                                 <Grid.Background>

@@ -6,8 +6,7 @@ public class GameItem : INotifyPropertyChanged
 {
     public int Id { get; set; }
     public string Name { get; set; } = "";
-    public string ImagePath { get; set; } = "";
-    public string? CoverImageUrl { get; set; }
+    public string CoverImageUrl { get; set; } = "";
     public string? BgImageUrl { get; set; }
     public string SteamId { get; set; } = "";
     public bool IsInstalled { get; set; }

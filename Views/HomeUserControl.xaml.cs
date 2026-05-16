@@ -3,10 +3,12 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Net.Http;
 using HITAPEX.Controls;
 using HITAPEX.Models;
 using HITAPEX.Services;
@@ -20,6 +22,9 @@ public partial class HomeUserControl : UserControl
     private const int SlideCount = 3;
     private const int AutoPlayInterval = 5000;
     private const double AnimationDuration = 0.5;
+
+    private List<BannerItem>? _banners;
+    private Image[]? _slideImages;
     
     private const double GaugeCenterX = 71.5;
     private const double GaugeCenterY = 71.5;
@@ -41,6 +46,7 @@ public partial class HomeUserControl : UserControl
     private bool _isPinning = false;
     private GameDataService? _gameDataService;
     private CancellationTokenSource? _loadGamesCts;
+    private bool _isLoadingGames;
     
     private double _forceFeedbackValue = 75;
     private DispatcherTimer? _forceFeedbackAnimationTimer;
@@ -81,27 +87,30 @@ public partial class HomeUserControl : UserControl
     {
         _indicators = new[] { Indicator0, Indicator1, Indicator2 };
         _slides = new[] { Slide0, Slide1, Slide2 };
+        _slideImages = new[] { SlideImage0, SlideImage1, SlideImage2 };
         UpdateSlideWidths();
         InitializeSlidePositions();
         StartAutoPlay();
-        
+
         InitializeForceFeedbackGauge();
         StartForceFeedbackSimulation();
-        
+
         InitializeTemperatureGauge();
         StartTemperatureSimulation();
-        
+
         InitializeSteeringWheel();
         StartSteeringSimulation();
-        
+
         StartPedalSimulation();
-        
+
         InitializeGameList();
+        _ = LoadBannersAsync();
     }
 
     private async void InitializeGameList()
     {
         _gameDataService = new GameDataService();
+        _gameDataService.StateChanged += OnGameDataStateChanged;
 
         _gameList = new ObservableCollection<GameItem>();
         GameListItemsControl.ItemsSource = _gameList;
@@ -114,7 +123,8 @@ public partial class HomeUserControl : UserControl
 
     private async Task LoadGamesAsync(bool forceRefresh = false)
     {
-        if (_gameDataService == null) return;
+        if (_gameDataService == null || _isLoadingGames) return;
+        _isLoadingGames = true;
 
         _loadGamesCts?.Cancel();
         _loadGamesCts = new CancellationTokenSource();
@@ -159,6 +169,16 @@ public partial class HomeUserControl : UserControl
                     _gameList?.Add(game);
             }
         }
+        finally
+        {
+            _isLoadingGames = false;
+        }
+    }
+
+    private async void OnGameDataStateChanged(GameDataState state)
+    {
+        if (state == GameDataState.Loaded)
+            await Dispatcher.InvokeAsync(async () => await LoadGamesAsync());
     }
 
     private void ShowGameLoadingState()
@@ -738,6 +758,71 @@ public partial class HomeUserControl : UserControl
         {
             ResetAutoPlayTimer();
             GoToSlide(index);
+        }
+    }
+
+    private static readonly HttpClient _bannerImageClient = new() { Timeout = TimeSpan.FromSeconds(15) };
+
+    private async Task LoadBannersAsync()
+    {
+        try
+        {
+            if (_gameDataService == null) return;
+            _banners = await _gameDataService.GetBannersAsync();
+
+            if (_banners.Count > 0)
+                await UpdateCarouselImagesAsync();
+        }
+        catch
+        {
+            // Silently fail — banners are cosmetic
+        }
+    }
+
+    private async Task UpdateCarouselImagesAsync()
+    {
+        if (_banners == null || _slideImages == null) return;
+
+        for (int i = 0; i < SlideCount && i < _banners.Count; i++)
+        {
+            try
+            {
+                var bytes = await _bannerImageClient.GetByteArrayAsync(_banners[i].ImageUrl);
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.StreamSource = new System.IO.MemoryStream(bytes);
+                bitmap.EndInit();
+                bitmap.Freeze();
+                _slideImages[i].Source = bitmap;
+            }
+            catch
+            {
+                // Keep default image on failure
+            }
+        }
+    }
+
+    private void Slide_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (_banners == null || _banners.Count == 0) return;
+        if (sender is Border border && border.Tag is string tag && int.TryParse(tag, out int index))
+        {
+            if (index < _banners.Count && !string.IsNullOrWhiteSpace(_banners[index].LinkUrl))
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = _banners[index].LinkUrl,
+                        UseShellExecute = true
+                    });
+                }
+                catch
+                {
+                    // Silently fail if browser can't open
+                }
+            }
         }
     }
 

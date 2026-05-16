@@ -29,6 +29,18 @@ public class GameApiDto
     public string SteamId { get; set; } = "";
 }
 
+public class BannerApiDto
+{
+    [JsonPropertyName("id")]
+    public int Id { get; set; }
+
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = "";
+
+    [JsonPropertyName("image")]
+    public MediaAssetDto? Image { get; set; }
+}
+
 public class MediaAssetDto
 {
     [JsonPropertyName("id")]

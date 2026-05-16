@@ -26,9 +26,39 @@ public class GameApiService
 
     public async Task<List<GameItem>> GetGamesAsync(bool forceRefresh = false, CancellationToken ct = default)
     {
-        if (!forceRefresh && _cache.TryGet<List<GameItem>>(GamesCacheKey, out var cached))
-            return cached!;
+        if (!forceRefresh)
+        {
+            if (_cache.TryGet<List<GameItem>>(GamesCacheKey, out var cached))
+                return cached!;
 
+            var localGames = LocalGameCacheService.Load();
+            if (localGames != null)
+            {
+                await ImageCacheService.CacheAllAsync(localGames);
+                _cache.Set(GamesCacheKey, localGames, GamesCacheTtl);
+
+                _ = BackgroundRefreshAsync();
+                return localGames;
+            }
+        }
+
+        return await FetchAndMergeAsync(skipIfUnchanged: false, ct);
+    }
+
+    private async Task BackgroundRefreshAsync()
+    {
+        try
+        {
+            await FetchAndMergeAsync(skipIfUnchanged: true, CancellationToken.None);
+        }
+        catch
+        {
+            // Silently fail — background refresh shouldn't disrupt UI
+        }
+    }
+
+    private async Task<List<GameItem>> FetchAndMergeAsync(bool skipIfUnchanged, CancellationToken ct)
+    {
         NotifyState(GameDataState.Loading);
 
         var result = await _apiClient.GetAsync<ApiResponse<List<GameApiDto>>>(GamesEndpoint, ct);
@@ -37,19 +67,80 @@ public class GameApiService
         {
             NotifyState(GameDataState.Error);
 
-            if (_cache.TryGet<List<GameItem>>(GamesCacheKey, out var stale))
+            var fallback = _cache.TryGet<List<GameItem>>(GamesCacheKey, out var stale) ? stale
+                : LocalGameCacheService.Load();
+
+            if (fallback != null)
             {
+                await ImageCacheService.CacheAllAsync(fallback);
                 NotifyState(GameDataState.Loaded);
-                return stale!;
+                return fallback!;
             }
 
             throw new GameServiceException(result.ErrorMessage ?? "获取游戏数据失败", result.IsClientError);
         }
 
-        var games = _transformer.TransformGames(result.Data!.Data);
-        _cache.Set(GamesCacheKey, games, GamesCacheTtl);
+        var freshGames = _transformer.TransformGames(result.Data!.Data);
+        var localExisting = LocalGameCacheService.Load();
+
+        if (skipIfUnchanged && localExisting != null && !HasChanges(freshGames, localExisting))
+        {
+            NotifyState(GameDataState.Loaded);
+            return localExisting;
+        }
+
+        var merged = MergeWithLocal(freshGames, localExisting);
+
+        LocalGameCacheService.Save(merged);
+        await ImageCacheService.CacheAllAsync(merged);
+        _cache.Set(GamesCacheKey, merged, GamesCacheTtl);
         NotifyState(GameDataState.Loaded);
-        return games;
+        return merged;
+    }
+
+    private static bool HasChanges(List<GameItem> fresh, List<GameItem> local)
+    {
+        if (fresh.Count != local.Count)
+            return true;
+
+        var localMap = local.ToDictionary(g => g.Id);
+
+        foreach (var f in fresh)
+        {
+            if (!localMap.TryGetValue(f.Id, out var l))
+                return true;
+
+            if (f.Name != l.Name ||
+                f.Description != l.Description ||
+                f.SteamId != l.SteamId ||
+                f.BgImageUrl != l.BgImageUrl ||
+                f.CoverImageUrl != l.CoverImageUrl)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static List<GameItem> MergeWithLocal(List<GameItem> freshGames, List<GameItem>? localGames)
+    {
+        if (localGames == null || localGames.Count == 0)
+            return freshGames;
+
+        var localMap = localGames.ToDictionary(g => g.Id);
+
+        foreach (var fresh in freshGames)
+        {
+            if (localMap.TryGetValue(fresh.Id, out var local))
+            {
+                fresh.IsPinned = local.IsPinned;
+                fresh.LaunchPath = local.LaunchPath;
+                if (local.LastLaunchTime > fresh.LastLaunchTime)
+                    fresh.LastLaunchTime = local.LastLaunchTime;
+                fresh.IsInstalled = local.IsInstalled;
+            }
+        }
+
+        return freshGames;
     }
 
     public List<GameItem>? GetCachedGames()

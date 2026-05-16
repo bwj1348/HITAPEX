@@ -17,16 +17,16 @@
         <Border x:Name="CarouselContainer" Grid.Row="0" Margin="20" Height="200" ClipToBounds="True" SizeChanged="CarouselContainer_SizeChanged" MouseWheel="CarouselContainer_MouseWheel">
             <Grid>
                 <Canvas>
-                    <Border x:Name="Slide0" Height="200" Canvas.Left="0">
-                        <Image Source="/Assets/unnamed3.png" Stretch="UniformToFill"/>
+                    <Border x:Name="Slide0" Height="200" Canvas.Left="0" Cursor="Hand" MouseLeftButtonDown="Slide_Click" Tag="0">
+                        <Image x:Name="SlideImage0" Source="/Assets/unnamed3.png" Stretch="UniformToFill"/>
                     </Border>
 
-                    <Border x:Name="Slide1" Height="200" Canvas.Left="0">
-                        <Image Source="/Assets/unnamed3.png" Stretch="UniformToFill"/>
+                    <Border x:Name="Slide1" Height="200" Canvas.Left="0" Cursor="Hand" MouseLeftButtonDown="Slide_Click" Tag="1">
+                        <Image x:Name="SlideImage1" Source="/Assets/unnamed3.png" Stretch="UniformToFill"/>
                     </Border>
 
-                    <Border x:Name="Slide2" Height="200" Canvas.Left="0">
-                        <Image Source="/Assets/unnamed3.png" Stretch="UniformToFill"/>
+                    <Border x:Name="Slide2" Height="200" Canvas.Left="0" Cursor="Hand" MouseLeftButtonDown="Slide_Click" Tag="2">
+                        <Image x:Name="SlideImage2" Source="/Assets/unnamed3.png" Stretch="UniformToFill"/>
                     </Border>
                 </Canvas>
 
@@ -566,11 +566,17 @@
                                             </Path.RenderTransform>
                                             <Path.Style>
                                                 <Style TargetType="Path">
+                                                    <Setter Property="Opacity" Value="0"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding ElementName=CardRoot, Path=IsMouseOver}" Value="True">
                                                             <DataTrigger.EnterActions>
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.15">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
                                                                         <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="2.33" Duration="0:0:0.3">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
@@ -587,6 +593,11 @@
                                                             <DataTrigger.ExitActions>
                                                                 <BeginStoryboard>
                                                                     <Storyboard>
+                                                                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2">
+                                                                            <DoubleAnimation.EasingFunction>
+                                                                                <CubicEase EasingMode="EaseOut"/>
+                                                                            </DoubleAnimation.EasingFunction>
+                                                                        </DoubleAnimation>
                                                                         <DoubleAnimation Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)" To="0" Duration="0:0:0.3">
                                                                             <DoubleAnimation.EasingFunction>
                                                                                 <CubicEase EasingMode="EaseOut"/>
@@ -661,7 +672,7 @@
                                                 </PathGeometry>
                                             </Grid.Clip>
 
-                                            <Image Source="{Binding ImagePath}" Stretch="Fill"/>
+                                            <Image Source="{Binding CoverImageUrl}" Stretch="Fill"/>
 
                                             <Grid>
                                                 <Grid.Background>

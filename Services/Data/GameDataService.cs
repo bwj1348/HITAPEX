@@ -8,6 +8,7 @@ namespace HITAPEX.Services.Data;
 public class GameDataService : IDisposable
 {
     private readonly GameApiService _gameApi;
+    private readonly BannerApiService _bannerApi;
     private readonly ApiClient _apiClient;
     private readonly SteamInstallService _steamInstall;
 
@@ -27,6 +28,7 @@ public class GameDataService : IDisposable
         var cache = new CacheService(TimeSpan.FromMinutes(5));
         var transformer = new DataTransformer(MediaBaseUrl);
         _gameApi = new GameApiService(_apiClient, cache, transformer);
+        _bannerApi = new BannerApiService(_apiClient, MediaBaseUrl);
         _steamInstall = new SteamInstallService();
     }
 
@@ -62,6 +64,9 @@ public class GameDataService : IDisposable
             }
         }
     }
+
+    public Task<List<BannerItem>> GetBannersAsync(CancellationToken ct = default)
+        => _bannerApi.GetBannersAsync(ct);
 
     public void Dispose()
     {

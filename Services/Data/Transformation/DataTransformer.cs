@@ -20,9 +20,8 @@ public class DataTransformer
             Name = dto.Name,
             Description = dto.Description,
             SteamId = dto.SteamId,
-            CoverImageUrl = BuildFullUrl(dto.CoverImage?.Url),
             BgImageUrl = BuildFullUrl(dto.BgImage?.Url),
-            ImagePath = BuildFullUrl(dto.CoverImage?.Url) ?? "/Assets/Rectangle 24845.png",
+            CoverImageUrl = BuildFullUrl(dto.CoverImage?.Url) ?? "/Assets/Rectangle 24845.png",
             IsInstalled = false,
             IsPinned = false
         };

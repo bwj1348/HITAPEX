@@ -59,6 +59,7 @@ public partial class GameUserControl : UserControl
     private async void InitializeGameList()
     {
         _gameDataService = new GameDataService();
+        _gameDataService.StateChanged += OnGameDataStateChanged;
 
         _allGameList = new ObservableCollection<GameItem>();
         _filteredGameList = new ObservableCollection<GameItem>();
@@ -74,7 +75,8 @@ public partial class GameUserControl : UserControl
 
     private async Task LoadGamesAsync(bool forceRefresh = false)
     {
-        if (_gameDataService == null) return;
+        if (_gameDataService == null || _isLoading) return;
+        _isLoading = true;
 
         _loadGamesCts?.Cancel();
         _loadGamesCts = new CancellationTokenSource();
@@ -105,6 +107,16 @@ public partial class GameUserControl : UserControl
                 ApplyFilter(_currentFilter);
             }
         }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async void OnGameDataStateChanged(GameDataState state)
+    {
+        if (state == GameDataState.Loaded)
+            await Dispatcher.InvokeAsync(async () => await LoadGamesAsync());
     }
 
     private void ShowLoadingState()
@@ -157,7 +169,8 @@ public partial class GameUserControl : UserControl
         GameTitleText2.Text = game.Name;
         GameDescriptionText.Text = game.Description;
 
-        BackgroundGrid.Source = null;
+        //BackgroundGrid.Source = null;
+        GameBackgroundImage.Source = null;
 
         if (!string.IsNullOrEmpty(game.BgImageUrl))
         {
@@ -166,7 +179,8 @@ public partial class GameUserControl : UserControl
             bitmap.UriSource = new Uri(game.BgImageUrl);
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.EndInit();
-            BackgroundGrid.Source = bitmap;
+            //BackgroundGrid.Source = bitmap;
+            GameBackgroundImage.Source = bitmap;
         }
 
         if (!string.IsNullOrEmpty(game.LaunchPath))
@@ -214,7 +228,6 @@ public partial class GameUserControl : UserControl
     {
         if (_isLoading) return;
 
-        _isLoading = true;
         ShowLoadingState();
 
         var previousGameId = _selectedGame?.Id;
@@ -229,7 +242,6 @@ public partial class GameUserControl : UserControl
             SelectGame(keepSelected ?? _filteredGameList[0]);
         }
 
-        _isLoading = false;
         HideLoadingState();
     }
 
