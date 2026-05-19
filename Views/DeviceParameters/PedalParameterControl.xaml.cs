@@ -1,8 +1,12 @@
+using System.Diagnostics;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using HITAPEX.Models.Usb;
+using HITAPEX.Services.Usb;
 
 namespace HITAPEX.Views.DeviceParameters;
 
@@ -53,13 +57,21 @@ public partial class PedalParameterControl : UserControl
     private bool _isThrottleDragging = false;
     private Control? _throttleDraggingPoint = null;
 
+    // ────────── USB 设备通信状态 ──────────
+    private UsbDeviceInfo? _connectedPedalDevice;
+    private string _deviceModelName = "P2000";
+    private string _connectionStatusText = "已连接(基座)";
+    private string _connectionStatusColor = "#179548";
+    private string _firmwareVersion = "v 1.0.0";
+    private bool _isSendingParameters;
+
     public PedalParameterControl()
     {
         InitializeComponent();
         Loaded += PedalParameterControl_Loaded;
     }
 
-    private void PedalParameterControl_Loaded(object sender, RoutedEventArgs e)
+    private async void PedalParameterControl_Loaded(object sender, RoutedEventArgs e)
     {
         // 离合器初始化
         UpdateCurveTypeSelection();
@@ -78,6 +90,9 @@ public partial class PedalParameterControl : UserControl
         SetupThrottleDraggablePoints();
         SetupThrottleDeadZoneThumbs();
         UpdateThrottleDeadZoneDisplay();
+
+        // 刷新设备连接状态和固件信息
+        await RefreshDeviceInfoAsync();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -377,6 +392,7 @@ public partial class PedalParameterControl : UserControl
     private void ClutchPoint_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         EndPointDrag(ref _isClutchDragging, ref _clutchDraggingPoint);
+        SendPedalParameters();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -412,6 +428,7 @@ public partial class PedalParameterControl : UserControl
     private void BrakePoint_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         EndPointDrag(ref _isBrakeDragging, ref _brakeDraggingPoint);
+        SendPedalParameters();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -447,6 +464,7 @@ public partial class PedalParameterControl : UserControl
     private void ThrottlePoint_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         EndPointDrag(ref _isThrottleDragging, ref _throttleDraggingPoint);
+        SendPedalParameters();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -508,31 +526,31 @@ public partial class PedalParameterControl : UserControl
     //  离合器 — 曲线类型点击
     // ════════════════════════════════════════════════════════════════
 
-    private void CurveType1_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 1; UpdateCurveTypeSelection(); }
-    private void CurveType2_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 2; UpdateCurveTypeSelection(); }
-    private void CurveType3_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 3; UpdateCurveTypeSelection(); }
-    private void CurveType4_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 4; UpdateCurveTypeSelection(); }
-    private void CurveType5_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 5; UpdateCurveTypeSelection(); }
+    private void CurveType1_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 1; UpdateCurveTypeSelection(); SendPedalParameters(); }
+    private void CurveType2_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 2; UpdateCurveTypeSelection(); SendPedalParameters(); }
+    private void CurveType3_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 3; UpdateCurveTypeSelection(); SendPedalParameters(); }
+    private void CurveType4_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 4; UpdateCurveTypeSelection(); SendPedalParameters(); }
+    private void CurveType5_Click(object sender, MouseButtonEventArgs e) { _selectedCurveType = 5; UpdateCurveTypeSelection(); SendPedalParameters(); }
 
     // ════════════════════════════════════════════════════════════════
     //  刹车 — 曲线类型点击
     // ════════════════════════════════════════════════════════════════
 
-    private void BrakeCurveType1_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 1; UpdateBrakeCurveTypeSelection(); }
-    private void BrakeCurveType2_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 2; UpdateBrakeCurveTypeSelection(); }
-    private void BrakeCurveType3_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 3; UpdateBrakeCurveTypeSelection(); }
-    private void BrakeCurveType4_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 4; UpdateBrakeCurveTypeSelection(); }
-    private void BrakeCurveType5_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 5; UpdateBrakeCurveTypeSelection(); }
+    private void BrakeCurveType1_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 1; UpdateBrakeCurveTypeSelection(); SendPedalParameters(); }
+    private void BrakeCurveType2_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 2; UpdateBrakeCurveTypeSelection(); SendPedalParameters(); }
+    private void BrakeCurveType3_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 3; UpdateBrakeCurveTypeSelection(); SendPedalParameters(); }
+    private void BrakeCurveType4_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 4; UpdateBrakeCurveTypeSelection(); SendPedalParameters(); }
+    private void BrakeCurveType5_Click(object sender, MouseButtonEventArgs e) { _brakeSelectedCurveType = 5; UpdateBrakeCurveTypeSelection(); SendPedalParameters(); }
 
     // ════════════════════════════════════════════════════════════════
     //  油门 — 曲线类型点击
     // ════════════════════════════════════════════════════════════════
 
-    private void ThrottleCurveType1_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 1; UpdateThrottleCurveTypeSelection(); }
-    private void ThrottleCurveType2_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 2; UpdateThrottleCurveTypeSelection(); }
-    private void ThrottleCurveType3_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 3; UpdateThrottleCurveTypeSelection(); }
-    private void ThrottleCurveType4_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 4; UpdateThrottleCurveTypeSelection(); }
-    private void ThrottleCurveType5_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 5; UpdateThrottleCurveTypeSelection(); }
+    private void ThrottleCurveType1_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 1; UpdateThrottleCurveTypeSelection(); SendPedalParameters(); }
+    private void ThrottleCurveType2_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 2; UpdateThrottleCurveTypeSelection(); SendPedalParameters(); }
+    private void ThrottleCurveType3_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 3; UpdateThrottleCurveTypeSelection(); SendPedalParameters(); }
+    private void ThrottleCurveType4_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 4; UpdateThrottleCurveTypeSelection(); SendPedalParameters(); }
+    private void ThrottleCurveType5_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 5; UpdateThrottleCurveTypeSelection(); SendPedalParameters(); }
 
     // ════════════════════════════════════════════════════════════════
     //  预设管理按钮
@@ -601,6 +619,7 @@ public partial class PedalParameterControl : UserControl
     private void ClutchDeadZoneThumb_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         EndDeadZoneDrag(sender, ref _isClutchDraggingDeadZone, ref _clutchDraggingDeadZoneThumb);
+        SendPedalParameters();
     }
 
     private void UpdateClutchDeadZoneDisplay()
@@ -638,6 +657,7 @@ public partial class PedalParameterControl : UserControl
     private void BrakeDeadZoneThumb_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         EndDeadZoneDrag(sender, ref _isBrakeDraggingDeadZone, ref _brakeDraggingDeadZoneThumb);
+        SendPedalParameters();
     }
 
     private void UpdateBrakeDeadZoneDisplay()
@@ -675,6 +695,7 @@ public partial class PedalParameterControl : UserControl
     private void ThrottleDeadZoneThumb_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         EndDeadZoneDrag(sender, ref _isThrottleDraggingDeadZone, ref _throttleDraggingDeadZoneThumb);
+        SendPedalParameters();
     }
 
     private void UpdateThrottleDeadZoneDisplay()
@@ -741,15 +762,160 @@ public partial class PedalParameterControl : UserControl
 
         double leftProgressWidth = deadZoneLeft / 15.0 * 100.0;
         double leftThumbPos = deadZoneLeft / 15.0 * 100.0 - 4.5;
-        leftProgress.Width = leftProgressWidth;
+        // 左侧进度条向左扩展 0.5px，遮盖 SVG 轨道左边界抗锯齿缝隙
+        Canvas.SetLeft(leftProgress, -0.5);
+        leftProgress.Width = leftProgressWidth + 0.5;
         Canvas.SetLeft(leftThumb, leftThumbPos);
         leftLabel.Text = $"{deadZoneLeft:F0}%";
 
         double rightProgressWidth = deadZoneRight / 15.0 * 103.0;
-        double rightThumbPos = 222.5 - deadZoneRight / 15.0 * 103.0;
-        rightProgress.Width = rightProgressWidth;
-        Canvas.SetLeft(rightProgress, 227.0 - rightProgressWidth);
+        double rightThumbPos = 222.5 - rightProgressWidth;
         Canvas.SetLeft(rightThumb, rightThumbPos);
+        // 右侧进度条向右扩展 0.5px，遮盖 SVG 轨道右边界抗锯齿缝隙
+        Canvas.SetLeft(rightProgress, 227.0 - rightProgressWidth);
+        rightProgress.Width = rightProgressWidth + 0.5;
         rightLabel.Text = $"{100.0 - deadZoneRight:F0}%";
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  USB 设备通信
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>供外部调用的设备信息刷新入口</summary>
+    public async Task RefreshDeviceInfoAsync()
+    {
+        try
+        {
+            var connectedDevices = App.UsbManager?.ConnectedDevices
+                ?? System.Collections.ObjectModel.ReadOnlyCollection<UsbDeviceInfo>.Empty;
+
+            // 遍历已连接设备，查找踏板设备
+            _connectedPedalDevice = connectedDevices.FirstOrDefault(d =>
+            {
+                var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+                return descriptor != null && descriptor.DeviceType == DeviceType.Pedal
+                       && descriptor.IsNormalMode(d.Vid, d.Pid);
+            });
+
+            if (_connectedPedalDevice != null)
+            {
+                var descriptor = DeviceRegistry.FindByVidPid(_connectedPedalDevice.Vid, _connectedPedalDevice.Pid);
+                _deviceModelName = descriptor?.ModelName ?? "踏板";
+                _connectionStatusText = $"已连接({_deviceModelName})";
+                _connectionStatusColor = "#179548";
+
+                // 发送获取设备信息命令以获取固件版本
+                if (App.ProtocolService != null)
+                {
+                    var deviceInfo = await App.FirmwareUpdater?.GetDeviceInfoAsync(
+                        _connectedPedalDevice, DeviceType.Pedal)!;
+                    if (deviceInfo != null)
+                    {
+                        _firmwareVersion = deviceInfo.VersionString;
+                    }
+                    else
+                    {
+                        _firmwareVersion = "未知";
+                    }
+                }
+            }
+            else
+            {
+                _deviceModelName = "踏板";
+                _connectionStatusText = "未连接";
+                _connectionStatusColor = "#C60E0E";
+                _firmwareVersion = "---";
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 刷新设备信息异常: {ex.Message}");
+            _connectionStatusText = "未连接";
+            _connectionStatusColor = "#C60E0E";
+        }
+
+        UpdateConnectionStatusDisplay();
+    }
+
+    private void UpdateConnectionStatusDisplay()
+    {
+        if (DeviceModelName != null)
+            DeviceModelName.Text = _deviceModelName;
+
+        if (ConnectionStatusText != null)
+            ConnectionStatusText.Text = _connectionStatusText;
+
+        if (FirmwareVersionText != null)
+            FirmwareVersionText.Text = _firmwareVersion;
+
+        // 更新连接状态图标颜色
+        var color = (Color)ColorConverter.ConvertFromString(_connectionStatusColor);
+        var brush = new SolidColorBrush(color);
+        var iconPaths = new[] { ConnStatusIcon1, ConnStatusIcon2, ConnStatusIcon3,
+                                ConnStatusIcon4, ConnStatusIcon5, ConnStatusIcon6, ConnStatusIcon7 };
+        foreach (var path in iconPaths)
+        {
+            if (path != null)
+                path.Stroke = brush;
+        }
+    }
+
+    /// <summary>将画布曲线点转换为协议格式的字节数组(每点Y,X，各0-100)</summary>
+    private static byte[] GetCurvePointsAsProtocolBytes(PointCollection curvePoints)
+    {
+        // curvePoints 有6个点，取中间4个(索引1-4)，Y从266倒转为0-100
+        var result = new byte[8];
+        for (int i = 0; i < 4 && i + 1 < curvePoints.Count; i++)
+        {
+            var y = Math.Max(0, Math.Min(266, curvePoints[i + 1].Y));
+            var x = Math.Max(0, Math.Min(345, curvePoints[i + 1].X));
+            var yPercent = (byte)Math.Round((266.0 - y) / 266.0 * 100.0);
+            var xPercent = (byte)Math.Round(x / 345.0 * 100.0);
+            result[i * 2] = yPercent;
+            result[i * 2 + 1] = xPercent;
+        }
+        return result;
+    }
+
+    /// <summary>构建并发送踏板参数命令到已连接的踏板设备</summary>
+    private void SendPedalParameters()
+    {
+        if (_connectedPedalDevice == null || _isSendingParameters)
+            return;
+
+        try
+        {
+            _isSendingParameters = true;
+
+            var clutchDir = (byte)(ClutchReverseToggle?.IsChecked == true ? 1 : 0);
+            var brakeDir = (byte)(BrakeReverseToggle?.IsChecked == true ? 1 : 0);
+            var throttleDir = (byte)(ThrottleReverseToggle?.IsChecked == true ? 1 : 0);
+
+            var clutchPoints = GetCurvePointsAsProtocolBytes(_clutchCurvePoints);
+            var brakePoints = GetCurvePointsAsProtocolBytes(_brakeCurvePoints);
+            var throttlePoints = GetCurvePointsAsProtocolBytes(_throttleCurvePoints);
+
+            var cmd = DeviceProtocolService.BuildSetPedalParametersCommand(
+                clutchDir, clutchPoints, (byte)Math.Round(_clutchDeadZoneLeft), (byte)Math.Round(_clutchDeadZoneRight),
+                brakeDir, brakePoints, (byte)Math.Round(_brakeDeadZoneLeft), (byte)Math.Round(_brakeDeadZoneRight),
+                throttleDir, throttlePoints, (byte)Math.Round(_throttleDeadZoneLeft), (byte)Math.Round(_throttleDeadZoneRight));
+
+            App.UsbManager?.SendToDevice(_connectedPedalDevice.DeviceKey, cmd);
+            Debug.WriteLine($"[PedalControl] 踏板参数已发送到 {_connectedPedalDevice.DeviceKey}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 发送踏板参数异常: {ex.Message}");
+        }
+        finally
+        {
+            _isSendingParameters = false;
+        }
+    }
+
+    /// <summary>轴反向开关变更处理</summary>
+    private void AxisReverseToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        SendPedalParameters();
     }
 }

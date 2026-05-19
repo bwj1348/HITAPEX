@@ -220,7 +220,7 @@
                 <!-- 设备名称 -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="踏 板" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="P2000" FontSize="26" Foreground="#EEEEEE" Margin="10,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                    <TextBlock x:Name="DeviceModelName" Text="P2000" FontSize="26" Foreground="#EEEEEE" Margin="10,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
                 </StackPanel>
 
                 <!-- 垂直分割线1 -->
@@ -230,23 +230,23 @@
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                     <Viewbox Width="22" Height="26" Margin="0,0,10,0">
                         <Canvas Width="22" Height="26">
-                            <Path Data="M3.40006 11.8001C4.72555 11.8001 5.80012 10.7256 5.80012 9.40006C5.80012 8.07457 4.72555 7 3.40006 7C2.07454 7 1 8.07457 1 9.40006C1 10.7256 2.07454 11.8001 3.40006 11.8001Z" 
+                            <Path x:Name="ConnStatusIcon1" Data="M3.40006 11.8001C4.72555 11.8001 5.80012 10.7256 5.80012 9.40006C5.80012 8.07457 4.72555 7 3.40006 7C2.07454 7 1 8.07457 1 9.40006C1 10.7256 2.07454 11.8001 3.40006 11.8001Z"
                                   Stroke="#179548" StrokeThickness="2" StrokeLineJoin="Round"/>
-                            <Path Data="M17.8024 15.3997C19.1279 15.3997 20.2025 14.3252 20.2025 12.9997C20.2025 11.6742 19.1279 10.5996 17.8024 10.5996C16.4769 10.5996 15.4023 11.6742 15.4023 12.9997C15.4023 14.3252 16.4769 15.3997 17.8024 15.3997Z" 
+                            <Path x:Name="ConnStatusIcon2" Data="M17.8024 15.3997C19.1279 15.3997 20.2025 14.3252 20.2025 12.9997C20.2025 11.6742 19.1279 10.5996 17.8024 10.5996C16.4769 10.5996 15.4023 11.6742 15.4023 12.9997C15.4023 14.3252 16.4769 15.3997 17.8024 15.3997Z"
                                   Stroke="#179548" StrokeThickness="2" StrokeLineJoin="Round"/>
-                            <Path Data="M7.60156 4.00007L10.6016 1L13.6017 4.00007" 
+                            <Path x:Name="ConnStatusIcon3" Data="M7.60156 4.00007L10.6016 1L13.6017 4.00007"
                                   Stroke="#179548" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                            <Path Data="M11.2025 22.001L3.40234 15.5588V11.8008" 
+                            <Path x:Name="ConnStatusIcon4" Data="M11.2025 22.001L3.40234 15.5588V11.8008"
                                   Stroke="#179548" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                            <Path Data="M17.8017 15.4004V18.2742L10.6016 23.2006" 
+                            <Path x:Name="ConnStatusIcon5" Data="M17.8017 15.4004V18.2742L10.6016 23.2006"
                                   Stroke="#179548" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                            <Path Data="M10.6016 1V24.4006" 
+                            <Path x:Name="ConnStatusIcon6" Data="M10.6016 1V24.4006"
                                   Stroke="#179548" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                            <Path Data="M8.80078 25H12.4009" 
+                            <Path x:Name="ConnStatusIcon7" Data="M8.80078 25H12.4009"
                                   Stroke="#179548" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                         </Canvas>
                     </Viewbox>
-                    <TextBlock Text="已连接(基座)" FontSize="22" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ConnectionStatusText" Text="已连接(基座)" FontSize="22" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- 垂直分割线2 -->
@@ -255,7 +255,7 @@
                 <!-- 固件版本 -->
                 <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="固件版本:" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
-                    <TextBlock Text="v 1.0.0" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                    <TextBlock x:Name="FirmwareVersionText" Text="v 1.0.0" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
                 </StackPanel>
             </Grid>
 
@@ -442,7 +442,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="输入反向" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                        <CheckBox Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0"/>
+                        <CheckBox x:Name="ClutchReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
@@ -842,7 +842,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="输入反向" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                        <CheckBox Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0"/>
+                        <CheckBox x:Name="BrakeReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
@@ -1242,7 +1242,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="输入反向" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                        <CheckBox Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0"/>
+                        <CheckBox x:Name="ThrottleReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->

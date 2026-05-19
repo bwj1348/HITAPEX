@@ -636,7 +636,6 @@
                                                     Style="{StaticResource LinkButtonStyle}"
                                                     FontSize="16"
                                                     FontWeight="Regular"
-                                                    Click="ViewUpdateLogButton_Click"
                                                     AutomationProperties.Name="查看更新日志"
                                                     Margin="10,0,0,0"/>
                                         </StackPanel>
