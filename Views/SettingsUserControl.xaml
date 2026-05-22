@@ -23,15 +23,15 @@
             <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontStyle" Value="Italic"/>
-            <Setter Property="Width" Value="440"/>
+            <Setter Property="Width" Value="266"/>
             <Setter Property="Height" Value="45"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Grid Width="440" Height="45">
+                        <Grid Width="266" Height="45">
                             <Path x:Name="ButtonPath"
-                          Data="M23.0581 1.5H426.387C427.422 1.5 428.404 1.95812 429.069 2.75098L435.251 10.1211C436.242 11.3027 436.343 12.9941 435.5 14.2852L417.441 41.915C416.795 42.9039 415.693 43.4998 414.511 43.5H11.1822C10.1474 43.5 9.16553 43.0419 8.50052 42.249L2.31888 34.8789C1.32774 33.6973 1.2262 32.0059 2.06985 30.7148L20.1284 3.08496C20.7748 2.09607 21.8768 1.50016 23.0581 1.5Z"
+                          Data="M15.9058 1.5H256.7C257.984 1.5 259.165 2.20315 259.777 3.33203L263.752 10.666C264.245 11.5751 264.31 12.6562 263.931 13.6182L253.025 41.2832C252.498 42.6205 251.207 43.4999 249.769 43.5H8.9751C7.69107 43.4999 6.50985 42.7968 5.89795 41.668L1.92236 34.334C1.42962 33.4249 1.36443 32.3438 1.74365 31.3818L12.6499 3.7168C13.1771 2.37956 14.4684 1.50019 15.9058 1.5Z"
                           Stretch="Fill"
                           Fill="Transparent"
                           Stroke="{StaticResource TabSelectedGradient}"
@@ -60,15 +60,15 @@
             <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontStyle" Value="Italic"/>
-            <Setter Property="Width" Value="438"/>
+            <Setter Property="Width" Value="264"/>
             <Setter Property="Height" Value="45"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Grid Width="438" Height="45">
+                        <Grid Width="264" Height="45">
                             <Path x:Name="ButtonPath"
-                          Data="M17.8864 1.5H421.475C422.515 1.5 423.501 1.96188 424.166 2.76074L430.299 10.1299C431.279 11.3079 431.378 12.9866 430.545 14.2725L412.626 41.9043C411.98 42.8993 410.875 43.4999 409.689 43.5H5.00848C2.23312 43.5 0.561859 40.4243 2.07196 38.0957L16.4626 15.9053C18.0113 13.517 17.8254 10.3989 16.0046 8.21094L15.196 7.23926C13.2984 4.9592 14.92 1.5 17.8864 1.5Z"
+                          Data="M12.5693 1.5H254.862C256.146 1.5001 257.328 2.20313 257.939 3.33203L261.914 10.666C262.407 11.575 262.472 12.6553 262.093 13.6172L251.188 41.2832C250.66 42.6205 249.369 43.4998 247.932 43.5H5.00488C2.53554 43.4999 0.843171 41.0117 1.75 38.7148L11.2217 14.7236C11.9285 12.9335 11.8061 10.9222 10.8867 9.23145L9.49512 6.67188C8.22694 4.33976 9.91476 1.5002 12.5693 1.5Z"
                           Stretch="Fill"
                           Fill="Transparent"
                           Stroke="{StaticResource TabSelectedGradient}"
@@ -476,7 +476,7 @@
                              IsChecked="True"
                              Checked="Tab_Checked"
                              Tag="SystemSettings"
-                             Margin="0,0,-8,0"/>
+                             Margin="0,0,-5,0"/>
                 <RadioButton x:Name="FirmwareUpdateTab"
                              Content="固 件 更 新"
                              Style="{StaticResource SettingsTabButtonStyle2}"
@@ -484,12 +484,6 @@
                              Checked="Tab_Checked"
                              Tag="FirmwareUpdate"
                              Margin="0,0,-8,0"/>
-                <RadioButton x:Name="AccountSettingsTab"
-                             Content="账 户 设 置"
-                             Style="{StaticResource SettingsTabButtonStyle2}"
-                             GroupName="SettingsTabs"
-                             Checked="Tab_Checked"
-                             Tag="AccountSettings"/>
             </StackPanel>
         </Grid>
 
@@ -973,156 +967,6 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
-
-                <Grid x:Name="AccountSettingsContent" Visibility="Collapsed">
-                    <StackPanel>
-                        <Border>
-                            <StackPanel>
-                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                    </Grid>
-                                    <TextBlock Text="账户信息" Style="{StaticResource SectionTitleStyle}"/>
-                                </StackPanel>
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0"
-                                            Width="60" Height="60"
-                                            CornerRadius="30"
-                                            Background="#F0F0F0"
-                                            Margin="0,0,16,0">
-                                        <TextBlock Text="A"
-                                                   FontSize="24"
-                                                   FontWeight="Bold"
-                                                   Foreground="#C60E0E"
-                                                   HorizontalAlignment="Center"
-                                                   VerticalAlignment="Center"/>
-                                    </Border>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock x:Name="UsernameText" 
-                                                   Text="Alex_Racer" 
-                                                   Foreground="#333333" 
-                                                   FontSize="16"
-                                                   FontWeight="SemiBold"/>
-                                        <TextBlock x:Name="EmailText" 
-                                                   Text="alex.racer@example.com" 
-                                                   Foreground="#666666" 
-                                                   FontSize="13"
-                                                   Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Grid>
-                                <Button Content="编辑资料"
-                                        Style="{StaticResource LinkButtonStyle}"
-                                        Click="EditProfileButton_Click"
-                                        AutomationProperties.Name="编辑资料"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border>
-                            <StackPanel>
-                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                    </Grid>
-                                    <TextBlock Text="安全设置" Style="{StaticResource SectionTitleStyle}"/>
-                                </StackPanel>
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="修改密码" Foreground="#333333" FontSize="13"/>
-                                        <TextBlock Text="定期更改密码可以提高账户安全性" 
-                                                   Foreground="#666666" 
-                                                   FontSize="12"
-                                                   Margin="0,2,0,0"/>
-                                    </StackPanel>
-                                    <Button Grid.Column="1"
-                                            Content="修改"
-                                            Style="{StaticResource PrimaryButtonStyle}"
-                                            Click="ChangePasswordButton_Click"
-                                            AutomationProperties.Name="修改密码"/>
-                                </Grid>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="两步验证" Foreground="#333333" FontSize="13"/>
-                                        <TextBlock Text="为您的账户添加额外的安全保护" 
-                                                   Foreground="#666666" 
-                                                   FontSize="12"
-                                                   Margin="0,2,0,0"/>
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1"
-                                               x:Name="TwoFactorStatusText"
-                                               Text="未开启"
-                                               Foreground="#999999"
-                                               FontSize="13"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <Border>
-                            <StackPanel>
-                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                    </Grid>
-                                    <TextBlock Text="登录设备" Style="{StaticResource SectionTitleStyle}"/>
-                                </StackPanel>
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <TextBlock Text="当前设备" Foreground="#333333" FontSize="13"/>
-                                        <Border Background="#E8F5E9"
-                                                CornerRadius="4"
-                                                Padding="6,2"
-                                                Margin="8,0,0,0">
-                                            <TextBlock Text="在线" Foreground="#4CAF50" FontSize="11"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1"
-                                               Text="Windows PC"
-                                               Foreground="#666666"
-                                               FontSize="12"/>
-                                </Grid>
-                                <TextBlock Text="最后活动：刚刚"
-                                           Foreground="#999999"
-                                           FontSize="12"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Margin="0,0,0,0">
-                            <StackPanel>
-                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}">
-                                    <Grid Width="13" Height="26" Effect="{StaticResource TitleIconShadow}" Opacity="0.9">
-                                        <Path Data="M5 7L7 5H9.00034L5 9V7Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                        <Path Data="M13 5H11L5 11V31H10L13 28V5Z" Fill="{StaticResource TabSelectedGradient}" Stretch="Uniform"/>
-                                    </Grid>
-                                    <TextBlock Text="账户操作" Style="{StaticResource SectionTitleStyle}"/>
-                                </StackPanel>
-                                <Button Content="退出登录"
-                                        Style="{StaticResource LinkButtonStyle}"
-                                        Foreground="#C60E0E"
-                                        Click="LogoutButton_Click"
-                                        AutomationProperties.Name="退出登录"/>
                             </StackPanel>
                         </Border>
                     </StackPanel>

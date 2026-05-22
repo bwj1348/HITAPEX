@@ -11,7 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\**\*" Exclude="Assets\*.ico" />
+    <Resource Include="Assets\**\*" Exclude="Assets\*.ico;Assets\Presets\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Presets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

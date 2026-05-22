@@ -1,12 +1,15 @@
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using HITAPEX.Models.Usb;
 using HITAPEX.Services.Usb;
+using SharpVectors.Converters;
 
 namespace HITAPEX.Views.DeviceParameters;
 
@@ -18,7 +21,6 @@ public partial class PedalParameterControl : UserControl
     private double _clutchDeadZoneRight = 0;
     private bool _isClutchDraggingDeadZone = false;
     private string? _clutchDraggingDeadZoneThumb = null;
-    private double _clutchCurrentPosition = 0;
     private PointCollection _clutchCurvePoints = new PointCollection
     {
         new Point(0, 266), new Point(69, 205), new Point(138, 148),
@@ -33,7 +35,6 @@ public partial class PedalParameterControl : UserControl
     private double _brakeDeadZoneRight = 0;
     private bool _isBrakeDraggingDeadZone = false;
     private string? _brakeDraggingDeadZoneThumb = null;
-    private double _brakeCurrentPosition = 0;
     private PointCollection _brakeCurvePoints = new PointCollection
     {
         new Point(0, 266), new Point(69, 205), new Point(138, 148),
@@ -48,7 +49,6 @@ public partial class PedalParameterControl : UserControl
     private double _throttleDeadZoneRight = 0;
     private bool _isThrottleDraggingDeadZone = false;
     private string? _throttleDraggingDeadZoneThumb = null;
-    private double _throttleCurrentPosition = 0;
     private PointCollection _throttleCurvePoints = new PointCollection
     {
         new Point(0, 266), new Point(69, 205), new Point(138, 148),
@@ -59,16 +59,56 @@ public partial class PedalParameterControl : UserControl
 
     // ────────── USB 设备通信状态 ──────────
     private UsbDeviceInfo? _connectedPedalDevice;
-    private string _deviceModelName = "P2000";
+    private UsbDeviceInfo? _baseDevice;
+    private bool _isPedalViaBase;
+    private string _deviceModelName = "踏板";
     private string _connectionStatusText = "已连接(基座)";
     private string _connectionStatusColor = "#179548";
     private string _firmwareVersion = "v 1.0.0";
     private bool _isSendingParameters;
+    private bool _isApplyingParameters; // 从设备同步参数时阻止下发
+    private string? _latestApiFirmwareVersion;
+    private int _pedalCount = 1; // 0=2踏板, 1=3踏板
+
+    // ────────── 预设管理 ──────────
+    private PedalPresetSnapshot? _appliedPresetParameters;
+    private bool _isPresetModified;
+    private bool _isApplyingPreset;
+    private bool _isAppliedPresetPersonal;
+    private string _currentPresetName = "Default";
+
+    // HID 最新数据缓存（后台线程写入，UI 线程读取），始终反映设备最新状态
+    private double _latestRawClutch;
+    private double _latestRawBrake;
+    private double _latestRawGas;
+    private double _latestProcessedClutch;
+    private double _latestProcessedBrake;
+    private double _latestProcessedGas;
+
+    // 待处理的 UI 更新标记（0=无, 1=已入队），防止 Dispatcher 队列堆积
+    private int _pendingUiUpdate;
+
+    // 上次已显示的值，用于跳过冗余 UI 更新
+    private double _displayedRawClutch = -1;
+    private double _displayedRawBrake = -1;
+    private double _displayedRawGas = -1;
+    private double _displayedProcessedClutch = -1;
+    private double _displayedProcessedBrake = -1;
+    private double _displayedProcessedGas = -1;
+
+    // 曲线缓存（值类型数组，无线程亲和性，后台线程可安全访问）
+    private Point[] _clutchCurvePointsCache = Array.Empty<Point>();
+    private double[] _clutchCurveSlopesCache = Array.Empty<double>();
+    private Point[] _brakeCurvePointsCache = Array.Empty<Point>();
+    private double[] _brakeCurveSlopesCache = Array.Empty<double>();
+    private Point[] _throttleCurvePointsCache = Array.Empty<Point>();
+    private double[] _throttleCurveSlopesCache = Array.Empty<double>();
 
     public PedalParameterControl()
     {
         InitializeComponent();
         Loaded += PedalParameterControl_Loaded;
+        Unloaded += (_, _) => UnsubscribeHidData();
     }
 
     private async void PedalParameterControl_Loaded(object sender, RoutedEventArgs e)
@@ -91,8 +131,17 @@ public partial class PedalParameterControl : UserControl
         SetupThrottleDeadZoneThumbs();
         UpdateThrottleDeadZoneDisplay();
 
+        // 初始化位置显示为 0，清除 XAML 设计时占位值
+        UpdatePedalPositionDisplay(0, 0, 0, 0, 0, 0);
+
+        // 订阅 HID 数据（独立于串口连接状态）
+        SubscribeHidData();
+
         // 刷新设备连接状态和固件信息
         await RefreshDeviceInfoAsync();
+
+        // 初始化撤销按钮状态
+        UpdatePresetDisplay();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -151,6 +200,7 @@ public partial class PedalParameterControl : UserControl
         _clutchCurvePoints = GetCurvePointsForType(_selectedCurveType);
         ApplySmoothCurve(ClutchCurveLine, ClutchFillArea, _clutchCurvePoints);
         RepositionCurvePoints(_clutchCurvePoints, ClutchPoint1, ClutchPoint2, ClutchPoint3, ClutchPoint4);
+        RebuildCurveCaches();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -170,6 +220,7 @@ public partial class PedalParameterControl : UserControl
         _brakeCurvePoints = GetCurvePointsForType(_brakeSelectedCurveType);
         ApplySmoothCurve(BrakeCurveLine, BrakeFillArea, _brakeCurvePoints);
         RepositionCurvePoints(_brakeCurvePoints, BrakePoint1, BrakePoint2, BrakePoint3, BrakePoint4);
+        RebuildCurveCaches();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -189,6 +240,7 @@ public partial class PedalParameterControl : UserControl
         _throttleCurvePoints = GetCurvePointsForType(_throttleSelectedCurveType);
         ApplySmoothCurve(ThrottleCurveLine, ThrottleFillArea, _throttleCurvePoints);
         RepositionCurvePoints(_throttleCurvePoints, ThrottlePoint1, ThrottlePoint2, ThrottlePoint3, ThrottlePoint4);
+        RebuildCurveCaches();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -386,7 +438,7 @@ public partial class PedalParameterControl : UserControl
     {
         HandlePointDrag(sender, e, ClutchCurveLine, ref _isClutchDragging, ref _clutchDraggingPoint,
             _clutchCurvePoints, ClutchPoint1, ClutchPoint2, ClutchPoint3, ClutchPoint4,
-            v => { _clutchCurvePoints = v; ApplySmoothCurve(ClutchCurveLine, ClutchFillArea, _clutchCurvePoints); });
+            v => { _clutchCurvePoints = v; ApplySmoothCurve(ClutchCurveLine, ClutchFillArea, _clutchCurvePoints); RebuildCurveCaches(); });
     }
 
     private void ClutchPoint_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -422,7 +474,7 @@ public partial class PedalParameterControl : UserControl
     {
         HandlePointDrag(sender, e, BrakeCurveLine, ref _isBrakeDragging, ref _brakeDraggingPoint,
             _brakeCurvePoints, BrakePoint1, BrakePoint2, BrakePoint3, BrakePoint4,
-            v => { _brakeCurvePoints = v; ApplySmoothCurve(BrakeCurveLine, BrakeFillArea, _brakeCurvePoints); });
+            v => { _brakeCurvePoints = v; ApplySmoothCurve(BrakeCurveLine, BrakeFillArea, _brakeCurvePoints); RebuildCurveCaches(); });
     }
 
     private void BrakePoint_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -458,7 +510,7 @@ public partial class PedalParameterControl : UserControl
     {
         HandlePointDrag(sender, e, ThrottleCurveLine, ref _isThrottleDragging, ref _throttleDraggingPoint,
             _throttleCurvePoints, ThrottlePoint1, ThrottlePoint2, ThrottlePoint3, ThrottlePoint4,
-            v => { _throttleCurvePoints = v; ApplySmoothCurve(ThrottleCurveLine, ThrottleFillArea, _throttleCurvePoints); });
+            v => { _throttleCurvePoints = v; ApplySmoothCurve(ThrottleCurveLine, ThrottleFillArea, _throttleCurvePoints); RebuildCurveCaches(); });
     }
 
     private void ThrottlePoint_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -553,35 +605,662 @@ public partial class PedalParameterControl : UserControl
     private void ThrottleCurveType5_Click(object sender, MouseButtonEventArgs e) { _throttleSelectedCurveType = 5; UpdateThrottleCurveTypeSelection(); SendPedalParameters(); }
 
     // ════════════════════════════════════════════════════════════════
-    //  预设管理按钮
+    //  预设管理
     // ════════════════════════════════════════════════════════════════
+
+    public bool HasUnsavedChanges => _isPresetModified;
+
+    /// <summary>放弃当前修改，恢复到已应用预设的状态</summary>
+    public void DiscardChanges()
+    {
+        if (!_isPresetModified || _appliedPresetParameters == null)
+            return;
+
+        _isApplyingPreset = true;
+        ApplyPresetSnapshot(_appliedPresetParameters);
+        SendPedalParameters();
+        _isApplyingPreset = false;
+        _isPresetModified = false;
+        UpdatePresetDisplay();
+    }
+
+    /// <summary>弹出未保存确认弹窗，保存后执行 onSaved，取消后执行 onCancelled</summary>
+    public void ShowUnsavedDialog(Action? onSaved, Action? onCancelled = null)
+    {
+        if (!_isPresetModified)
+        {
+            onSaved?.Invoke();
+            return;
+        }
+
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "未 保 存";
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = "当前预设已更改，是否保存？",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        if (_isAppliedPresetPersonal)
+        {
+            dialog.AddButton("保 存", (_, _) =>
+            {
+                dialog.Hide();
+                TrySaveWithRetry(() => PerformSave(), () => onSaved?.Invoke());
+            }, isPrimary: true);
+        }
+        else
+        {
+            dialog.AddButton("另 存 为", (_, _) =>
+            {
+                dialog.Hide();
+                SaveAsInternal(onSaved);
+            }, isPrimary: true);
+        }
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+            onCancelled?.Invoke();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
+
+    private bool PerformSave()
+    {
+        var popup = GetPresetListPopup();
+        if (popup == null || App.PresetService == null) return false;
+
+        try
+        {
+            var personalPresets = App.PresetService.LoadPersonalPresets();
+            var target = personalPresets.FirstOrDefault(p => p.Name == _currentPresetName);
+            if (target == null) return false;
+
+            target.Parameters = CaptureCurrentParameters();
+            App.PresetService.SavePersonalPresets(personalPresets);
+            popup.RefreshPersonalPresets(personalPresets);
+
+            _appliedPresetParameters = CaptureCurrentParameters();
+            _isPresetModified = false;
+            UpdatePresetDisplay();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 保存预设失败: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void ShowSaveFailedDialog(Action? onRetry)
+    {
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "保 存 失 败";
+        dialog.ShowIcon = true;
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = "当前预设未能成功保存，请检查后重试。",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        dialog.AddButton("重 试", (_, _) =>
+        {
+            dialog.Hide();
+            onRetry?.Invoke();
+        }, isPrimary: true);
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
 
     private void UndoButton_Click(object sender, MouseButtonEventArgs e)
     {
-        MessageBox.Show("撤回上一步操作", "撤回", MessageBoxButton.OK, MessageBoxImage.Information);
+        if (!_isPresetModified || _appliedPresetParameters == null)
+            return;
+
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "撤 回 更 改";
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = "所有未保存的调整将被恢复为上一次保存的状态。",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        dialog.AddButton("撤 回", (_, _) =>
+        {
+            dialog.Hide();
+            DiscardChanges();
+        }, isPrimary: true);
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
     }
 
     private void SaveButton_Click(object sender, MouseButtonEventArgs e)
     {
-        MessageBox.Show("预设已保存", "保存成功", MessageBoxButton.OK, MessageBoxImage.Information);
+        if (!_isAppliedPresetPersonal || !_isPresetModified) return;
+        TrySaveWithRetry(() => PerformSave(), () =>
+        {
+            ShowSuccessToast("保 存 成 功");
+        });
+    }
+
+    private void TrySaveWithRetry(Func<bool> saveAction, Action onSuccess)
+    {
+        if (saveAction())
+        {
+            onSuccess();
+            return;
+        }
+
+        ShowSaveFailedDialog(() => TrySaveWithRetry(saveAction, onSuccess));
+    }
+
+    private void ShowSuccessToast(string message)
+    {
+        var rootPanel = (Window.GetWindow(this)?.Content as Panel);
+        if (rootPanel == null) return;
+
+        var toast = new Grid
+        {
+            Width = 360,
+            Height = 100,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Panel.SetZIndex(toast, 2000);
+
+        // 背景形状
+        toast.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M360 0H9L0 9V100H351L360 91V0Z"),
+            Fill = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x4A)),
+            Stretch = Stretch.Fill
+        });
+
+        // SVG 装饰图形
+        toast.Children.Add(new SvgViewbox
+        {
+            Source = new Uri("/Assets/Group126548867.svg", UriKind.Relative),
+            Stretch = Stretch.Fill
+        });
+
+        // 边框
+        toast.Children.Add(new System.Windows.Shapes.Path
+        {
+            Width = 340,
+            Height = 80,
+            Data = Geometry.Parse("M339.5 0.5V73.793L333.793 79.5H0.5V6.20703L6.20703 0.5H339.5Z"),
+            Stroke = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            StrokeThickness = 1,
+            Stretch = Stretch.Fill
+        });
+
+        // 内容：图标 + 文字
+        var contentPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var iconCanvas = new Canvas { Width = 22, Height = 22 };
+        iconCanvas.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M6.13672 12.2886L9.29057 14.8117C9.37527 14.8814 9.47445 14.9314 9.5809 14.9581C9.68735 14.9847 9.79839 14.9872 9.90595 14.9655C10.0145 14.9452 10.1175 14.9016 10.2077 14.8379C10.298 14.7742 10.3735 14.6918 10.429 14.5963L15.3675 6.13477"),
+            Stroke = new SolidColorBrush(Color.FromRgb(0x16, 0xC6, 0x42)),
+            StrokeThickness = 1.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round
+        });
+        iconCanvas.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M10.75 20.75C16.2728 20.75 20.75 16.2728 20.75 10.75C20.75 5.22715 16.2728 0.75 10.75 0.75C5.22715 0.75 0.75 5.22715 0.75 10.75C0.75 16.2728 5.22715 20.75 10.75 20.75Z"),
+            Stroke = new SolidColorBrush(Color.FromRgb(0x16, 0xC6, 0x42)),
+            StrokeThickness = 1.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round
+        });
+
+        var iconViewbox = new Viewbox { Width = 22, Height = 22, Margin = new Thickness(0, 0, 20, 0), Child = iconCanvas };
+        contentPanel.Children.Add(iconViewbox);
+
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = message,
+            FontSize = 30,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            FontWeight = FontWeights.Bold,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        toast.Children.Add(contentPanel);
+        rootPanel.Children.Add(toast);
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (rootPanel.Children.Contains(toast))
+                rootPanel.Children.Remove(toast);
+        };
+        timer.Start();
     }
 
     private void SaveAsButton_Click(object sender, MouseButtonEventArgs e)
     {
-        MessageBox.Show("请输入新的预设名称...", "另存为", MessageBoxButton.OK, MessageBoxImage.Information);
+        SaveAsInternal(null);
+    }
+
+    private void SaveAsInternal(Action? onSaved)
+    {
+        if (App.PresetService == null) return;
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var personalPresets = App.PresetService.LoadPersonalPresets();
+        var existingNames = personalPresets.Select(p => p.Name).ToList();
+
+        var rootPanel = mainWindow.Content as Panel;
+        if (rootPanel == null) return;
+
+        var editPopup = new EditPresetPopup();
+        rootPanel.Children.Add(editPopup);
+
+        editPopup.EditConfirmed += (_, edited) =>
+        {
+            var presetName = edited.Name;
+            var newPreset = new PresetItem
+            {
+                Name = presetName,
+                Description = edited.Description,
+                Category = edited.Category,
+                Games = edited.Games,
+                Parameters = CaptureCurrentParameters(),
+                IsPersonal = true
+            };
+
+            var currentPersonal = App.PresetService.LoadPersonalPresets();
+            currentPersonal.Add(newPreset);
+            App.PresetService.SavePersonalPresets(currentPersonal);
+
+            var popup = GetPresetListPopup();
+            popup?.RefreshPersonalPresets(currentPersonal);
+
+            _appliedPresetParameters = CaptureCurrentParameters();
+            _currentPresetName = presetName;
+            _isAppliedPresetPersonal = true;
+            _isPresetModified = false;
+            UpdatePresetDisplay();
+
+            if (rootPanel.Children.Contains(editPopup))
+                rootPanel.Children.Remove(editPopup);
+
+            onSaved?.Invoke();
+        };
+
+        editPopup.EditCancelled += (_, _) =>
+        {
+            if (rootPanel.Children.Contains(editPopup))
+                rootPanel.Children.Remove(editPopup);
+        };
+
+        editPopup.BeginSaveAs(existingNames);
+        editPopup.Show();
     }
 
     private void ExportButton_Click(object sender, MouseButtonEventArgs e)
     {
-        MessageBox.Show("预设配置已导出", "导出成功", MessageBoxButton.OK, MessageBoxImage.Information);
+        if (!_isAppliedPresetPersonal) return;
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "导出预设",
+            Filter = "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+            DefaultExt = ".json",
+            FileName = _currentPresetName == "Default" ? "pedal_preset" : _currentPresetName
+        };
+
+        if (dlg.ShowDialog() != true || App.PresetService == null) return;
+
+        var fileName = dlg.FileName;
+        TryExportWithRetry(fileName);
+    }
+
+    private void TryExportWithRetry(string fileName)
+    {
+        if (PerformExport(fileName))
+        {
+            ShowSuccessToast("导 出 成 功");
+            return;
+        }
+
+        ShowExportFailedDialog(() => TryExportWithRetry(fileName));
+    }
+
+    private bool PerformExport(string fileName)
+    {
+        try
+        {
+            var snapshot = _appliedPresetParameters ?? CaptureCurrentParameters();
+            var exportItem = new PresetItem
+            {
+                Name = _currentPresetName,
+                Parameters = snapshot,
+                IsPersonal = true
+            };
+            App.PresetService!.ExportPreset(exportItem, fileName);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 导出预设失败: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void ShowExportFailedDialog(Action? onRetry)
+    {
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "导 出 失 败";
+        dialog.ShowIcon = true;
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = "当前预设导出失败，请检查后重试。",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        dialog.AddButton("重 试", (_, _) =>
+        {
+            dialog.Hide();
+            onRetry?.Invoke();
+        }, isPrimary: true);
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
+
+    private PresetListPopup? GetPresetListPopup()
+    {
+        if (Window.GetWindow(this) is HITAPEX.MainWindow mainWindow)
+            return mainWindow.PresetListPopup;
+        return null;
     }
 
     private void PresetListButton_Click(object sender, MouseButtonEventArgs e)
     {
         if (Window.GetWindow(this) is HITAPEX.MainWindow mainWindow)
         {
-            mainWindow.ShowPresetListPopup();
+            var popup = mainWindow.ShowPresetListPopup();
+            popup.PresetApplied -= OnPresetApplied;
+            popup.PresetApplied += OnPresetApplied;
         }
+    }
+
+    private void OnPresetApplied(object? sender, PresetItem preset)
+    {
+        if (preset.Parameters == null) return;
+
+        if (_isPresetModified)
+            ShowUnsavedDialog(() => ApplyPreset(preset), () => { DiscardChanges(); ApplyPreset(preset); });
+        else
+            ApplyPreset(preset);
+    }
+
+    private void ApplyPreset(PresetItem preset)
+    {
+        _isApplyingPreset = true;
+        ApplyPresetSnapshot(preset.Parameters!);
+        SendPedalParameters();
+        _isApplyingPreset = false;
+
+        _appliedPresetParameters = preset.Parameters;
+        _currentPresetName = preset.Name;
+        _isAppliedPresetPersonal = preset.IsPersonal;
+        _isPresetModified = false;
+        UpdatePresetDisplay();
+    }
+
+    /// <summary>任意参数修改后的统一入口，标记已修改状态并刷新 UI</summary>
+    private void OnParameterModified()
+    {
+        if (_isApplyingParameters || _isApplyingPreset) return;
+        _isPresetModified = true;
+        UpdatePresetDisplay();
+    }
+
+    /// <summary>更新预设名称、已更改提示、撤回按钮状态</summary>
+    private void UpdatePresetDisplay()
+    {
+        var isDeviceConnected = _connectedPedalDevice != null || _isPedalViaBase;
+        var isOnboard = _currentPresetName == "Default" && isDeviceConnected;
+
+        if (PresetNameText != null)
+        {
+            PresetNameText.Text = isOnboard ? "板载" : _currentPresetName;
+            PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
+        }
+
+        if (ModifiedIndicator != null)
+            ModifiedIndicator.Visibility = _isPresetModified ? Visibility.Visible : Visibility.Collapsed;
+
+        if (UndoButtonPath != null)
+        {
+            if (_isPresetModified)
+            {
+                UndoButtonPath.ClearValue(System.Windows.Shapes.Path.FillProperty);
+                UndoButtonPath.Cursor = System.Windows.Input.Cursors.Hand;
+            }
+            else
+            {
+                UndoButtonPath.Fill = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE));
+                UndoButtonPath.Cursor = System.Windows.Input.Cursors.Arrow;
+            }
+        }
+
+        var isSaveEnabled = _isAppliedPresetPersonal && _isPresetModified;
+        if (SaveButtonPath != null)
+        {
+            if (isSaveEnabled)
+            {
+                SaveButtonPath.ClearValue(System.Windows.Shapes.Path.FillProperty);
+                SaveButtonPath.Cursor = System.Windows.Input.Cursors.Hand;
+            }
+            else
+            {
+                SaveButtonPath.Fill = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE));
+                SaveButtonPath.Cursor = System.Windows.Input.Cursors.Arrow;
+            }
+        }
+
+        var isExportEnabled = _isAppliedPresetPersonal;
+        if (ExportButtonPath != null)
+        {
+            if (isExportEnabled)
+            {
+                ExportButtonPath.ClearValue(System.Windows.Shapes.Path.FillProperty);
+                ExportButtonPath.Cursor = System.Windows.Input.Cursors.Hand;
+            }
+            else
+            {
+                ExportButtonPath.Fill = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE));
+                ExportButtonPath.Cursor = System.Windows.Input.Cursors.Arrow;
+            }
+        }
+
+        if (OnboardPresetIcon != null)
+            OnboardPresetIcon.Visibility = isOnboard ? Visibility.Visible : Visibility.Collapsed;
+        if (OfficialPresetIcon != null)
+            OfficialPresetIcon.Visibility = (!isOnboard && !_isAppliedPresetPersonal) ? Visibility.Visible : Visibility.Collapsed;
+        if (PersonalPresetIcon != null)
+            PersonalPresetIcon.Visibility = (!isOnboard && _isAppliedPresetPersonal) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>将当前 UI 参数捕获为快照</summary>
+    private PedalPresetSnapshot CaptureCurrentParameters()
+    {
+        var clutchPoints = GetCurvePointsAsProtocolBytes(_clutchCurvePoints);
+        var brakePoints = GetCurvePointsAsProtocolBytes(_brakeCurvePoints);
+        var throttlePoints = GetCurvePointsAsProtocolBytes(_throttleCurvePoints);
+
+        return new PedalPresetSnapshot
+        {
+            ClutchCurveType = _selectedCurveType,
+            ClutchDirection = (byte)(ClutchReverseToggle?.IsChecked == true ? 1 : 0),
+            ClutchPoint1Y = clutchPoints[0], ClutchPoint1X = clutchPoints[1],
+            ClutchPoint2Y = clutchPoints[2], ClutchPoint2X = clutchPoints[3],
+            ClutchPoint3Y = clutchPoints[4], ClutchPoint3X = clutchPoints[5],
+            ClutchPoint4Y = clutchPoints[6], ClutchPoint4X = clutchPoints[7],
+            ClutchDeadZoneFront = (byte)Math.Round(_clutchDeadZoneLeft),
+            ClutchDeadZoneRear = (byte)Math.Round(_clutchDeadZoneRight),
+
+            BrakeCurveType = _brakeSelectedCurveType,
+            BrakeDirection = (byte)(BrakeReverseToggle?.IsChecked == true ? 1 : 0),
+            BrakePoint1Y = brakePoints[0], BrakePoint1X = brakePoints[1],
+            BrakePoint2Y = brakePoints[2], BrakePoint2X = brakePoints[3],
+            BrakePoint3Y = brakePoints[4], BrakePoint3X = brakePoints[5],
+            BrakePoint4Y = brakePoints[6], BrakePoint4X = brakePoints[7],
+            BrakeDeadZoneFront = (byte)Math.Round(_brakeDeadZoneLeft),
+            BrakeDeadZoneRear = (byte)Math.Round(_brakeDeadZoneRight),
+
+            ThrottleCurveType = _throttleSelectedCurveType,
+            ThrottleDirection = (byte)(ThrottleReverseToggle?.IsChecked == true ? 1 : 0),
+            ThrottlePoint1Y = throttlePoints[0], ThrottlePoint1X = throttlePoints[1],
+            ThrottlePoint2Y = throttlePoints[2], ThrottlePoint2X = throttlePoints[3],
+            ThrottlePoint3Y = throttlePoints[4], ThrottlePoint3X = throttlePoints[5],
+            ThrottlePoint4Y = throttlePoints[6], ThrottlePoint4X = throttlePoints[7],
+            ThrottleDeadZoneFront = (byte)Math.Round(_throttleDeadZoneLeft),
+            ThrottleDeadZoneRear = (byte)Math.Round(_throttleDeadZoneRight),
+        };
+    }
+
+    /// <summary>将预设快照应用到 UI 控件</summary>
+    private void ApplyPresetSnapshot(PedalPresetSnapshot p)
+    {
+        // 离合方向
+        if (ClutchReverseToggle != null)
+            ClutchReverseToggle.IsChecked = p.ClutchDirection == 1;
+
+        // 离合死区
+        _clutchDeadZoneLeft = p.ClutchDeadZoneFront;
+        _clutchDeadZoneRight = p.ClutchDeadZoneRear;
+        UpdateClutchDeadZoneDisplay();
+
+        // 离合曲线
+        _selectedCurveType = p.ClutchCurveType;
+        ApplyCurveTypeSelection(p.ClutchCurveType, "CurveType", Color.FromRgb(255, 200, 0), Color.FromRgb(153, 120, 0));
+        _clutchCurvePoints = new PointCollection
+        {
+            new Point(0, 266),
+            PointFromProtocol(p.ClutchPoint1X, p.ClutchPoint1Y),
+            PointFromProtocol(p.ClutchPoint2X, p.ClutchPoint2Y),
+            PointFromProtocol(p.ClutchPoint3X, p.ClutchPoint3Y),
+            PointFromProtocol(p.ClutchPoint4X, p.ClutchPoint4Y),
+            new Point(345, 0)
+        };
+        ApplySmoothCurve(ClutchCurveLine, ClutchFillArea, _clutchCurvePoints);
+        RepositionCurvePoints(_clutchCurvePoints, ClutchPoint1, ClutchPoint2, ClutchPoint3, ClutchPoint4);
+
+        // 刹车方向
+        if (BrakeReverseToggle != null)
+            BrakeReverseToggle.IsChecked = p.BrakeDirection == 1;
+
+        // 刹车死区
+        _brakeDeadZoneLeft = p.BrakeDeadZoneFront;
+        _brakeDeadZoneRight = p.BrakeDeadZoneRear;
+        UpdateBrakeDeadZoneDisplay();
+
+        // 刹车曲线
+        _brakeSelectedCurveType = p.BrakeCurveType;
+        ApplyCurveTypeSelection(p.BrakeCurveType, "BrakeCurveType", Color.FromRgb(198, 14, 14), Color.FromRgb(96, 7, 7));
+        _brakeCurvePoints = new PointCollection
+        {
+            new Point(0, 266),
+            PointFromProtocol(p.BrakePoint1X, p.BrakePoint1Y),
+            PointFromProtocol(p.BrakePoint2X, p.BrakePoint2Y),
+            PointFromProtocol(p.BrakePoint3X, p.BrakePoint3Y),
+            PointFromProtocol(p.BrakePoint4X, p.BrakePoint4Y),
+            new Point(345, 0)
+        };
+        ApplySmoothCurve(BrakeCurveLine, BrakeFillArea, _brakeCurvePoints);
+        RepositionCurvePoints(_brakeCurvePoints, BrakePoint1, BrakePoint2, BrakePoint3, BrakePoint4);
+
+        // 油门方向
+        if (ThrottleReverseToggle != null)
+            ThrottleReverseToggle.IsChecked = p.ThrottleDirection == 1;
+
+        // 油门死区
+        _throttleDeadZoneLeft = p.ThrottleDeadZoneFront;
+        _throttleDeadZoneRight = p.ThrottleDeadZoneRear;
+        UpdateThrottleDeadZoneDisplay();
+
+        // 油门曲线
+        _throttleSelectedCurveType = p.ThrottleCurveType;
+        ApplyCurveTypeSelection(p.ThrottleCurveType, "ThrottleCurveType", Color.FromRgb(22, 198, 66), Color.FromRgb(10, 96, 32));
+        _throttleCurvePoints = new PointCollection
+        {
+            new Point(0, 266),
+            PointFromProtocol(p.ThrottlePoint1X, p.ThrottlePoint1Y),
+            PointFromProtocol(p.ThrottlePoint2X, p.ThrottlePoint2Y),
+            PointFromProtocol(p.ThrottlePoint3X, p.ThrottlePoint3Y),
+            PointFromProtocol(p.ThrottlePoint4X, p.ThrottlePoint4Y),
+            new Point(345, 0)
+        };
+        ApplySmoothCurve(ThrottleCurveLine, ThrottleFillArea, _throttleCurvePoints);
+        RepositionCurvePoints(_throttleCurvePoints, ThrottlePoint1, ThrottlePoint2, ThrottlePoint3, ThrottlePoint4);
+
+        RebuildCurveCaches();
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -789,7 +1468,10 @@ public partial class PedalParameterControl : UserControl
             var connectedDevices = App.UsbManager?.ConnectedDevices
                 ?? System.Collections.ObjectModel.ReadOnlyCollection<UsbDeviceInfo>.Empty;
 
-            // 遍历已连接设备，查找踏板设备
+            _connectedPedalDevice = null;
+            _isPedalViaBase = false;
+
+            // 1. 查找直连的踏板 USB 设备
             _connectedPedalDevice = connectedDevices.FirstOrDefault(d =>
             {
                 var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
@@ -799,19 +1481,20 @@ public partial class PedalParameterControl : UserControl
 
             if (_connectedPedalDevice != null)
             {
+                // 直连方式
                 var descriptor = DeviceRegistry.FindByVidPid(_connectedPedalDevice.Vid, _connectedPedalDevice.Pid);
                 _deviceModelName = descriptor?.ModelName ?? "踏板";
-                _connectionStatusText = $"已连接({_deviceModelName})";
+                _connectionStatusText = "已连接(直连)";
                 _connectionStatusColor = "#179548";
 
-                // 发送获取设备信息命令以获取固件版本
-                if (App.ProtocolService != null)
+                if (App.ProtocolService != null && App.FirmwareUpdater != null)
                 {
-                    var deviceInfo = await App.FirmwareUpdater?.GetDeviceInfoAsync(
-                        _connectedPedalDevice, DeviceType.Pedal)!;
+                    var deviceInfo = await App.FirmwareUpdater.GetDeviceInfoAsync(
+                        _connectedPedalDevice, DeviceType.Pedal);
                     if (deviceInfo != null)
                     {
                         _firmwareVersion = deviceInfo.VersionString;
+                        _pedalCount = deviceInfo.PedalCount;
                     }
                     else
                     {
@@ -821,20 +1504,286 @@ public partial class PedalParameterControl : UserControl
             }
             else
             {
-                _deviceModelName = "踏板";
-                _connectionStatusText = "未连接";
-                _connectionStatusColor = "#C60E0E";
-                _firmwareVersion = "---";
+                // 2. 检查是否通过基座连接
+                var baseDevice = connectedDevices.FirstOrDefault(d =>
+                {
+                    var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+                    return descriptor != null && descriptor.DeviceType == DeviceType.Base
+                           && descriptor.IsNormalMode(d.Vid, d.Pid);
+                });
+
+                if (baseDevice != null && App.ProtocolService != null && App.FirmwareUpdater != null)
+                {
+                    var baseInfo = await App.FirmwareUpdater.GetDeviceInfoAsync(baseDevice, DeviceType.Base);
+                    if (baseInfo != null && baseInfo.IsPedalConnected)
+                    {
+                        _isPedalViaBase = true;
+                        _baseDevice = baseDevice;
+                        _deviceModelName = GetPedalModelFromConnectionStatus(baseInfo.PedalConnectionStatus);
+                        _connectionStatusText = "已连接(基座)";
+                        _connectionStatusColor = "#179548";
+                        _firmwareVersion = baseInfo.PedalVersionString;
+                        _pedalCount = baseInfo.PedalCount;
+                    }
+                    else
+                    {
+                        SetDisconnected();
+                    }
+                }
+                else
+                {
+                    SetDisconnected();
+                }
             }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[PedalControl] 刷新设备信息异常: {ex.Message}");
-            _connectionStatusText = "未连接";
-            _connectionStatusColor = "#C60E0E";
+            SetDisconnected();
         }
 
         UpdateConnectionStatusDisplay();
+
+        // 检查固件新版本
+        await CheckFirmwareVersionAsync();
+
+        // 获取踏板参数并同步 UI
+        await FetchPedalParametersAsync();
+    }
+
+    private void SetDisconnected()
+    {
+        _baseDevice = null;
+        _deviceModelName = "踏板";
+        _connectionStatusText = "未连接";
+        _connectionStatusColor = "#C60E0E";
+        _firmwareVersion = "---";
+    }
+
+    /// <summary>
+    /// 根据基座上报的踏板连接状态字节，返回踏板型号名称。
+    /// 0x01 = A1, 0x02 = A2, ...
+    /// </summary>
+    private static string GetPedalModelFromConnectionStatus(int status)
+    {
+        return status switch
+        {
+            0x01 => "A1踏板",
+            0x02 => "A2踏板",
+            0x03 => "A3踏板",
+            0x04 => "A4踏板",
+            _ => "踏板"
+        };
+    }
+
+    /// <summary>
+    /// 从 API 获取踏板最新固件版本并与设备当前版本比对，控制“新版本可用”的显隐。
+    /// </summary>
+    private async Task CheckFirmwareVersionAsync()
+    {
+        try
+        {
+            if (App.FirmwareApi == null || string.IsNullOrEmpty(_firmwareVersion) || _firmwareVersion == "---" || _firmwareVersion == "未知")
+            {
+                if (NewVersionAvailableBorder != null)
+                    NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // 确定用于 API 匹配的 VID/PID
+            int vid, pid;
+            if (!_isPedalViaBase && _connectedPedalDevice != null)
+            {
+                vid = _connectedPedalDevice.Vid;
+                pid = _connectedPedalDevice.Pid;
+            }
+            else
+            {
+                // 踏板通过基座连接时，使用 A1 踏板的默认 VID/PID 查询 API
+                var descriptor = DeviceRegistry.Devices.FirstOrDefault(d => d.DeviceType == DeviceType.Pedal);
+                if (descriptor == null) return;
+                vid = descriptor.NormalMode.Vid;
+                pid = descriptor.NormalMode.Pid;
+            }
+
+            var firmwareList = await App.FirmwareApi.GetFirmwareVersionsAsync();
+            var matched = App.FirmwareApi.FindFirmwareForDevice(firmwareList, vid, pid);
+
+            if (matched != null && FirmwareUpdateService.IsNewerVersion(_firmwareVersion, matched.Version))
+            {
+                _latestApiFirmwareVersion = matched.Version;
+                if (NewVersionAvailableBorder != null)
+                    NewVersionAvailableBorder.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                _latestApiFirmwareVersion = null;
+                if (NewVersionAvailableBorder != null)
+                    NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 固件版本检查异常: {ex.Message}");
+        }
+    }
+
+    /// <summary>点击“新版本可用”跳转到设置界面的固件更新选项卡</summary>
+    private void NewVersionAvailable_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
+            if (vm != null)
+            {
+                // 导航到设置界面
+                var settingsItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Settings");
+                if (settingsItem != null)
+                {
+                    vm.SelectedNavigationItem = settingsItem;
+                    // 延迟切换到固件更新选项卡，等待 SettingsUserControl 加载
+                    Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+                    {
+                        var settingsView = vm.CurrentView as SettingsUserControl;
+                        settingsView?.SwitchToFirmwareUpdateTab();
+                    });
+                }
+            }
+        }
+        e.Handled = true;
+    }
+
+    /// <summary>向设备下发获取踏板参数命令，并根据响应更新 UI</summary>
+    private async Task FetchPedalParametersAsync()
+    {
+        UsbDeviceInfo? targetDevice = null;
+        if (_connectedPedalDevice != null)
+            targetDevice = _connectedPedalDevice;
+        else if (_isPedalViaBase && _baseDevice != null)
+            targetDevice = _baseDevice;
+
+        if (targetDevice == null || App.ProtocolService == null)
+            return;
+
+        try
+        {
+            var cmd = DeviceProtocolService.BuildGetPedalParametersCommand();
+            var response = await App.ProtocolService.SendCommandAsync(targetDevice.DeviceKey, cmd);
+            if (response == null) return;
+
+            var parameters = DeviceProtocolService.ParsePedalParametersResponse(response);
+            if (parameters != null)
+                ApplyPedalParameters(parameters);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 获取踏板参数异常: {ex.Message}");
+        }
+    }
+
+    /// <summary>将协议解析的踏板参数应用到 UI 控件</summary>
+    private void ApplyPedalParameters(PedalParametersResponse p)
+    {
+        _isApplyingParameters = true;
+
+        try
+        {
+            // 离合方向
+            if (ClutchReverseToggle != null)
+                ClutchReverseToggle.IsChecked = p.ClutchDirection == 1;
+
+        // 离合死区
+        _clutchDeadZoneLeft = p.ClutchDeadZoneFront;
+        _clutchDeadZoneRight = p.ClutchDeadZoneRear;
+        UpdateClutchDeadZoneDisplay();
+
+        // 离合曲线点
+        _selectedCurveType = 5;
+        ApplyCurveTypeSelection(5, "CurveType", Color.FromRgb(255, 200, 0), Color.FromRgb(153, 120, 0));
+        _clutchCurvePoints = new PointCollection
+        {
+            new Point(0, 266),
+            PointFromProtocol(p.ClutchPoint1X, p.ClutchPoint1Y),
+            PointFromProtocol(p.ClutchPoint2X, p.ClutchPoint2Y),
+            PointFromProtocol(p.ClutchPoint3X, p.ClutchPoint3Y),
+            PointFromProtocol(p.ClutchPoint4X, p.ClutchPoint4Y),
+            new Point(345, 0)
+        };
+        ApplySmoothCurve(ClutchCurveLine, ClutchFillArea, _clutchCurvePoints);
+        RepositionCurvePoints(_clutchCurvePoints, ClutchPoint1, ClutchPoint2, ClutchPoint3, ClutchPoint4);
+        RebuildCurveCaches();
+
+        // 刹车方向
+        if (BrakeReverseToggle != null)
+            BrakeReverseToggle.IsChecked = p.BrakeDirection == 1;
+
+        // 刹车死区
+        _brakeDeadZoneLeft = p.BrakeDeadZoneFront;
+        _brakeDeadZoneRight = p.BrakeDeadZoneRear;
+        UpdateBrakeDeadZoneDisplay();
+
+        // 刹车曲线点
+        _brakeSelectedCurveType = 5;
+        ApplyCurveTypeSelection(5, "BrakeCurveType", Color.FromRgb(198, 14, 14), Color.FromRgb(96, 7, 7));
+        _brakeCurvePoints = new PointCollection
+        {
+            new Point(0, 266),
+            PointFromProtocol(p.BrakePoint1X, p.BrakePoint1Y),
+            PointFromProtocol(p.BrakePoint2X, p.BrakePoint2Y),
+            PointFromProtocol(p.BrakePoint3X, p.BrakePoint3Y),
+            PointFromProtocol(p.BrakePoint4X, p.BrakePoint4Y),
+            new Point(345, 0)
+        };
+        ApplySmoothCurve(BrakeCurveLine, BrakeFillArea, _brakeCurvePoints);
+        RepositionCurvePoints(_brakeCurvePoints, BrakePoint1, BrakePoint2, BrakePoint3, BrakePoint4);
+        RebuildCurveCaches();
+
+        // 油门方向
+        if (ThrottleReverseToggle != null)
+            ThrottleReverseToggle.IsChecked = p.ThrottleDirection == 1;
+
+        // 油门死区
+        _throttleDeadZoneLeft = p.ThrottleDeadZoneFront;
+        _throttleDeadZoneRight = p.ThrottleDeadZoneRear;
+        UpdateThrottleDeadZoneDisplay();
+
+        // 油门曲线点
+        _throttleSelectedCurveType = 5;
+        ApplyCurveTypeSelection(5, "ThrottleCurveType", Color.FromRgb(22, 198, 66), Color.FromRgb(10, 96, 32));
+        _throttleCurvePoints = new PointCollection
+        {
+            new Point(0, 266),
+            PointFromProtocol(p.ThrottlePoint1X, p.ThrottlePoint1Y),
+            PointFromProtocol(p.ThrottlePoint2X, p.ThrottlePoint2Y),
+            PointFromProtocol(p.ThrottlePoint3X, p.ThrottlePoint3Y),
+            PointFromProtocol(p.ThrottlePoint4X, p.ThrottlePoint4Y),
+            new Point(345, 0)
+        };
+        ApplySmoothCurve(ThrottleCurveLine, ThrottleFillArea, _throttleCurvePoints);
+        RepositionCurvePoints(_throttleCurvePoints, ThrottlePoint1, ThrottlePoint2, ThrottlePoint3, ThrottlePoint4);
+        RebuildCurveCaches();
+
+        // 设备上报参数作为首次基线预设
+        _appliedPresetParameters = CaptureCurrentParameters();
+        _currentPresetName = "Default";
+        _isAppliedPresetPersonal = false;
+        _isPresetModified = false;
+        UpdatePresetDisplay();
+
+        Debug.WriteLine($"[PedalControl] 踏板参数已从设备同步到 UI");
+        }
+        finally
+        {
+            _isApplyingParameters = false;
+        }
+    }
+
+    /// <summary>将协议字节值（X/Y 0-100）转为画布坐标 Point</summary>
+    private static Point PointFromProtocol(byte x, byte y)
+    {
+        var canvasX = x / 100.0 * 345.0;
+        var canvasY = (100 - y) / 100.0 * 266.0;
+        return new Point(canvasX, canvasY);
     }
 
     private void UpdateConnectionStatusDisplay()
@@ -858,6 +1807,10 @@ public partial class PedalParameterControl : UserControl
             if (path != null)
                 path.Stroke = brush;
         }
+
+        // 2踏板模式下离合不可用，显示遮罩
+        if (ClutchOverlay != null)
+            ClutchOverlay.Visibility = _pedalCount == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>将画布曲线点转换为协议格式的字节数组(每点Y,X，各0-100)</summary>
@@ -880,8 +1833,11 @@ public partial class PedalParameterControl : UserControl
     /// <summary>构建并发送踏板参数命令到已连接的踏板设备</summary>
     private void SendPedalParameters()
     {
-        if (_connectedPedalDevice == null || _isSendingParameters)
+        if (_connectedPedalDevice == null || _isSendingParameters || _isApplyingParameters)
             return;
+
+        // 用户主动修改参数时标记已更改
+        OnParameterModified();
 
         try
         {
@@ -917,5 +1873,281 @@ public partial class PedalParameterControl : UserControl
     private void AxisReverseToggle_Changed(object sender, RoutedEventArgs e)
     {
         SendPedalParameters();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  HID 实时数据更新
+    // ════════════════════════════════════════════════════════════════
+
+    private void SubscribeHidData()
+    {
+        if (App.HidService == null) return;
+        App.HidService.PedalDataReceived -= OnPedalDataReceived;
+        App.HidService.PedalDataReceived += OnPedalDataReceived;
+    }
+
+    private void UnsubscribeHidData()
+    {
+        if (App.HidService == null) return;
+        App.HidService.PedalDataReceived -= OnPedalDataReceived;
+    }
+
+    private void OnPedalDataReceived(UsbDeviceInfo device, HidPedalData data)
+    {
+        if (_connectedPedalDevice == null || device.Vid != _connectedPedalDevice.Vid || device.Pid != _connectedPedalDevice.Pid)
+            return;
+
+        // 始终缓存最新原始值
+        _latestRawClutch = data.ClutchPercent;
+        _latestRawBrake = data.BrakePercent;
+        _latestRawGas = data.GasPercent;
+
+        // 使用预缓存的 Point[] 数组在后台线程完成曲线变换，避免跨线程访问 PointCollection
+        _latestProcessedClutch = ApplyCurveTransform(_clutchCurvePointsCache, _clutchCurveSlopesCache, data.ClutchPercent);
+        _latestProcessedBrake = ApplyCurveTransform(_brakeCurvePointsCache, _brakeCurveSlopesCache, data.BrakePercent);
+        _latestProcessedGas = ApplyCurveTransform(_throttleCurvePointsCache, _throttleCurveSlopesCache, data.GasPercent);
+
+        // Render 优先级 + 防抖：同一渲染帧内只入队一次回调
+        if (Interlocked.Exchange(ref _pendingUiUpdate, 1) == 0)
+        {
+            Dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
+            {
+                _pendingUiUpdate = 0;
+
+                var rawClutch = _latestRawClutch;
+                var rawBrake = _latestRawBrake;
+                var rawGas = _latestRawGas;
+                var pClutch = _latestProcessedClutch;
+                var pBrake = _latestProcessedBrake;
+                var pGas = _latestProcessedGas;
+
+                // 跳过与上次已显示值相同的更新，避免无效 WPF 布局重排
+                if (HasDisplayChanged(rawClutch, rawBrake, rawGas, pClutch, pBrake, pGas))
+                {
+                    _displayedRawClutch = rawClutch;
+                    _displayedRawBrake = rawBrake;
+                    _displayedRawGas = rawGas;
+                    _displayedProcessedClutch = pClutch;
+                    _displayedProcessedBrake = pBrake;
+                    _displayedProcessedGas = pGas;
+                    UpdatePedalPositionDisplay(rawClutch, pClutch, rawBrake, pBrake, rawGas, pGas);
+                }
+            });
+        }
+    }
+
+    private bool HasDisplayChanged(double rc, double rb, double rg, double pc, double pb, double pg)
+    {
+        return Math.Abs(rc - _displayedRawClutch) > 0.05
+            || Math.Abs(rb - _displayedRawBrake) > 0.05
+            || Math.Abs(rg - _displayedRawGas) > 0.05
+            || Math.Abs(pc - _displayedProcessedClutch) > 0.05
+            || Math.Abs(pb - _displayedProcessedBrake) > 0.05
+            || Math.Abs(pg - _displayedProcessedGas) > 0.05;
+    }
+
+    /// <summary>将踏板原始位置百分比通过曲线映射为处理后百分比</summary>
+    private static double ApplyCurveTransform(PointCollection curvePoints, double positionPercent)
+    {
+        if (curvePoints == null || curvePoints.Count < 2)
+            return positionPercent;
+
+        var canvasX = positionPercent / 100.0 * 345.0;
+        canvasX = Math.Max(0, Math.Min(345, canvasX));
+
+        int n = curvePoints.Count;
+        var slopes = ComputeMonotonicSlopes(curvePoints);
+
+        if (canvasX <= curvePoints[0].X)
+            return (266.0 - curvePoints[0].Y) / 266.0 * 100.0;
+        if (canvasX >= curvePoints[n - 1].X)
+            return (266.0 - curvePoints[n - 1].Y) / 266.0 * 100.0;
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            double x0 = curvePoints[i].X;
+            double x1 = curvePoints[i + 1].X;
+            if (canvasX < x0 || canvasX > x1)
+                continue;
+
+            double y0 = curvePoints[i].Y;
+            double y1 = curvePoints[i + 1].Y;
+            double dx = x1 - x0;
+            if (dx < 1e-10) return positionPercent;
+
+            double t = (canvasX - x0) / dx;
+            double m0 = slopes[i] * dx;
+            double m1 = slopes[i + 1] * dx;
+
+            double t2 = t * t;
+            double t3 = t2 * t;
+            double y = (2 * t3 - 3 * t2 + 1) * y0
+                     + (t3 - 2 * t2 + t) * m0
+                     + (-2 * t3 + 3 * t2) * y1
+                     + (t3 - t2) * m1;
+
+            return (266.0 - y) / 266.0 * 100.0;
+        }
+
+        return positionPercent;
+    }
+
+    /// <summary>用 Point[] 缓存做曲线变换，可从任何线程安全调用</summary>
+    private static double ApplyCurveTransform(Point[] points, double[] slopes, double positionPercent)
+    {
+        if (points == null || points.Length < 2)
+            return positionPercent;
+
+        var canvasX = positionPercent / 100.0 * 345.0;
+        canvasX = Math.Max(0, Math.Min(345, canvasX));
+
+        int n = points.Length;
+
+        if (canvasX <= points[0].X)
+            return (266.0 - points[0].Y) / 266.0 * 100.0;
+        if (canvasX >= points[n - 1].X)
+            return (266.0 - points[n - 1].Y) / 266.0 * 100.0;
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            double x0 = points[i].X;
+            double x1 = points[i + 1].X;
+            if (canvasX < x0 || canvasX > x1)
+                continue;
+
+            double y0 = points[i].Y;
+            double y1 = points[i + 1].Y;
+            double dx = x1 - x0;
+            if (dx < 1e-10) return positionPercent;
+
+            double t = (canvasX - x0) / dx;
+            double m0 = slopes[i] * dx;
+            double m1 = slopes[i + 1] * dx;
+
+            double t2 = t * t;
+            double t3 = t2 * t;
+            double y = (2 * t3 - 3 * t2 + 1) * y0
+                     + (t3 - 2 * t2 + t) * m0
+                     + (-2 * t3 + 3 * t2) * y1
+                     + (t3 - t2) * m1;
+
+            return (266.0 - y) / 266.0 * 100.0;
+        }
+
+        return positionPercent;
+    }
+
+    /// <summary>从 PointCollection 构建值类型数组缓存并预计算斜率，供后台线程安全访问</summary>
+    private static void BuildCurveCache(PointCollection source, ref Point[] pointsCache, ref double[] slopesCache)
+    {
+        var arr = new Point[source.Count];
+        source.CopyTo(arr, 0);
+        var slopes = ComputeMonotonicSlopes(arr);
+        pointsCache = arr;
+        slopesCache = slopes;
+    }
+
+    /// <summary>Fritsch-Carlson 单调三次样条斜率计算（Point[] 版）</summary>
+    private static double[] ComputeMonotonicSlopes(Point[] points)
+    {
+        int n = points.Length;
+        double[] m = new double[n];
+        double[] delta = new double[n - 1];
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            double dx = points[i + 1].X - points[i].X;
+            delta[i] = dx != 0 ? (points[i + 1].Y - points[i].Y) / dx : 0;
+        }
+
+        for (int i = 1; i < n - 1; i++)
+        {
+            if (delta[i - 1] * delta[i] <= 0)
+                m[i] = 0;
+            else
+            {
+                double sum = delta[i - 1] + delta[i];
+                m[i] = sum != 0 ? 2.0 * delta[i - 1] * delta[i] / sum : 0;
+            }
+        }
+
+        m[0] = delta[0];
+        m[n - 1] = delta[n - 2];
+
+        for (int i = 0; i < n - 1; i++)
+        {
+            if (Math.Abs(delta[i]) < 1e-10)
+            {
+                m[i] = 0;
+                m[i + 1] = 0;
+            }
+            else
+            {
+                double alpha = m[i] / delta[i];
+                double beta = m[i + 1] / delta[i];
+                if (alpha < 0) alpha = 0;
+                if (beta < 0) beta = 0;
+                double sq = alpha * alpha + beta * beta;
+                if (sq > 9.0)
+                {
+                    double tau = 3.0 / Math.Sqrt(sq);
+                    m[i] = tau * alpha * delta[i];
+                    m[i + 1] = tau * beta * delta[i];
+                }
+            }
+        }
+
+        return m;
+    }
+
+    /// <summary>更新所有曲线缓存（曲线点变化时调用）</summary>
+    private void RebuildCurveCaches()
+    {
+        BuildCurveCache(_clutchCurvePoints, ref _clutchCurvePointsCache, ref _clutchCurveSlopesCache);
+        BuildCurveCache(_brakeCurvePoints, ref _brakeCurvePointsCache, ref _brakeCurveSlopesCache);
+        BuildCurveCache(_throttleCurvePoints, ref _throttleCurvePointsCache, ref _throttleCurveSlopesCache);
+    }
+
+    private void UpdatePedalPositionDisplay(
+        double rawClutch, double processedClutch,
+        double rawBrake, double processedBrake,
+        double rawGas, double processedGas)
+    {
+        if (ClutchProgressGreen != null)
+            ClutchProgressGreen.Width = new GridLength(processedClutch, GridUnitType.Star);
+        if (ClutchProgressRed != null)
+            ClutchProgressRed.Width = new GridLength(100 - processedClutch, GridUnitType.Star);
+
+        if (ClutchProgressGreen2 != null)
+            ClutchProgressGreen2.Width = new GridLength(rawClutch, GridUnitType.Star);
+        if (ClutchProgressRed2 != null)
+            ClutchProgressRed2.Width = new GridLength(100 - rawClutch, GridUnitType.Star);
+
+        if (BrakeProgressGreen != null)
+            BrakeProgressGreen.Width = new GridLength(processedBrake, GridUnitType.Star);
+        if (BrakeProgressRed != null)
+            BrakeProgressRed.Width = new GridLength(100 - processedBrake, GridUnitType.Star);
+
+        if (BrakeProgressGreen2 != null)
+            BrakeProgressGreen2.Width = new GridLength(rawBrake, GridUnitType.Star);
+        if (BrakeProgressRed2 != null)
+            BrakeProgressRed2.Width = new GridLength(100 - rawBrake, GridUnitType.Star);
+
+        if (ThrottleProgressGreen != null)
+            ThrottleProgressGreen.Width = new GridLength(processedGas, GridUnitType.Star);
+        if (ThrottleProgressRed != null)
+            ThrottleProgressRed.Width = new GridLength(100 - processedGas, GridUnitType.Star);
+
+        if (ThrottleProgressGreen2 != null)
+            ThrottleProgressGreen2.Width = new GridLength(rawGas, GridUnitType.Star);
+        if (ThrottleProgressRed2 != null)
+            ThrottleProgressRed2.Width = new GridLength(100 - rawGas, GridUnitType.Star);
+
+        if (ClutchCurrentPosition != null)
+            ClutchCurrentPosition.Text = $"{processedClutch:F0}%";
+        if (BrakeCurrentPosition != null)
+            BrakeCurrentPosition.Text = $"{processedBrake:F0}%";
+        if (ThrottleCurrentPosition != null)
+            ThrottleCurrentPosition.Text = $"{processedGas:F0}%";
     }
 }

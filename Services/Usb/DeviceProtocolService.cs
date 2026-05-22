@@ -49,6 +49,7 @@ public class DeviceProtocolService
     /// Parse device info response from raw data.
     /// Expected response format:
     /// [0xC1, 0x01, 0x81, deviceType, usbSpeed, fwLow, fwHigh, bootLow, bootHigh, ...]
+    /// When deviceType is Base, extended fields (wheel/pedal connection status & firmware) are parsed.
     /// </summary>
     public static DeviceInfoResponse? ParseDeviceInfoResponse(byte[] data)
     {
@@ -65,6 +66,21 @@ public class DeviceProtocolService
             NormalFirmwareVersion = data[5] | (data[6] << 8),
             BootFirmwareVersion = data[7] | (data[8] << 8)
         };
+
+        // 解析基座特有字段（面盘/踏板连接状态及固件版本）
+        if (response.DeviceType == DeviceType.Base && data.Length >= 19)
+        {
+            response.WheelConnectionStatus = data[9];
+            response.WheelNormalFwVersion = data[10] | (data[11] << 8);
+            response.WheelBootFwVersion = data[12] | (data[13] << 8);
+            response.PedalConnectionStatus = data[14];
+            response.PedalNormalFwVersion = data[15] | (data[16] << 8);
+            response.PedalBootFwVersion = data[17] | (data[18] << 8);
+        }
+
+        // 踏板个数（offset 30，所有设备类型通用）
+        if (data.Length > 30)
+            response.PedalCount = data[30];
 
         Debug.WriteLine($"[Protocol] 解析设备信息: {response}");
         return response;
@@ -295,6 +311,59 @@ public class DeviceProtocolService
         frame[18] = handsOffProtect;
         frame[19] = forceReverse;
         return frame;
+    }
+
+    /// <summary>
+    /// Build Get Pedal Parameters command frame (64 bytes).
+    /// Protocol: [0x81, 0x10, 0x21, 0x00...]
+    /// </summary>
+    public static byte[] BuildGetPedalParametersCommand()
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;          // Get command
+        frame[1] = 0x10;          // 0x2110 LE low byte
+        frame[2] = 0x21;          // 0x2110 LE high byte
+        return frame;
+    }
+
+    /// <summary>
+    /// Parse pedal parameters response.
+    /// Expected: [0xC1, 0x10, 0x21, clutchDir, clutch4pts(8B), clutchDeadFront, clutchDeadRear,
+    ///            brakeDir, brake4pts(8B), brakeDeadFront, brakeDeadRear,
+    ///            throttleDir, throttle4pts(8B), throttleDeadFront, throttleDeadRear, ...]
+    /// </summary>
+    public static PedalParametersResponse? ParsePedalParametersResponse(byte[] data)
+    {
+        if (data == null || data.Length < 36)
+            return null;
+
+        if (data[0] != 0xC1 || data[1] != 0x10 || data[2] != 0x21)
+            return null;
+
+        return new PedalParametersResponse
+        {
+            ClutchDirection = data[3],
+            ClutchPoint1Y = data[4], ClutchPoint1X = data[5],
+            ClutchPoint2Y = data[6], ClutchPoint2X = data[7],
+            ClutchPoint3Y = data[8], ClutchPoint3X = data[9],
+            ClutchPoint4Y = data[10], ClutchPoint4X = data[11],
+            ClutchDeadZoneFront = data[12],
+            ClutchDeadZoneRear = data[13],
+            BrakeDirection = data[14],
+            BrakePoint1Y = data[15], BrakePoint1X = data[16],
+            BrakePoint2Y = data[17], BrakePoint2X = data[18],
+            BrakePoint3Y = data[19], BrakePoint3X = data[20],
+            BrakePoint4Y = data[21], BrakePoint4X = data[22],
+            BrakeDeadZoneFront = data[23],
+            BrakeDeadZoneRear = data[24],
+            ThrottleDirection = data[25],
+            ThrottlePoint1Y = data[26], ThrottlePoint1X = data[27],
+            ThrottlePoint2Y = data[28], ThrottlePoint2X = data[29],
+            ThrottlePoint3Y = data[30], ThrottlePoint3X = data[31],
+            ThrottlePoint4Y = data[32], ThrottlePoint4X = data[33],
+            ThrottleDeadZoneFront = data[34],
+            ThrottleDeadZoneRear = data[35],
+        };
     }
 
     /// <summary>

@@ -218,10 +218,7 @@
                 <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,3" VerticalAlignment="Bottom"/>
 
                 <!-- 设备名称 -->
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="踏 板" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="DeviceModelName" Text="P2000" FontSize="26" Foreground="#EEEEEE" Margin="10,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
-                </StackPanel>
+                <TextBlock x:Name="DeviceModelName" Grid.Column="1" Text="踏板" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
 
                 <!-- 垂直分割线1 -->
                 <Border Grid.Column="2" Width="1" Height="26" Background="#EEEEEE" Margin="20,0,20,0" VerticalAlignment="Center"/>
@@ -256,6 +253,9 @@
                 <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="固件版本:" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
                     <TextBlock x:Name="FirmwareVersionText" Text="v 1.0.0" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                    <Border x:Name="NewVersionAvailableBorder" BorderThickness="0,0,0,1" BorderBrush="#C60E0E" Padding="0,0,0,0" Margin="10,0,0,0" VerticalAlignment="Center" Cursor="Hand" Visibility="Collapsed" MouseLeftButtonDown="NewVersionAvailable_Click">
+                        <TextBlock x:Name="NewVersionAvailableText" Text="新版本可用" FontSize="22" Foreground="#C60E0E"/>
+                    </Border>
                 </StackPanel>
             </Grid>
 
@@ -278,15 +278,56 @@
                     <TextBlock Text="当前" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                     <Border Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
                     <Viewbox Width="15" Height="17" Margin="0,0,8,0">
-                        <Canvas Width="15" Height="17">
-                            <Path Data="M9.85 15.7504L5.3 12.2888L0.75 15.7504V5.36576C0.75 5.05974 0.886964 4.76626 1.13076 4.54987C1.37456 4.33348 1.70522 4.21191 2.05 4.21191H8.55C8.89478 4.21191 9.22544 4.33348 9.46924 4.54987C9.71304 4.76626 9.85 5.05974 9.85 5.36576V15.7504Z" 
-                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                            <Path Data="M4.64844 0.75H12.4484C12.7932 0.75 13.1239 0.871566 13.3677 1.08795C13.6115 1.30434 13.7484 1.59783 13.7484 1.90385V12.2885" 
-                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
-                        </Canvas>
+                        <Grid Width="15" Height="17">
+                            <!-- 官方预设图标（旗帜） -->
+                            <Canvas x:Name="OfficialPresetIcon" Width="15" Height="17">
+                                <Path Data="M9.85 15.7504L5.3 12.2888L0.75 15.7504V5.36576C0.75 5.05974 0.886964 4.76626 1.13076 4.54987C1.37456 4.33348 1.70522 4.21191 2.05 4.21191H8.55C8.89478 4.21191 9.22544 4.33348 9.46924 4.54987C9.71304 4.76626 9.85 5.05974 9.85 5.36576V15.7504Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.64844 0.75H12.4484C12.7932 0.75 13.1239 0.871566 13.3677 1.08795C13.6115 1.30434 13.7484 1.59783 13.7484 1.90385V12.2885"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                            <!-- 个人预设图标（人物） -->
+                            <Canvas x:Name="PersonalPresetIcon" Width="15" Height="17" Visibility="Collapsed">
+                                <Path Data="M8.24962 8.25C10.4279 8.25 12.1938 6.57107 12.1938 4.5C12.1938 2.42893 10.4279 0.75 8.24962 0.75C6.07132 0.75 4.30545 2.42893 4.30545 4.5C4.30545 6.57107 6.07132 8.25 8.24962 8.25Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.75 15.7505C15.2405 14.24 14.2397 12.9223 12.8917 11.9874C11.5438 11.0526 9.91845 10.5488 8.25 10.5488C6.58155 10.5488 4.9562 11.0526 3.60827 11.9874C2.26035 12.9223 1.25949 14.24 0.75 15.7505H15.75Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                            <!-- 板载图标（芯片） -->
+                            <Canvas x:Name="OnboardPresetIcon" Width="16" Height="16" Visibility="Collapsed">
+                                <Path Data="M13.625 12.9218V3.07812C13.625 2.6898 13.3102 2.375 12.9219 2.375H3.07802C2.68969 2.375 2.37489 2.6898 2.37489 3.07812V12.9218C2.37489 13.3101 2.68969 13.6249 3.07802 13.6249H12.9219C13.3102 13.6249 13.625 13.3101 13.625 12.9218Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                <Path Data="M10.8299 10.8083V5.19141H5.21292V10.8083H10.8299Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 4.25H13.625"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 4.25H0.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 8H13.625"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 8H0.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 11.75H13.625"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 11.75H0.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M11.7607 0.5V2.375"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M11.7607 13.625V15.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M8.02145 0.5V2.375"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M8.02145 13.625V15.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.2822 0.5V2.375"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.2822 13.625V15.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                        </Grid>
                     </Viewbox>
-                    <TextBlock Text="Default" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold"/>
-                    <TextBlock VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18">
+                    <TextBlock x:Name="PresetNameText" Text="Default" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="ModifiedIndicator" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Visibility="Collapsed">
                         <Run Text="(" Foreground="#EEEEEE"/>
                         <Run Text="已更改" Foreground="#C60E0E"/>
                         <Run Text=")" Foreground="#EEEEEE"/>
@@ -297,7 +338,7 @@
             <!-- 功能按钮 -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
                 <!-- 撤回按钮 -->
-                <Grid Width="80" Height="37" Margin="0,0,10,0" 
+                <Grid x:Name="UndoButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
                       MouseLeftButtonDown="UndoButton_Click">
                     <Path x:Name="UndoButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z" 
                           Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
@@ -307,7 +348,7 @@
                 </Grid>
 
                 <!-- 保存按钮 -->
-                <Grid Width="80" Height="37" Margin="0,0,10,0"
+                <Grid x:Name="SaveButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
                       MouseLeftButtonDown="SaveButton_Click">
                     <Path x:Name="SaveButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z" 
                           Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
@@ -372,7 +413,7 @@
                     </LinearGradientBrush>
                 </Path.Fill>
             </Path>
-            <TextBlock Text="踏板设置" FontSize="18" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Text="踏 板" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
 
         <!-- 第四行：曲线调节区 -->
@@ -538,10 +579,20 @@
                                   Fill="#14EEEEEE" Stroke="#66EEEEEE" StrokeThickness="1"/>
                             <Viewbox Width="26" Height="26">
                                 <Canvas Width="26" Height="26">
-                                    <Path Data="M11 8.71776L11 20.251C11 22.9647 8.85714 25 6 25C3.14286 25 1 22.9647 1 20.251L1 1"
-                                          Stroke="#EEEEEE" StrokeThickness="2" StrokeStartLineCap="Round" StrokeLineJoin="Round"/>
-                                    <Path Data="M21 25L21 5.68293C21 3.00697 18.8571 1 16 1C13.1429 1 11 3.00697 11 5.68293L11 9.02788"
-                                          Stroke="#EEEEEE" StrokeThickness="2" StrokeStartLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M21.4155 7.41699V24.7499"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7502 16.083V24.7495"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7502 9.41646V0.75"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M4.08179 0.75V18.0829"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M21.417 7.41651C19.5762 7.41651 18.0838 5.92414 18.0838 4.08325C18.0838 2.24235 19.5762 0.75 21.417 0.75C23.2579 0.75 24.7502 2.24235 24.7502 4.08325C24.7502 5.92414 23.2579 7.41651 21.417 7.41651Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7517 16.0835C10.9109 16.0835 9.41852 14.5911 9.41852 12.7502C9.41852 10.9094 10.9109 9.41699 12.7517 9.41699C14.5926 9.41699 16.085 10.9094 16.085 12.7502C16.085 14.5911 14.5926 16.0835 12.7517 16.0835Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                    <Path Data="M4.08328 24.7485C2.24241 24.7485 0.750062 23.2562 0.750062 21.4153C0.750062 19.5744 2.24241 18.082 4.08328 18.082C5.92415 18.082 7.4165 19.5744 7.4165 21.4153C7.4165 23.2562 5.92415 24.7485 4.08328 24.7485Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
                                 </Canvas>
                             </Viewbox>
                         </Grid>
@@ -783,6 +834,9 @@
                         </Grid>
                     </Grid>
                 </Grid>
+
+                <!-- 离合不可用遮罩层（2踏板模式下覆盖） -->
+                <Rectangle x:Name="ClutchOverlay" Fill="#991B1B1B" Visibility="Collapsed"/>
             </Grid>
 
             <!-- 刹车 -->
@@ -938,10 +992,20 @@
                                   Fill="#14EEEEEE" Stroke="#66EEEEEE" StrokeThickness="1"/>
                             <Viewbox Width="26" Height="26">
                                 <Canvas Width="26" Height="26">
-                                    <Path Data="M11 8.71776L11 20.251C11 22.9647 8.85714 25 6 25C3.14286 25 1 22.9647 1 20.251L1 1"
-                                          Stroke="#EEEEEE" StrokeThickness="2" StrokeStartLineCap="Round" StrokeLineJoin="Round"/>
-                                    <Path Data="M21 25L21 5.68293C21 3.00697 18.8571 1 16 1C13.1429 1 11 3.00697 11 5.68293L11 9.02788"
-                                          Stroke="#EEEEEE" StrokeThickness="2" StrokeStartLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M21.4155 7.41699V24.7499"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7502 16.083V24.7495"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7502 9.41646V0.75"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M4.08179 0.75V18.0829"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M21.417 7.41651C19.5762 7.41651 18.0838 5.92414 18.0838 4.08325C18.0838 2.24235 19.5762 0.75 21.417 0.75C23.2579 0.75 24.7502 2.24235 24.7502 4.08325C24.7502 5.92414 23.2579 7.41651 21.417 7.41651Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7517 16.0835C10.9109 16.0835 9.41852 14.5911 9.41852 12.7502C9.41852 10.9094 10.9109 9.41699 12.7517 9.41699C14.5926 9.41699 16.085 10.9094 16.085 12.7502C16.085 14.5911 14.5926 16.0835 12.7517 16.0835Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                    <Path Data="M4.08328 24.7485C2.24241 24.7485 0.750062 23.2562 0.750062 21.4153C0.750062 19.5744 2.24241 18.082 4.08328 18.082C5.92415 18.082 7.4165 19.5744 7.4165 21.4153C7.4165 23.2562 5.92415 24.7485 4.08328 24.7485Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
                                 </Canvas>
                             </Viewbox>
                         </Grid>
@@ -1338,10 +1402,20 @@
                                   Fill="#14EEEEEE" Stroke="#66EEEEEE" StrokeThickness="1"/>
                             <Viewbox Width="26" Height="26">
                                 <Canvas Width="26" Height="26">
-                                    <Path Data="M11 8.71776L11 20.251C11 22.9647 8.85714 25 6 25C3.14286 25 1 22.9647 1 20.251L1 1"
-                                          Stroke="#EEEEEE" StrokeThickness="2" StrokeStartLineCap="Round" StrokeLineJoin="Round"/>
-                                    <Path Data="M21 25L21 5.68293C21 3.00697 18.8571 1 16 1C13.1429 1 11 3.00697 11 5.68293L11 9.02788"
-                                          Stroke="#EEEEEE" StrokeThickness="2" StrokeStartLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M21.4155 7.41699V24.7499"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7502 16.083V24.7495"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7502 9.41646V0.75"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M4.08179 0.75V18.0829"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    <Path Data="M21.417 7.41651C19.5762 7.41651 18.0838 5.92414 18.0838 4.08325C18.0838 2.24235 19.5762 0.75 21.417 0.75C23.2579 0.75 24.7502 2.24235 24.7502 4.08325C24.7502 5.92414 23.2579 7.41651 21.417 7.41651Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                    <Path Data="M12.7517 16.0835C10.9109 16.0835 9.41852 14.5911 9.41852 12.7502C9.41852 10.9094 10.9109 9.41699 12.7517 9.41699C14.5926 9.41699 16.085 10.9094 16.085 12.7502C16.085 14.5911 14.5926 16.0835 12.7517 16.0835Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                    <Path Data="M4.08328 24.7485C2.24241 24.7485 0.750062 23.2562 0.750062 21.4153C0.750062 19.5744 2.24241 18.082 4.08328 18.082C5.92415 18.082 7.4165 19.5744 7.4165 21.4153C7.4165 23.2562 5.92415 24.7485 4.08328 24.7485Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
                                 </Canvas>
                             </Viewbox>
                         </Grid>

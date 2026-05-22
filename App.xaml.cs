@@ -13,9 +13,11 @@ public partial class App : Application
 {
     public static bool IsSessionEnding { get; private set; }
     public static UsbSerialManager? UsbManager { get; private set; }
+    public static HidService? HidService { get; private set; }
     public static DeviceProtocolService? ProtocolService { get; private set; }
     public static FirmwareUpdateService? FirmwareUpdater { get; private set; }
     public static FirmwareApiService? FirmwareApi { get; private set; }
+    public static Services.PresetService? PresetService { get; private set; }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -39,6 +41,8 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        HidService?.Dispose();
+        HidService = null;
         UsbManager?.Dispose();
         UsbManager = null;
         base.OnExit(e);
@@ -75,10 +79,27 @@ public partial class App : Application
         ProtocolService = new DeviceProtocolService(UsbManager);
         FirmwareUpdater = new FirmwareUpdateService(UsbManager, ProtocolService);
         FirmwareApi = new FirmwareApiService();
+        PresetService = new Services.PresetService();
 
         FirmwareUpdater.DebugLog += msg =>
             Debug.WriteLine($"[FirmwareUpdate] {msg}");
 
+        // 初始化 HID 设备服务（与串口并行）
+        HidService = new HidService();
+
+        HidService.PedalDataReceived += (device, data) =>
+        {
+            // 踏板 HID 数据由 PedalParameterControl 订阅处理
+            Debug.WriteLine($"[HID] 踏板数据 [{device.DeviceKey}]: 离合={data.ClutchPercent:F1}% 刹车={data.BrakePercent:F1}% 油门={data.GasPercent:F1}%");
+        };
+
+        HidService.BaseDataReceived += (device, data) =>
+        {
+            // 基座 HID 数据由 BaseParameterControl 订阅处理
+            Debug.WriteLine($"[HID] 基座数据 [{device.DeviceKey}]: 转向={data.Steering}");
+        };
+
+        HidService.Start();
         UsbManager.Start();
     }
 }

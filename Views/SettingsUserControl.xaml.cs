@@ -643,20 +643,18 @@ public partial class SettingsUserControl : UserControl
 
     private async void SwitchTab(string? tabName)
     {
-        if (SystemSettingsContent == null || FirmwareUpdateContent == null || AccountSettingsContent == null)
+        if (SystemSettingsContent == null || FirmwareUpdateContent == null)
             return;
 
         var fadeIn = Resources["FadeInStoryboard"] as Storyboard;
 
         SystemSettingsContent.Visibility = Visibility.Collapsed;
         FirmwareUpdateContent.Visibility = Visibility.Collapsed;
-        AccountSettingsContent.Visibility = Visibility.Collapsed;
 
         Grid? targetContent = tabName switch
         {
             "SystemSettings" => SystemSettingsContent,
             "FirmwareUpdate" => FirmwareUpdateContent,
-            "AccountSettings" => AccountSettingsContent,
             _ => SystemSettingsContent
         };
 
@@ -1067,167 +1065,11 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
-    private void EditProfileButton_Click(object sender, RoutedEventArgs e)
+    /// <summary>供外部调用，切换到固件更新选项卡</summary>
+    public void SwitchToFirmwareUpdateTab()
     {
-        var parentWindow = Window.GetWindow(this);
-        if (parentWindow is MainWindow mainWindow)
-        {
-            var dialog = mainWindow.GlobalDialog;
-            dialog.Title = "编辑资料";
-            dialog.ClearButtons();
-            dialog.AddButton("取消", (s, e) => dialog.Hide(), false);
-            dialog.AddButton("保存", (s, e) =>
-            {
-                dialog.Hide();
-            }, true);
-
-            var stackPanel = new StackPanel
-            {
-                Margin = new Thickness(20, 0, 20, 0)
-            };
-
-            var usernameLabel = new TextBlock
-            {
-                Text = "用户名",
-                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 238, 238)),
-                FontSize = 14,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var usernameBox = new TextBox
-            {
-                Text = UsernameText.Text,
-                FontSize = 14,
-                Padding = new Thickness(8),
-                Margin = new Thickness(0, 0, 0, 16)
-            };
-
-            var emailLabel = new TextBlock
-            {
-                Text = "邮箱",
-                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 238, 238)),
-                FontSize = 14,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var emailBox = new TextBox
-            {
-                Text = EmailText.Text,
-                FontSize = 14,
-                Padding = new Thickness(8)
-            };
-
-            stackPanel.Children.Add(usernameLabel);
-            stackPanel.Children.Add(usernameBox);
-            stackPanel.Children.Add(emailLabel);
-            stackPanel.Children.Add(emailBox);
-
-            dialog.DialogContent = stackPanel;
-            dialog.Show();
-        }
-    }
-
-    private void ChangePasswordButton_Click(object sender, RoutedEventArgs e)
-    {
-        var parentWindow = Window.GetWindow(this);
-        if (parentWindow is MainWindow mainWindow)
-        {
-            var dialog = mainWindow.GlobalDialog;
-            dialog.Title = "修改密码";
-            dialog.ClearButtons();
-            dialog.AddButton("取消", (s, e) => dialog.Hide(), false);
-            dialog.AddButton("确认修改", (s, e) =>
-            {
-                dialog.Hide();
-            }, true);
-
-            var stackPanel = new StackPanel
-            {
-                Margin = new Thickness(20, 0, 20, 0)
-            };
-
-            var currentPwdLabel = new TextBlock
-            {
-                Text = "当前密码",
-                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 238, 238)),
-                FontSize = 14,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var currentPwdBox = new PasswordBox
-            {
-                FontSize = 14,
-                Padding = new Thickness(8),
-                Margin = new Thickness(0, 0, 0, 16)
-            };
-
-            var newPwdLabel = new TextBlock
-            {
-                Text = "新密码",
-                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 238, 238)),
-                FontSize = 14,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var newPwdBox = new PasswordBox
-            {
-                FontSize = 14,
-                Padding = new Thickness(8),
-                Margin = new Thickness(0, 0, 0, 16)
-            };
-
-            var confirmPwdLabel = new TextBlock
-            {
-                Text = "确认新密码",
-                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 238, 238)),
-                FontSize = 14,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var confirmPwdBox = new PasswordBox
-            {
-                FontSize = 14,
-                Padding = new Thickness(8)
-            };
-
-            stackPanel.Children.Add(currentPwdLabel);
-            stackPanel.Children.Add(currentPwdBox);
-            stackPanel.Children.Add(newPwdLabel);
-            stackPanel.Children.Add(newPwdBox);
-            stackPanel.Children.Add(confirmPwdLabel);
-            stackPanel.Children.Add(confirmPwdBox);
-
-            dialog.DialogContent = stackPanel;
-            dialog.Show();
-        }
-    }
-
-    private void LogoutButton_Click(object sender, RoutedEventArgs e)
-    {
-        var parentWindow = Window.GetWindow(this);
-        if (parentWindow is MainWindow mainWindow)
-        {
-            var dialog = mainWindow.GlobalDialog;
-            dialog.Title = "退出登录";
-            dialog.ClearButtons();
-            dialog.AddButton("取消", (s, e) => dialog.Hide(), false);
-            dialog.AddButton("确认退出", (s, e) =>
-            {
-                dialog.Hide();
-            }, true);
-
-            var content = new TextBlock
-            {
-                Text = "确定要退出登录吗？",
-                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 238, 238)),
-                FontSize = 16,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            dialog.DialogContent = content;
-            dialog.Show();
-        }
+        if (FirmwareUpdateTab != null)
+            FirmwareUpdateTab.IsChecked = true;
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

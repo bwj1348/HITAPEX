@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +8,9 @@ using System.Windows.Media.Animation;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using HITAPEX.Models.Usb;
+using SharpVectors.Converters;
 
 namespace HITAPEX.Views.DeviceParameters;
 
@@ -14,8 +18,15 @@ public partial class PresetListPopup : UserControl
 {
     private readonly List<PresetItem> _officialPresets = new();
     private readonly List<PresetItem> _personalPresets = new();
+    private readonly List<string> _allGameItems = new();
     private bool _isOfficialTab = true;
     private string _currentCategory = "全部";
+    private PresetItem? _selectedPreset;
+    private ContentControl? _selectedControl;
+    private TextBox? _filterTextBox;
+    private TextBlock? _contentSite;
+    private TextBlock? _watermark;
+    private object? _previousGameSelection;
     // Shared detail popup — one instance for all preset items
     private Popup? _detailPopup;
     private TextBlock? _detailNameText;
@@ -26,7 +37,6 @@ public partial class PresetListPopup : UserControl
     private List<Path>? _detailBorderSegments;
 
     public event EventHandler<PresetItem>? PresetApplied;
-    public event EventHandler? PresetImported;
 
     //用于控制弹窗延迟任务的取消标志
     private CancellationTokenSource? _popupDelayCts;
@@ -40,7 +50,7 @@ public partial class PresetListPopup : UserControl
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         InitCategoryComboBox();
-        LoadSamplePresets();
+        LoadPresets();
         InitSharedDetailPopup();
         RenderPresetList();
         PresetScrollViewer.ScrollChanged += PresetScrollViewer_ScrollChanged;
@@ -60,6 +70,7 @@ public partial class PresetListPopup : UserControl
                 if (idx >= 0)
                 {
                     _personalPresets[idx] = edited;
+                    SavePersonalPresets();
                     if (!_isOfficialTab) RenderPresetList();
                 }
             }
@@ -93,34 +104,20 @@ public partial class PresetListPopup : UserControl
         PresetScrollBar.Value = PresetScrollViewer.VerticalOffset;
     }
 
-    private void LoadSamplePresets()
+    private void LoadPresets()
     {
-        _officialPresets.AddRange(new[]
+        if (App.PresetService != null)
         {
-            new PresetItem { Name = "GT3 Sprint V1.2", Description = "Sprint race setup", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 7, Games = new List<string> { "ACC", "GTWC", "IGTC", "GT4" } },
-            new PresetItem { Name = "GT3 Endurance Pro", Description = "Endurance race setup", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 9, Games = new List<string> { "ACC", "GTWC", "IGTC", "F1", "LMU" } },
-            new PresetItem { Name = "GT4 Monza Quali", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 6, Games = new List<string> { "ACC", "GT4", "iR" } },
-            new PresetItem { Name = "Drift King Tune", Description = "Drift competition tune", Category = "Forza Horizon 5 (FH5)", ItemCount = 5, Games = new List<string> { "FH5", "FM", "AC EVO" } },
-            new PresetItem { Name = "Dakar Stage 3 Rally", Description = "Rally stage setup", Category = "Dirt Rally 2.0 (DR2.0)", ItemCount = 4, Games = new List<string> { "DR2.0", "EA WRC", "FH5" } },
-            new PresetItem { Name = "AC EVO Time Attack", Description = "Time attack setup", Category = "Assetto Corsa Evo (AC EVO)", ItemCount = 6, Games = new List<string> { "AC EVO", "ACC", "FM", "F1" } },
-            new PresetItem { Name = "Nurburgring Setup", Description = "Nordschleife setup", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 8, Games = new List<string> { "ACC", "GTWC", "IGTC", "GT4", "LMU" } },
-            new PresetItem { Name = "Spa 24H Wet", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 11, Games = new List<string> { "ACC", "GTWC", "IGTC", "iR" } },
-            new PresetItem { Name = "Forza 5 Drag Strip", Category = "Forza Horizon 5 (FH5)", ItemCount = 3, Games = new List<string> { "FH5", "FM", "AC EVO" } },
-            new PresetItem { Name = "Dakar Prologue Tune", Category = "Dirt Rally 2.0 (DR2.0)", ItemCount = 5, Games = new List<string> { "DR2.0", "EA WRC" } },
-            new PresetItem { Name = "AC EVO Nordschleife", Category = "Assetto Corsa Evo (AC EVO)", ItemCount = 7, Games = new List<string> { "AC EVO", "FH5", "FM", "LMU", "F1" } },
-            new PresetItem { Name = "Bathurst 12H Setup", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 8, Games = new List<string> { "ACC", "IGTC", "GTWC", "GT4" } },
-            new PresetItem { Name = "Forza 5 Circuit GP", Category = "Forza Motorsport (FM)", ItemCount = 6, Games = new List<string> { "FM", "FH5", "ACC", "iR" } },
-            new PresetItem { Name = "Dakar Marathon E2", Category = "Dirt Rally 2.0 (DR2.0)", ItemCount = 4, Games = new List<string> { "DR2.0", "EA WRC", "FH5" } },
-        });
+            var official = App.PresetService.LoadOfficialPresets();
+            _officialPresets.AddRange(official);
 
-        _personalPresets.AddRange(new[]
+            var personal = App.PresetService.LoadPersonalPresets();
+            _personalPresets.AddRange(personal);
+        }
+        else
         {
-            new PresetItem { Name = "My GT3 Setup", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 3, Games = new List<string> { "ACC", "GTWC" } },
-            new PresetItem { Name = "Rally Custom", Category = "Dirt Rally 2.0 (DR2.0)", ItemCount = 2, Games = new List<string> { "DR2.0", "EA WRC", "FH5" } },
-            new PresetItem { Name = "Forza Drift V2", Category = "Forza Horizon 5 (FH5)", ItemCount = 4, Games = new List<string> { "FH5", "FM" } },
-            new PresetItem { Name = "Endurance Pro", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 5, Games = new List<string> { "ACC", "GTWC", "IGTC", "LMU", "F1", "LMU" } },
-            new PresetItem { Name = "Nurb Custom", Category = "Assetto Corsa Competizione (ACC)", ItemCount = 2, Games = new List<string> { "ACC" } },
-        });
+            System.Diagnostics.Debug.WriteLine("[PresetListPopup] PresetService 不可用");
+        }
     }
 
     public void Show()
@@ -198,20 +195,225 @@ public partial class PresetListPopup : UserControl
 
     private void InitCategoryComboBox()
     {
-        CategoryComboBox.Items.Clear();
-        CategoryComboBox.Items.Add("Assetto Corsa Competizione (ACC)");
-        CategoryComboBox.Items.Add("Assetto Corsa Evo (AC EVO)");
-        CategoryComboBox.Items.Add("Forza Horizon 5 (FH5)");
-        CategoryComboBox.Items.Add("Forza Motorsport (FM)");
-        CategoryComboBox.Items.Add("Dirt Rally 2.0 (DR2.0)");
-        CategoryComboBox.Items.Add("EA Sports WRC (EA WRC)");
-        CategoryComboBox.Items.Add("GT World Challenge (GTWC)");
-        CategoryComboBox.Items.Add("Intercontinental GT Challenge (IGTC)");
-        CategoryComboBox.Items.Add("GT4 European Series (GT4)");
-        CategoryComboBox.Items.Add("iRacing (iR)");
-        CategoryComboBox.Items.Add("F1 24 (F1)");
-        CategoryComboBox.Items.Add("Le Mans Ultimate (LMU)");
+        _allGameItems.Clear();
+        _allGameItems.Add("Assetto Corsa Competizione (ACC)");
+        _allGameItems.Add("Assetto Corsa Evo (AC EVO)");
+        _allGameItems.Add("Forza Horizon 5 (FH5)");
+        _allGameItems.Add("Forza Motorsport (FM)");
+        _allGameItems.Add("Dirt Rally 2.0 (DR2.0)");
+        _allGameItems.Add("EA Sports WRC (EA WRC)");
+        _allGameItems.Add("GT World Challenge (GTWC)");
+        _allGameItems.Add("Intercontinental GT Challenge (IGTC)");
+        _allGameItems.Add("GT4 European Series (GT4)");
+        _allGameItems.Add("iRacing (iR)");
+        _allGameItems.Add("F1 24 (F1)");
+        _allGameItems.Add("Le Mans Ultimate (LMU)");
+
+        CategoryComboBox.DropDownOpened += CategoryComboBox_DropDownOpened;
+        CategoryComboBox.DropDownClosed += CategoryComboBox_DropDownClosed;
+        ResetComboBoxFilter();
         CategoryComboBox.SelectedIndex = -1;
+    }
+
+    // ══════════════════════════════════════════
+    //  下拉框文本筛选
+    // ══════════════════════════════════════════
+
+    private void CategoryComboBox_DropDownOpened(object? sender, EventArgs e)
+    {
+        if (_filterTextBox == null)
+        {
+            _filterTextBox = CategoryComboBox.Template.FindName("PART_FilterTextBox", CategoryComboBox) as TextBox;
+            _contentSite = CategoryComboBox.Template.FindName("ContentSite", CategoryComboBox) as TextBlock;
+            _watermark = CategoryComboBox.Template.FindName("Watermark", CategoryComboBox) as TextBlock;
+
+            if (_filterTextBox != null)
+            {
+                _filterTextBox.TextChanged += FilterTextBox_TextChanged;
+                _filterTextBox.PreviewKeyDown += FilterTextBox_PreviewKeyDown;
+                _filterTextBox.GotFocus += FilterTextBox_GotFocus;
+                _filterTextBox.LostKeyboardFocus += FilterTextBox_LostKeyboardFocus;
+            }
+        }
+
+        // 记录展开前的选中项，用于筛选后未选择时恢复
+        _previousGameSelection = CategoryComboBox.SelectedItem;
+
+        // 重置筛选文本，恢复全部列表（但保留已选中的项）
+        ResetComboBoxFilter();
+
+        // 保持 ContentSite/Watermark 可见，TextBox 透明覆盖在上方
+        ShowContentSiteOrWatermark();
+    }
+
+    private void CategoryComboBox_DropDownClosed(object? sender, EventArgs e)
+    {
+        // 如果筛选后用户没有选中新游戏，恢复展开前的选中项
+        if (_filterTextBox != null && !string.IsNullOrWhiteSpace(_filterTextBox.Text))
+        {
+            if (CategoryComboBox.SelectedIndex == -1 && _previousGameSelection != null)
+            {
+                CategoryComboBox.SelectedItem = _previousGameSelection;
+            }
+        }
+
+        // 清空筛选文本、恢复全部列表
+        ResetComboBoxFilter();
+
+        // 必须手动更新 ContentSite/Watermark，因为代码设置的局部 Visibility
+        // 优先级高于 ControlTemplate 触发器，触发器无法覆盖局部值
+        ShowContentSiteOrWatermark();
+    }
+
+    private void FilterTextBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+        // 用户点击文本框开始输入 → 隐藏 ContentSite 和 Watermark
+        HideContentSiteAndWatermark();
+    }
+
+    private void FilterTextBox_LostKeyboardFocus(object sender, System.Windows.Input.KeyboardFocusChangedEventArgs e)
+    {
+        // 下拉框仍展开时，鼠标悬停到展开项会导致 TextBox 失焦，
+        // 延迟重新获取焦点以保持 TextBox 可接收键盘输入
+        if (CategoryComboBox.IsDropDownOpen)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (CategoryComboBox.IsDropDownOpen && _filterTextBox != null)
+                    _filterTextBox.Focus();
+            }), System.Windows.Threading.DispatcherPriority.Input);
+            return;
+        }
+
+        // 下拉框已关闭时，如果文本框为空则恢复 ContentSite/Watermark
+        if (_filterTextBox != null && string.IsNullOrEmpty(_filterTextBox.Text))
+        {
+            ShowContentSiteOrWatermark();
+        }
+    }
+
+    private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var filterText = _filterTextBox?.Text ?? string.Empty;
+
+        // 一旦有输入文本，隐藏 ContentSite 和 Watermark
+        if (!string.IsNullOrWhiteSpace(filterText))
+        {
+            HideContentSiteAndWatermark();
+        }
+
+        DoFilterItems(filterText);
+    }
+
+    private void DoFilterItems(string filterText)
+    {
+        CategoryComboBox.SelectionChanged -= CategoryComboBox_SelectionChanged;
+        CategoryComboBox.Items.Clear();
+
+        if (string.IsNullOrWhiteSpace(filterText))
+        {
+            foreach (var item in _allGameItems)
+                CategoryComboBox.Items.Add(item);
+        }
+        else
+        {
+            foreach (var item in _allGameItems)
+            {
+                if (item.Contains(filterText, StringComparison.OrdinalIgnoreCase))
+                    CategoryComboBox.Items.Add(item);
+            }
+        }
+
+        CategoryComboBox.SelectedIndex = -1;
+        CategoryComboBox.SelectionChanged += CategoryComboBox_SelectionChanged;
+    }
+
+    private void FilterTextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case System.Windows.Input.Key.Down:
+                if (CategoryComboBox.Items.Count > 0)
+                {
+                    var idx = CategoryComboBox.SelectedIndex;
+                    if (idx < CategoryComboBox.Items.Count - 1)
+                        CategoryComboBox.SelectedIndex = idx + 1;
+                }
+                e.Handled = true;
+                break;
+
+            case System.Windows.Input.Key.Up:
+                if (CategoryComboBox.Items.Count > 0)
+                {
+                    var idx = CategoryComboBox.SelectedIndex;
+                    if (idx > 0)
+                        CategoryComboBox.SelectedIndex = idx - 1;
+                }
+                e.Handled = true;
+                break;
+
+            case System.Windows.Input.Key.Enter:
+                CategoryComboBox.IsDropDownOpen = false;
+                e.Handled = true;
+                break;
+
+            case System.Windows.Input.Key.Escape:
+                // 先恢复选中项，再关闭
+                if (_previousGameSelection != null)
+                    CategoryComboBox.SelectedItem = _previousGameSelection;
+                ResetComboBoxFilter();
+                CategoryComboBox.IsDropDownOpen = false;
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void HideContentSiteAndWatermark()
+    {
+        if (_contentSite != null) _contentSite.Visibility = Visibility.Collapsed;
+        if (_watermark != null) _watermark.Visibility = Visibility.Collapsed;
+    }
+
+    private void ShowContentSiteOrWatermark()
+    {
+        if (_contentSite == null || _watermark == null) return;
+
+        if (CategoryComboBox.SelectedIndex >= 0)
+        {
+            _contentSite.Visibility = Visibility.Visible;
+            _watermark.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            _contentSite.Visibility = Visibility.Collapsed;
+            _watermark.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void ResetComboBoxFilter()
+    {
+        // 必须在清空 TextBox 文本之前保存选中项
+        // 因为设置 TextBox.Text 会触发 TextChanged → DoFilterItems → SelectedIndex = -1
+        var currentSelection = CategoryComboBox.SelectedItem;
+
+        if (_filterTextBox != null)
+        {
+            _filterTextBox.TextChanged -= FilterTextBox_TextChanged;
+            _filterTextBox.Text = string.Empty;
+            _filterTextBox.TextChanged += FilterTextBox_TextChanged;
+        }
+
+        CategoryComboBox.SelectionChanged -= CategoryComboBox_SelectionChanged;
+        CategoryComboBox.Items.Clear();
+        foreach (var item in _allGameItems)
+            CategoryComboBox.Items.Add(item);
+
+        if (currentSelection != null && CategoryComboBox.Items.Contains(currentSelection))
+            CategoryComboBox.SelectedItem = currentSelection;
+        else
+            CategoryComboBox.SelectedIndex = -1;
+
+        CategoryComboBox.SelectionChanged += CategoryComboBox_SelectionChanged;
     }
 
     // ══════════════════════════════════════════
@@ -221,6 +423,7 @@ public partial class PresetListPopup : UserControl
     private void TabOfficial_Click(object sender, RoutedEventArgs e)
     {
         _isOfficialTab = true;
+        DeselectCurrentItem();
         UpdateTabVisuals();
         UpdateBottomButtons();
         RenderPresetList();
@@ -229,6 +432,7 @@ public partial class PresetListPopup : UserControl
     private void TabPersonal_Click(object sender, RoutedEventArgs e)
     {
         _isOfficialTab = false;
+        DeselectCurrentItem();
         UpdateTabVisuals();
         UpdateBottomButtons();
         RenderPresetList();
@@ -335,6 +539,9 @@ public partial class PresetListPopup : UserControl
 
         item.Content = stackPanel;
 
+        item.PreviewMouseLeftButtonDown += (_, _) => SelectPresetItem(preset, item);
+        item.MouseDoubleClick += (_, _) => ApplySelectedPreset();
+
         if (preset.Games.Count > 0)
         {
             item.MouseEnter += (_, _) => ShowDetailPopup(preset, item);
@@ -350,6 +557,9 @@ public partial class PresetListPopup : UserControl
         {
             Style = (Style)FindResource("PersonalPresetItemStyle")
         };
+
+        item.PreviewMouseLeftButtonDown += (_, _) => SelectPresetItem(preset, item);
+        item.MouseDoubleClick += (_, _) => ApplySelectedPreset();
 
         var mainGrid = new Grid();
         mainGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -427,21 +637,11 @@ public partial class PresetListPopup : UserControl
         };
         iconPanel.Children.Add(CreateIconButton(s_deleteIconGeometry, () =>
         {
-            _personalPresets.Remove(preset);
-            RenderPresetList();
+            ShowDeleteConfirmDialog(preset);
         }));
         iconPanel.Children.Add(CreateIconButton(s_copyIconGeometry, () =>
         {
-            var copy = new PresetItem
-            {
-                Name = preset.Name + "_copy",
-                Description = preset.Description,
-                Category = preset.Category,
-                ItemCount = preset.ItemCount,
-                Games = [..preset.Games]
-            };
-            _personalPresets.Add(copy);
-            RenderPresetList();
+            ExportPreset(preset);
         }));
         iconPanel.Children.Add(CreateIconButton(s_editIconGeometry, () => OpenEditPopup(preset)));
         Grid.SetColumn(iconPanel, 1);
@@ -788,7 +988,10 @@ public partial class PresetListPopup : UserControl
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
-        Hide();
+        _currentCategory = "全部";
+        CategoryComboBox.SelectedIndex = -1;
+        ShowContentSiteOrWatermark();
+        RenderPresetList();
     }
 
     private void ApplyButton_Click(object sender, RoutedEventArgs e)
@@ -801,12 +1004,40 @@ public partial class PresetListPopup : UserControl
 
     private void ImportButton_Click(object sender, RoutedEventArgs e)
     {
-        PresetImported?.Invoke(this, EventArgs.Empty);
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "导入预设",
+            Filter = "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+            DefaultExt = ".json"
+        };
+
+        if (dlg.ShowDialog() == true)
+        {
+            var imported = App.PresetService?.ImportPreset(dlg.FileName);
+            if (imported != null)
+            {
+                _personalPresets.Add(imported);
+                SavePersonalPresets();
+                RenderPresetList();
+            }
+            else
+            {
+                MessageBox.Show("导入预设失败，文件格式不正确。", "导入失败",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
     // ══════════════════════════════════════════
     //  公开方法
     // ══════════════════════════════════════════
+
+    public void RefreshPersonalPresets(List<PresetItem> presets)
+    {
+        _personalPresets.Clear();
+        _personalPresets.AddRange(presets);
+        if (!_isOfficialTab) RenderPresetList();
+    }
 
     public void SetOfficialPresets(IEnumerable<PresetItem> presets)
     {
@@ -834,11 +1065,263 @@ public partial class PresetListPopup : UserControl
         if (!_isOfficialTab) RenderPresetList();
     }
 
+    private void SavePersonalPresets()
+    {
+        App.PresetService?.SavePersonalPresets(_personalPresets);
+    }
+
     private PresetItem? GetSelectedPreset()
     {
-        // 返回列表中第一个预设作为当前选中项（可扩展为支持点击选中）
-        var source = _isOfficialTab ? _officialPresets : _personalPresets;
-        return source.FirstOrDefault();
+        return _selectedPreset;
+    }
+
+    private void SelectPresetItem(PresetItem preset, ContentControl control)
+    {
+        // Deselect previous
+        DeselectCurrentItem();
+
+        _selectedPreset = preset;
+        _selectedControl = control;
+
+        // Apply hover-like selected visual
+        var bgRect = control.Template.FindName("BgRect", control) as System.Windows.Shapes.Rectangle;
+        if (bgRect != null)
+        {
+            bgRect.Stroke = new SolidColorBrush(Color.FromArgb(0x99, 0xC6, 0x0E, 0x0E));
+            bgRect.Fill = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1),
+                GradientStops = new GradientStopCollection
+                {
+                    new GradientStop(Color.FromArgb(0x33, 0x60, 0x07, 0x07), 0),
+                    new GradientStop(Color.FromArgb(0x33, 0xC6, 0x0E, 0x0E), 0.5),
+                    new GradientStop(Color.FromArgb(0x33, 0x60, 0x07, 0x07), 1)
+                }
+            };
+        }
+    }
+
+    private void DeselectCurrentItem()
+    {
+        if (_selectedControl != null)
+        {
+            var bgRect = _selectedControl.Template.FindName("BgRect", _selectedControl) as System.Windows.Shapes.Rectangle;
+            if (bgRect != null)
+            {
+                bgRect.ClearValue(System.Windows.Shapes.Rectangle.StrokeProperty);
+                bgRect.ClearValue(System.Windows.Shapes.Rectangle.FillProperty);
+            }
+        }
+
+        _selectedPreset = null;
+        _selectedControl = null;
+    }
+
+    private void ApplySelectedPreset()
+    {
+        if (_selectedPreset != null)
+            PresetApplied?.Invoke(this, _selectedPreset);
+        Hide();
+    }
+
+    private void ShowDeleteConfirmDialog(PresetItem preset)
+    {
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "删 除 预 设";
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = "该预设将被永久删除，且无法恢复。",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        dialog.AddButton("删 除", (_, _) =>
+        {
+            dialog.Hide();
+            _personalPresets.Remove(preset);
+            SavePersonalPresets();
+            RenderPresetList();
+        }, isPrimary: true);
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
+
+    private void ExportPreset(PresetItem preset)
+    {
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "导出预设",
+            Filter = "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+            DefaultExt = ".json",
+            FileName = preset.Name
+        };
+
+        if (dlg.ShowDialog() != true || App.PresetService == null) return;
+
+        var fileName = dlg.FileName;
+        TryExportPresetWithRetry(preset, fileName);
+    }
+
+    private void TryExportPresetWithRetry(PresetItem preset, string fileName)
+    {
+        if (PerformExportPreset(preset, fileName))
+        {
+            ShowExportSuccessToast("导 出 成 功");
+            return;
+        }
+
+        ShowExportFailedDialog(() => TryExportPresetWithRetry(preset, fileName));
+    }
+
+    private bool PerformExportPreset(PresetItem preset, string fileName)
+    {
+        try
+        {
+            App.PresetService!.ExportPreset(preset, fileName);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PresetListPopup] 导出预设失败: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void ShowExportSuccessToast(string message)
+    {
+        var rootPanel = (Window.GetWindow(this)?.Content as Panel);
+        if (rootPanel == null) return;
+
+        var toast = new Grid
+        {
+            Width = 360,
+            Height = 100,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Panel.SetZIndex(toast, 2000);
+
+        toast.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M360 0H9L0 9V100H351L360 91V0Z"),
+            Fill = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x4A)),
+            Stretch = Stretch.Fill
+        });
+
+        toast.Children.Add(new SvgViewbox
+        {
+            Source = new Uri("/Assets/Group126548867.svg", UriKind.Relative),
+            Stretch = Stretch.Fill
+        });
+
+        toast.Children.Add(new System.Windows.Shapes.Path
+        {
+            Width = 340,
+            Height = 80,
+            Data = Geometry.Parse("M339.5 0.5V73.793L333.793 79.5H0.5V6.20703L6.20703 0.5H339.5Z"),
+            Stroke = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            StrokeThickness = 1,
+            Stretch = Stretch.Fill
+        });
+
+        var contentPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var iconCanvas = new Canvas { Width = 22, Height = 22 };
+        iconCanvas.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M6.13672 12.2886L9.29057 14.8117C9.37527 14.8814 9.47445 14.9314 9.5809 14.9581C9.68735 14.9847 9.79839 14.9872 9.90595 14.9655C10.0145 14.9452 10.1175 14.9016 10.2077 14.8379C10.298 14.7742 10.3735 14.6918 10.429 14.5963L15.3675 6.13477"),
+            Stroke = new SolidColorBrush(Color.FromRgb(0x16, 0xC6, 0x42)),
+            StrokeThickness = 1.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round
+        });
+        iconCanvas.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M10.75 20.75C16.2728 20.75 20.75 16.2728 20.75 10.75C20.75 5.22715 16.2728 0.75 10.75 0.75C5.22715 0.75 0.75 5.22715 0.75 10.75C0.75 16.2728 5.22715 20.75 10.75 20.75Z"),
+            Stroke = new SolidColorBrush(Color.FromRgb(0x16, 0xC6, 0x42)),
+            StrokeThickness = 1.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round
+        });
+
+        var iconViewbox = new Viewbox { Width = 22, Height = 22, Margin = new Thickness(0, 0, 20, 0), Child = iconCanvas };
+        contentPanel.Children.Add(iconViewbox);
+
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = message,
+            FontSize = 30,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            FontWeight = FontWeights.Bold,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        toast.Children.Add(contentPanel);
+        rootPanel.Children.Add(toast);
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (rootPanel.Children.Contains(toast))
+                rootPanel.Children.Remove(toast);
+        };
+        timer.Start();
+    }
+
+    private void ShowExportFailedDialog(Action? onRetry)
+    {
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "导 出 失 败";
+        dialog.ShowIcon = true;
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = "当前预设导出失败，请检查后重试。",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        dialog.AddButton("重 试", (_, _) =>
+        {
+            dialog.Hide();
+            onRetry?.Invoke();
+        }, isPrimary: true);
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
     }
 }
 
@@ -849,4 +1332,8 @@ public class PresetItem
     public string Category { get; set; } = string.Empty;
     public int ItemCount { get; set; }
     public List<string> Games { get; set; } = new();
+    public Models.Usb.PedalPresetSnapshot? Parameters { get; set; }
+
+    /// <summary>是否为个人预设（可编辑/删除），官方预设不可编辑</summary>
+    public bool IsPersonal { get; set; }
 }

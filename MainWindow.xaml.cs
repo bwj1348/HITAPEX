@@ -4,6 +4,7 @@ using System.Windows.Input;
 using HITAPEX.Helpers;
 using HITAPEX.ViewModels;
 using HITAPEX.Controls;
+using HITAPEX.Views;
 using HITAPEX.Views.DeviceParameters;
 
 namespace HITAPEX;
@@ -13,10 +14,13 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel _viewModel;
     private PresetListPopup? _presetListPopup;
     private TrayIcon? _trayIcon;
+    private bool _isCheckingUnsavedNavigation;
 
     public ModalDialog GlobalDialogControl => GlobalDialog;
 
-    public void ShowPresetListPopup()
+    public PresetListPopup? PresetListPopup => _presetListPopup;
+
+    public PresetListPopup ShowPresetListPopup()
     {
         if (_presetListPopup == null)
         {
@@ -25,6 +29,7 @@ public partial class MainWindow : Window
                 rootPanel.Children.Add(_presetListPopup);
         }
         _presetListPopup.Show();
+        return _presetListPopup;
     }
 
     public MainWindow()
@@ -106,9 +111,33 @@ public partial class MainWindow : Window
 
     private void NavigationItem_Checked(object sender, RoutedEventArgs e)
     {
+        if (_isCheckingUnsavedNavigation) return;
+
         if (sender is RadioButton radioButton && radioButton.DataContext is NavigationItem navItem)
         {
-            _viewModel.SelectedNavigationItem = navItem;
+            // 检查踏板参数是否有未保存的更改
+            if (_viewModel.CurrentView is DeviceUserControl deviceControl
+                && deviceControl.PedalControl is { HasUnsavedChanges: true })
+            {
+                _isCheckingUnsavedNavigation = true;
+
+                deviceControl.PedalControl.ShowUnsavedDialog(
+                    onSaved: () =>
+                    {
+                        _isCheckingUnsavedNavigation = false;
+                        _viewModel.SelectedNavigationItem = navItem;
+                    },
+                    onCancelled: () =>
+                    {
+                        _isCheckingUnsavedNavigation = false;
+                        deviceControl.PedalControl.DiscardChanges();
+                        _viewModel.SelectedNavigationItem = navItem;
+                    });
+            }
+            else
+            {
+                _viewModel.SelectedNavigationItem = navItem;
+            }
         }
     }
 

@@ -161,6 +161,19 @@
                                        HorizontalAlignment="Left" Margin="41,0,43,0"
                                        IsHitTestVisible="False"/>
 
+                            <TextBox x:Name="PART_FilterTextBox"
+                                     FontSize="22" FontWeight="Bold"
+                                     FontFamily="{StaticResource OrbitronFont}"
+                                     Foreground="#EEEEEE"
+                                     CaretBrush="#C60E0E"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="0"
+                                     VerticalAlignment="Center"
+                                     HorizontalAlignment="Stretch"
+                                     Margin="41,0,43,0"
+                                     Visibility="Collapsed"/>
+
                             <Path x:Name="Arrow" Data="M13.0605 1.06055L7.06055 7.06055L1.06055 1.06055" Stroke="#EEEEEE" StrokeThickness="1.5" HorizontalAlignment="Right" Margin="0,0,16,0" VerticalAlignment="Center" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5">
                                 <Path.RenderTransform>
                                     <RotateTransform Angle="0"/>
@@ -224,10 +237,25 @@
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
-                            <DataTrigger Binding="{Binding SelectedIndex, RelativeSource={RelativeSource Self}}" Value="-1">
+
+                            <!-- 下拉框展开时：显示筛选文本框（ContentSite/Watermark 由代码根据输入状态控制） -->
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Setter TargetName="PART_FilterTextBox" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+
+                            <!-- 下拉框收起时：隐藏筛选文本框 -->
+                            <Trigger Property="IsDropDownOpen" Value="False">
+                                <Setter TargetName="PART_FilterTextBox" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding IsDropDownOpen, RelativeSource={RelativeSource Self}}" Value="False"/>
+                                    <Condition Binding="{Binding SelectedIndex, RelativeSource={RelativeSource Self}}" Value="-1"/>
+                                </MultiDataTrigger.Conditions>
                                 <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
                                 <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
+                            </MultiDataTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>

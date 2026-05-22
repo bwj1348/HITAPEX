@@ -56,6 +56,11 @@ public partial class EditPresetPopup : UserControl
         BuildLetterIndex();
     }
 
+    public void SetTitle(string title)
+    {
+        TitleText.Text = title;
+    }
+
     public void BeginEdit(PresetItem preset, IEnumerable<string> existingNames)
     {
         _originalPreset = preset;
@@ -73,6 +78,23 @@ public partial class EditPresetPopup : UserControl
         BuildAllGamesList();
         BuildSelectedGamesList();
         UpdateSelectionSummary();
+        SetTitle("编 辑");
+    }
+
+    /// <summary>用于“另存为”场景：空白名称，给定已有名称列表用于重名校验</summary>
+    public void BeginSaveAs(IEnumerable<string> existingNames)
+    {
+        _originalPreset = new PresetItem();
+        _existingNames = existingNames.ToList();
+
+        _selectedGames.Clear();
+        PresetNameTextBox.Text = string.Empty;
+        UpdateCharCount();
+        UpdateWatermark();
+        BuildAllGamesList();
+        BuildSelectedGamesList();
+        UpdateSelectionSummary();
+        SetTitle("另 存 为");
     }
 
     // ══════════════════════════════════════════
@@ -485,7 +507,8 @@ public partial class EditPresetPopup : UserControl
             Description = _originalPreset.Description,
             Category = _originalPreset.Category,
             ItemCount = _originalPreset.ItemCount,
-            Games = _selectedGames.OrderBy(g => g, StringComparer.OrdinalIgnoreCase).ToList()
+            Games = _selectedGames.OrderBy(g => g, StringComparer.OrdinalIgnoreCase).ToList(),
+            Parameters = _originalPreset.Parameters
         };
 
         EditConfirmed?.Invoke(this, edited);

@@ -225,8 +225,8 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- 第一行：标题 "编辑" -->
-                    <TextBlock Grid.Row="0" Text="编 辑"
+                    <!-- 第一行：标题 -->
+                    <TextBlock x:Name="TitleText" Grid.Row="0" Text="编 辑"
                                FontSize="26" FontWeight="Bold"
                                Foreground="#EEEEEE"
                                HorizontalAlignment="Center"

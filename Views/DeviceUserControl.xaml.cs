@@ -14,6 +14,9 @@ public partial class DeviceUserControl : UserControl
 
     private UserControl? _currentControl;
     private int _currentIndex = 0;
+    private bool _isCheckingUnsaved;
+
+    public PedalParameterControl? PedalControl => _pedalControl;
 
     public DeviceUserControl()
     {
@@ -105,6 +108,8 @@ public partial class DeviceUserControl : UserControl
 
     private void NavButton_Checked(object sender, RoutedEventArgs e)
     {
+        if (_isCheckingUnsaved) return;
+
         if (sender is RadioButton button)
         {
             UserControl? targetControl = null;
@@ -127,7 +132,26 @@ public partial class DeviceUserControl : UserControl
 
             if (targetControl != null && targetControl != _currentControl)
             {
-                ShowControl(targetControl, true);
+                if (_currentControl == _pedalControl && _pedalControl is { HasUnsavedChanges: true })
+                {
+                    _isCheckingUnsaved = true;
+                    _pedalControl.ShowUnsavedDialog(
+                        onSaved: () =>
+                        {
+                            _isCheckingUnsaved = false;
+                            ShowControl(targetControl, true);
+                        },
+                        onCancelled: () =>
+                        {
+                            _isCheckingUnsaved = false;
+                            _pedalControl.DiscardChanges();
+                            ShowControl(targetControl, true);
+                        });
+                }
+                else
+                {
+                    ShowControl(targetControl, true);
+                }
             }
         }
     }
