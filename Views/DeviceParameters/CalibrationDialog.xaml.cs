@@ -79,15 +79,6 @@ public partial class CalibrationDialog : UserControl
         Hide();
     }
 
-    private void Overlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.OriginalSource == OverlayBackground)
-        {
-            CloseRequested?.Invoke(this, EventArgs.Empty);
-            Hide();
-        }
-    }
-
     public void Show()
     {
         ResetState();

@@ -16,6 +16,7 @@ namespace HITAPEX.Views.DeviceParameters;
 
 public partial class PresetListPopup : UserControl
 {
+    private bool _isInitialized;
     private readonly List<PresetItem> _officialPresets = new();
     private readonly List<PresetItem> _personalPresets = new();
     private readonly List<string> _allGameItems = new();
@@ -49,6 +50,9 @@ public partial class PresetListPopup : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (_isInitialized) return;
+        _isInitialized = true;
+
         InitCategoryComboBox();
         LoadPresets();
         InitSharedDetailPopup();

@@ -172,18 +172,4 @@ public partial class ModalDialog : UserControl
         DialogContent = null;
         ClearButtons(); // 强烈建议在这里也清理一下按钮，防止下次调用时按钮重复叠加
     }
-
-    // ������������ֲ�ʱ����
-    private void Overlay_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        // ����ԭ�е� Hide �����رյ���
-        Hide();
-    }
-
-    // �����������������ʱ����
-    private void DialogContent_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-    {
-        // ���� Handled Ϊ true����ֹ����¼����ݵ����� Overlay����ֹ���
-        e.Handled = true;
-    }
 }

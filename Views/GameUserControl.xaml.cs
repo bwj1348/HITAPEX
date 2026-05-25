@@ -30,6 +30,7 @@ public partial class GameUserControl : UserControl
 {
     private ObservableCollection<GameItem>? _allGameList;
     private ObservableCollection<GameItem>? _filteredGameList;
+    private bool _isInitialized;
     private GameFilterType _currentFilter = GameFilterType.All;
     private bool _isPinning = false;
     private bool _isLoading = false;
@@ -51,6 +52,9 @@ public partial class GameUserControl : UserControl
 
     private void GameUserControl_Loaded(object sender, RoutedEventArgs e)
     {
+        if (_isInitialized) return;
+        _isInitialized = true;
+
         InitializeGameList();
         StartTelemetrySimulation();
         UpdateScrollbarThumb();

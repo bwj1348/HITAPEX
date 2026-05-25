@@ -130,7 +130,6 @@ public partial class MainWindow : Window
                     onCancelled: () =>
                     {
                         _isCheckingUnsavedNavigation = false;
-                        deviceControl.PedalControl.DiscardChanges();
                         _viewModel.SelectedNavigationItem = navItem;
                     });
             }

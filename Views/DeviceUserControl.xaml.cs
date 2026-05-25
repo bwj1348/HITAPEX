@@ -15,6 +15,7 @@ public partial class DeviceUserControl : UserControl
     private UserControl? _currentControl;
     private int _currentIndex = 0;
     private bool _isCheckingUnsaved;
+    private EventHandler? _fadeOutCompleted;
 
     public PedalParameterControl? PedalControl => _pedalControl;
 
@@ -144,7 +145,6 @@ public partial class DeviceUserControl : UserControl
                         onCancelled: () =>
                         {
                             _isCheckingUnsaved = false;
-                            _pedalControl.DiscardChanges();
                             ShowControl(targetControl, true);
                         });
                 }
@@ -163,7 +163,10 @@ public partial class DeviceUserControl : UserControl
         if (animate && _currentControl != null)
         {
             var fadeOut = (Storyboard)FindResource("FadeOutAnimation");
-            fadeOut.Completed += (s, e) =>
+            if (_fadeOutCompleted != null)
+                fadeOut.Completed -= _fadeOutCompleted;
+
+            _fadeOutCompleted = (s, e) =>
             {
                 ContentHost.Content = control;
                 _currentControl = control;
@@ -171,6 +174,7 @@ public partial class DeviceUserControl : UserControl
                 var fadeIn = (Storyboard)FindResource("FadeInAnimation");
                 fadeIn.Begin(ContentHost);
             };
+            fadeOut.Completed += _fadeOutCompleted;
             fadeOut.Begin(ContentHost);
         }
         else

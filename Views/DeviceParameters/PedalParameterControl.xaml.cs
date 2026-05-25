@@ -107,6 +107,7 @@ public partial class PedalParameterControl : UserControl
 
     // 校准弹窗
     private CalibrationDialog? _calibrationDialog;
+    private bool _isInitialized;
 
     public PedalParameterControl()
     {
@@ -117,6 +118,9 @@ public partial class PedalParameterControl : UserControl
 
     private async void PedalParameterControl_Loaded(object sender, RoutedEventArgs e)
     {
+        if (_isInitialized) return;
+        _isInitialized = true;
+
         // 离合器初始化
         UpdateCurveTypeSelection();
         SetupClutchDraggablePoints();
@@ -1057,7 +1061,7 @@ public partial class PedalParameterControl : UserControl
         if (preset.Parameters == null) return;
 
         if (_isPresetModified)
-            ShowUnsavedDialog(() => ApplyPreset(preset), () => { DiscardChanges(); ApplyPreset(preset); });
+            ShowUnsavedDialog(() => ApplyPreset(preset), () => ApplyPreset(preset));
         else
             ApplyPreset(preset);
     }

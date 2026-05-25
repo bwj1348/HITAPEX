@@ -84,9 +84,7 @@
 
     <Grid Panel.ZIndex="1000">
         <!-- Overlay -->
-        <Border x:Name="OverlayBackground" Background="#991B1B1B"
-                MouseLeftButtonDown="Overlay_MouseLeftButtonDown"
-                Cursor="Hand"/>
+        <Border x:Name="OverlayBackground" Background="#991B1B1B"/>
 
         <!-- Dialog panel -->
         <Border x:Name="PopupPanel"

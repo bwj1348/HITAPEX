@@ -191,9 +191,7 @@
 
     <Grid Panel.ZIndex="1000">
         <!-- 半透明遮罩层 -->
-        <Border x:Name="OverlayBackground" Background="#991B1B1B"
-                MouseLeftButtonDown="Overlay_MouseLeftButtonDown"
-                Cursor="Hand"/>
+        <Border x:Name="OverlayBackground" Background="#991B1B1B"/>
 
         <!-- 弹窗主体：居中面板 -->
         <Border x:Name="PopupPanel"

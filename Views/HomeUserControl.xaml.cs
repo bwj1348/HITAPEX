@@ -37,6 +37,7 @@ public partial class HomeUserControl : UserControl
     private const double MaxTemperature = 90.0;
     
     private int _currentSlide = 0;
+    private bool _isInitialized;
     private DispatcherTimer? _autoPlayTimer;
     private Border[]? _indicators;
     private Border[]? _slides;
@@ -85,6 +86,9 @@ public partial class HomeUserControl : UserControl
 
     private void HomeUserControl_Loaded(object sender, RoutedEventArgs e)
     {
+        if (_isInitialized) return;
+        _isInitialized = true;
+
         _indicators = new[] { Indicator0, Indicator1, Indicator2 };
         _slides = new[] { Slide0, Slide1, Slide2 };
         _slideImages = new[] { SlideImage0, SlideImage1, SlideImage2 };

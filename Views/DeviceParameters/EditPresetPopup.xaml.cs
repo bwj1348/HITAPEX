@@ -521,12 +521,6 @@ public partial class EditPresetPopup : UserControl
         Hide();
     }
 
-    private void Overlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (e.OriginalSource == OverlayBackground)
-            CancelButton_Click(sender, e);
-    }
-
     // ══════════════════════════════════════════
     //  显示 / 隐藏 + 动画
     // ══════════════════════════════════════════

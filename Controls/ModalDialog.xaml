@@ -31,7 +31,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid x:Name="Overlay" Background="#991B1B1B" MouseLeftButtonDown="Overlay_MouseLeftButtonDown">
+    <Grid x:Name="Overlay" Background="#991B1B1B">
         <Grid.Style>
             <Style TargetType="Grid">
                 <Style.Triggers>
@@ -42,7 +42,7 @@
             </Style>
         </Grid.Style>
 
-        <Grid Width="620" Height="301" HorizontalAlignment="Center" VerticalAlignment="Center" MouseLeftButtonDown="DialogContent_MouseLeftButtonDown">
+        <Grid Width="620" Height="301" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Path Data="M620 0H15L0 15V301H605L620 286V0Z" 
                   Fill="#4A4A4A" 
                   Stretch="Fill"/>
