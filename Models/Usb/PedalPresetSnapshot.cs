@@ -115,4 +115,27 @@ public class PedalPresetSnapshot
 
     [JsonPropertyName("throttleDeadZoneRear")]
     public byte ThrottleDeadZoneRear { get; set; }
+
+    /// <summary>逐字段比较踏板参数是否一致（不包含曲线类型，设备下发时曲线类型固定为自定义）</summary>
+    public bool ParametersEqual(PedalPresetSnapshot other)
+    {
+        return ClutchDirection == other.ClutchDirection
+            && ClutchPoint1Y == other.ClutchPoint1Y && ClutchPoint1X == other.ClutchPoint1X
+            && ClutchPoint2Y == other.ClutchPoint2Y && ClutchPoint2X == other.ClutchPoint2X
+            && ClutchPoint3Y == other.ClutchPoint3Y && ClutchPoint3X == other.ClutchPoint3X
+            && ClutchPoint4Y == other.ClutchPoint4Y && ClutchPoint4X == other.ClutchPoint4X
+            && ClutchDeadZoneFront == other.ClutchDeadZoneFront && ClutchDeadZoneRear == other.ClutchDeadZoneRear
+            && BrakeDirection == other.BrakeDirection
+            && BrakePoint1Y == other.BrakePoint1Y && BrakePoint1X == other.BrakePoint1X
+            && BrakePoint2Y == other.BrakePoint2Y && BrakePoint2X == other.BrakePoint2X
+            && BrakePoint3Y == other.BrakePoint3Y && BrakePoint3X == other.BrakePoint3X
+            && BrakePoint4Y == other.BrakePoint4Y && BrakePoint4X == other.BrakePoint4X
+            && BrakeDeadZoneFront == other.BrakeDeadZoneFront && BrakeDeadZoneRear == other.BrakeDeadZoneRear
+            && ThrottleDirection == other.ThrottleDirection
+            && ThrottlePoint1Y == other.ThrottlePoint1Y && ThrottlePoint1X == other.ThrottlePoint1X
+            && ThrottlePoint2Y == other.ThrottlePoint2Y && ThrottlePoint2X == other.ThrottlePoint2X
+            && ThrottlePoint3Y == other.ThrottlePoint3Y && ThrottlePoint3X == other.ThrottlePoint3X
+            && ThrottlePoint4Y == other.ThrottlePoint4Y && ThrottlePoint4X == other.ThrottlePoint4X
+            && ThrottleDeadZoneFront == other.ThrottleDeadZoneFront && ThrottleDeadZoneRear == other.ThrottleDeadZoneRear;
+    }
 }

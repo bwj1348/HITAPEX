@@ -76,6 +76,7 @@ public partial class PedalParameterControl : UserControl
     private bool _isApplyingPreset;
     private bool _isAppliedPresetPersonal;
     private string _currentPresetName = "Default";
+    private string _devicePresetName = string.Empty;
 
     // HID 最新数据缓存（后台线程写入，UI 线程读取），始终反映设备最新状态
     private double _latestRawClutch;
@@ -103,6 +104,9 @@ public partial class PedalParameterControl : UserControl
     private double[] _brakeCurveSlopesCache = Array.Empty<double>();
     private Point[] _throttleCurvePointsCache = Array.Empty<Point>();
     private double[] _throttleCurveSlopesCache = Array.Empty<double>();
+
+    // 校准弹窗
+    private CalibrationDialog? _calibrationDialog;
 
     public PedalParameterControl()
     {
@@ -1070,6 +1074,8 @@ public partial class PedalParameterControl : UserControl
         _isAppliedPresetPersonal = preset.IsPersonal;
         _isPresetModified = false;
         UpdatePresetDisplay();
+
+        SendPresetName(preset.Name);
     }
 
     /// <summary>任意参数修改后的统一入口，标记已修改状态并刷新 UI</summary>
@@ -1088,7 +1094,12 @@ public partial class PedalParameterControl : UserControl
 
         if (PresetNameText != null)
         {
-            PresetNameText.Text = isOnboard ? "板载" : _currentPresetName;
+            if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
+                PresetNameText.Text = $"{_devicePresetName}_板载";
+            else if (isOnboard)
+                PresetNameText.Text = "板载";
+            else
+                PresetNameText.Text = _currentPresetName;
             PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
         }
 
@@ -1549,6 +1560,98 @@ public partial class PedalParameterControl : UserControl
 
         // 获取踏板参数并同步 UI
         await FetchPedalParametersAsync();
+
+        // 获取设备预设名称
+        await FetchPresetNameAsync();
+
+        // 尝试将设备预设匹配到本地预设
+        TryMatchLocalPreset();
+    }
+
+    /// <summary>从设备获取预设名称</summary>
+    private async Task FetchPresetNameAsync()
+    {
+        UsbDeviceInfo? targetDevice = null;
+        if (_connectedPedalDevice != null)
+            targetDevice = _connectedPedalDevice;
+        else if (_isPedalViaBase && _baseDevice != null)
+            targetDevice = _baseDevice;
+
+        if (targetDevice == null || App.ProtocolService == null)
+            return;
+
+        try
+        {
+            var name = await App.ProtocolService.GetPresetNameAsync(targetDevice.DeviceKey, DeviceType.Pedal);
+            if (name != null)
+            {
+                _devicePresetName = name;
+                Debug.WriteLine($"[PedalControl] 设备预设名称: {name}");
+                UpdatePresetDisplay();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 获取预设名称异常: {ex.Message}");
+        }
+    }
+
+    /// <summary>下发预设名称到设备</summary>
+    private void SendPresetName(string name)
+    {
+        UsbDeviceInfo? targetDevice = null;
+        if (_connectedPedalDevice != null)
+            targetDevice = _connectedPedalDevice;
+        else if (_isPedalViaBase && _baseDevice != null)
+            targetDevice = _baseDevice;
+
+        if (targetDevice == null || App.ProtocolService == null)
+            return;
+
+        try
+        {
+            App.ProtocolService.SetPresetName(targetDevice.DeviceKey, DeviceType.Pedal, name);
+            Debug.WriteLine($"[PedalControl] 预设名称已下发: {name}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 下发预设名称异常: {ex.Message}");
+        }
+    }
+
+    /// <summary>对比设备上报的预设名称和参数与本地预设，若完全匹配则视为本地预设</summary>
+    private void TryMatchLocalPreset()
+    {
+        if (string.IsNullOrEmpty(_devicePresetName) || _appliedPresetParameters == null || App.PresetService == null)
+            return;
+
+        try
+        {
+            var officialPresets = App.PresetService.LoadOfficialPresets();
+            var personalPresets = App.PresetService.LoadPersonalPresets();
+
+            // 先查个人预设，再查官方预设
+            PresetItem? matched = personalPresets.FirstOrDefault(p => p.Name == _devicePresetName);
+            bool isPersonal = true;
+            if (matched == null)
+            {
+                matched = officialPresets.FirstOrDefault(p => p.Name == _devicePresetName);
+                isPersonal = false;
+            }
+
+            if (matched?.Parameters != null && _appliedPresetParameters.ParametersEqual(matched.Parameters))
+            {
+                _currentPresetName = matched.Name;
+                _isAppliedPresetPersonal = isPersonal;
+                _devicePresetName = string.Empty;
+                Debug.WriteLine($"[PedalControl] 设备预设匹配到本地{(isPersonal ? "个人" : "官方")}预设: {matched.Name}");
+                UpdatePresetDisplay();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[PedalControl] 匹配本地预设异常: {ex.Message}");
+        }
     }
 
     private void SetDisconnected()
@@ -2108,6 +2211,54 @@ public partial class PedalParameterControl : UserControl
         BuildCurveCache(_throttleCurvePoints, ref _throttleCurvePointsCache, ref _throttleCurveSlopesCache);
     }
 
+    private void CalibrationButton_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (Window.GetWindow(this) is not MainWindow mainWindow) return;
+        if (mainWindow.Content is not Panel rootPanel) return;
+
+        if (_calibrationDialog == null)
+        {
+            _calibrationDialog = new CalibrationDialog();
+            _calibrationDialog.CloseRequested += (_, _) =>
+            {
+                if (rootPanel.Children.Contains(_calibrationDialog))
+                    rootPanel.Children.Remove(_calibrationDialog);
+                _calibrationDialog = null;
+            };
+            _calibrationDialog.CompleteRequested += (_, _) =>
+            {
+                SendPedalCalibration(
+                    DeviceProtocolService.CalibrationComplete,
+                    DeviceProtocolService.CalibrationComplete,
+                    DeviceProtocolService.CalibrationComplete);
+
+                if (rootPanel.Children.Contains(_calibrationDialog))
+                    rootPanel.Children.Remove(_calibrationDialog);
+                _calibrationDialog = null;
+            };
+            _calibrationDialog.StartCalibrationRequested += (_, _) =>
+            {
+                SendPedalCalibration(
+                    DeviceProtocolService.CalibrationStart,
+                    DeviceProtocolService.CalibrationStart,
+                    DeviceProtocolService.CalibrationStart);
+            };
+        }
+
+        rootPanel.Children.Add(_calibrationDialog);
+        _calibrationDialog.Show();
+        e.Handled = true;
+    }
+
+    private void SendPedalCalibration(byte clutch, byte brake, byte throttle)
+    {
+        var targetDevice = _connectedPedalDevice ?? (_isPedalViaBase ? _baseDevice : null);
+        if (targetDevice == null) return;
+
+        var cmd = DeviceProtocolService.BuildPedalCalibrationCommand(clutch, brake, throttle);
+        App.UsbManager?.SendToDevice(targetDevice.DeviceKey, cmd);
+    }
+
     private void UpdatePedalPositionDisplay(
         double rawClutch, double processedClutch,
         double rawBrake, double processedBrake,
@@ -2149,5 +2300,13 @@ public partial class PedalParameterControl : UserControl
             BrakeCurrentPosition.Text = $"{processedBrake:F0}%";
         if (ThrottleCurrentPosition != null)
             ThrottleCurrentPosition.Text = $"{processedGas:F0}%";
+
+        // 同步更新校准弹窗进度条
+        if (_calibrationDialog != null)
+        {
+            _calibrationDialog.UpdateClutchProgress(rawClutch);
+            _calibrationDialog.UpdateBrakeProgress(rawBrake);
+            _calibrationDialog.UpdateThrottleProgress(rawGas);
+        }
     }
 }

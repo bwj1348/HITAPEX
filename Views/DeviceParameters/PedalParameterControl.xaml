@@ -1661,7 +1661,8 @@
         </Grid>
 
         <!-- 第五行：校准按钮 -->
-        <Grid Grid.Row="4" Width="256" Height="35" Margin="0,0,0,0" HorizontalAlignment="Center" Cursor="Hand">
+        <Grid Grid.Row="4" Width="256" Height="35" Margin="0,0,0,0" HorizontalAlignment="Center" Cursor="Hand"
+              MouseLeftButtonDown="CalibrationButton_Click">
             <Path Data="M6 0H256V29L250 35H0V6L6 0Z">
                 <Path.Fill>
                     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
@@ -1680,7 +1681,7 @@
                         <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                     </Canvas>
                 </Viewbox>
-                <TextBlock Text="校 准" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text="开 始 校 准" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>
 

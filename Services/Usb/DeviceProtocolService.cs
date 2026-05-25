@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using HITAPEX.Models.Usb;
 
 namespace HITAPEX.Services.Usb;
@@ -9,8 +10,18 @@ public class DeviceProtocolService
     private readonly IUsbSerialManager _manager;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<byte[]?>> _pendingCommands = new();
 
+    // 多包预设名称收集状态
+    private record class PresetNameCollectionState(
+        List<PresetNameResponse> Packets,
+        TaskCompletionSource<string?> Tcs,
+        CancellationTokenSource Cts);
+
+    private readonly ConcurrentDictionary<string, PresetNameCollectionState> _presetNameCollections = new();
+
     private const int FrameSize = 64;
     private const int DefaultResponseTimeoutMs = 3000;
+    private const int PresetNameMaxBytes = 512;
+    private const int PresetNameChunkSize = 56;
 
     public DeviceProtocolService(IUsbSerialManager manager)
     {
@@ -21,6 +32,37 @@ public class DeviceProtocolService
     private void OnRawDataReceived(UsbDeviceInfo device, byte[] data)
     {
         Debug.WriteLine($"[Protocol] 收到数据 [{device.DeviceKey}]: {BitConverter.ToString(data)}");
+
+        // 优先处理多包预设名称收集
+        if (_presetNameCollections.TryGetValue(device.DeviceKey, out var collection))
+        {
+            var namePacket = ParsePresetNameResponse(data);
+            if (namePacket != null)
+            {
+                lock (collection.Packets)
+                {
+                    // 首个包直接加入，后续包需校验 DeviceType 一致
+                    if (collection.Packets.Count > 0 && namePacket.DeviceType != collection.Packets[0].DeviceType)
+                        return;
+
+                    collection.Packets.Add(namePacket);
+                }
+
+                // 检查是否已收齐所有包
+                var totalLen = collection.Packets[0].TotalLength;
+                var expectedPackets = Math.Max(1, (totalLen + PresetNameChunkSize - 1) / PresetNameChunkSize);
+                if (collection.Packets.Count >= expectedPackets)
+                {
+                    if (_presetNameCollections.TryRemove(device.DeviceKey, out _))
+                    {
+                        var name = PresetNameResponse.DecodeNameFromPackets(collection.Packets);
+                        collection.Tcs.TrySetResult(name);
+                        collection.Cts.Cancel();
+                    }
+                }
+                return;
+            }
+        }
 
         if (_pendingCommands.TryGetValue(device.DeviceKey, out var tcs))
         {
@@ -326,6 +368,26 @@ public class DeviceProtocolService
         return frame;
     }
 
+    public const byte CalibrationStart = 1;
+    public const byte CalibrationComplete = 2;
+
+    /// <summary>
+    /// Build pedal calibration command frame (64 bytes).
+    /// Protocol 0x21E1: [0x21, 0xE1, 0x21, clutch, brake, throttle, 0...]
+    /// Each axis byte: 1=start, 2=complete, 0=no-op.
+    /// </summary>
+    public static byte[] BuildPedalCalibrationCommand(byte clutch, byte brake, byte throttle)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;          // Set command
+        frame[1] = 0xE1;          // 0x21E1 LE low byte
+        frame[2] = 0x21;          // 0x21E1 LE high byte
+        frame[3] = clutch;
+        frame[4] = brake;
+        frame[5] = throttle;
+        return frame;
+    }
+
     /// <summary>
     /// Parse pedal parameters response.
     /// Expected: [0xC1, 0x10, 0x21, clutchDir, clutch4pts(8B), clutchDeadFront, clutchDeadRear,
@@ -375,5 +437,152 @@ public class DeviceProtocolService
         {
             tcs.TrySetCanceled();
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  预设名称协议 (0x21D0)
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Build Get Preset Name command frame (64 bytes).
+    /// Protocol: [0x81, 0xD0, 0x21, deviceType, reserved...]
+    /// </summary>
+    public static byte[] BuildGetPresetNameCommand(DeviceType deviceType)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;          // Get command
+        frame[1] = 0xD0;          // 0x21D0 LE low byte
+        frame[2] = 0x21;          // 0x21D0 LE high byte
+        frame[3] = (byte)deviceType;
+        return frame;
+    }
+
+    /// <summary>
+    /// Build Set Preset Name command frame for a single packet (64 bytes).
+    /// Protocol: [0x21, 0xD0, 0x21, deviceType, totalLen(2B), packetIndex, nameChunk(56B), 0x00]
+    /// </summary>
+    public static byte[] BuildSetPresetNameCommand(DeviceType deviceType, byte[] nameBytes, int totalLength, int packetIndex)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;          // Set command
+        frame[1] = 0xD0;          // 0x21D0 LE low byte
+        frame[2] = 0x21;          // 0x21D0 LE high byte
+        frame[3] = (byte)deviceType;
+        frame[4] = (byte)(totalLength & 0xFF);
+        frame[5] = (byte)((totalLength >> 8) & 0xFF);
+        frame[6] = (byte)packetIndex;
+
+        var offset = packetIndex * PresetNameChunkSize;
+        var chunkSize = Math.Min(PresetNameChunkSize, nameBytes.Length - offset);
+        if (chunkSize > 0)
+            Array.Copy(nameBytes, offset, frame, 7, chunkSize);
+
+        return frame;
+    }
+
+    /// <summary>
+    /// Parse a single preset name response packet.
+    /// Expected: [0xC1, 0xD0, 0x21, deviceType, totalLen(2B), packetIndex, nameData(up to 56B)]
+    /// </summary>
+    public static PresetNameResponse? ParsePresetNameResponse(byte[] data)
+    {
+        if (data == null || data.Length < 7)
+            return null;
+
+        if (data[0] != 0xC1 || data[1] != 0xD0 || data[2] != 0x21)
+            return null;
+
+        var totalLength = data[4] | (data[5] << 8);
+        var packetIndex = data[6];
+        var dataLen = Math.Min(PresetNameChunkSize, Math.Max(0, data.Length - 8));
+        var nameData = new byte[dataLen];
+        if (dataLen > 0)
+            Array.Copy(data, 7, nameData, 0, dataLen);
+
+        return new PresetNameResponse
+        {
+            DeviceType = (DeviceType)data[3],
+            TotalLength = totalLength,
+            PacketIndex = packetIndex,
+            NameData = nameData
+        };
+    }
+
+    /// <summary>
+    /// Send Get Preset Name command and collect multi-packet response.
+    /// Returns the decoded UTF-8 name string, or null on timeout/error.
+    /// </summary>
+    public async Task<string?> GetPresetNameAsync(string deviceKey, DeviceType deviceType, int timeoutMs = DefaultResponseTimeoutMs)
+    {
+        _presetNameCollections.TryRemove(deviceKey, out _);
+
+        var cts = new CancellationTokenSource();
+        var tcs = new TaskCompletionSource<string?>();
+        var packets = new List<PresetNameResponse>();
+        var state = new PresetNameCollectionState(packets, tcs, cts);
+        _presetNameCollections[deviceKey] = state;
+
+        try
+        {
+            var cmd = BuildGetPresetNameCommand(deviceType);
+            Debug.WriteLine($"[Protocol] 获取预设名称 [{deviceKey}] deviceType={deviceType}");
+            var ok = _manager.SendToDevice(deviceKey, cmd);
+            if (!ok)
+            {
+                Debug.WriteLine($"[Protocol] 获取预设名称发送失败 [{deviceKey}]");
+                return null;
+            }
+
+            var timeoutTask = Task.Delay(timeoutMs, cts.Token);
+            var completedTask = await Task.WhenAny(tcs.Task, timeoutTask);
+
+            if (completedTask == timeoutTask)
+            {
+                Debug.WriteLine($"[Protocol] 获取预设名称超时 [{deviceKey}]");
+                return null;
+            }
+
+            return await tcs.Task;
+        }
+        catch (TaskCanceledException)
+        {
+            return null;
+        }
+        finally
+        {
+            _presetNameCollections.TryRemove(deviceKey, out _);
+        }
+    }
+
+    /// <summary>
+    /// Send Set Preset Name command (potentially multi-packet).
+    /// Returns true if all packets were sent successfully.
+    /// </summary>
+    public bool SetPresetName(string deviceKey, DeviceType deviceType, string name)
+    {
+        var nameBytes = Encoding.UTF8.GetBytes(name);
+        if (nameBytes.Length > PresetNameMaxBytes)
+        {
+            Debug.WriteLine($"[Protocol] 预设名称过长 ({nameBytes.Length} > {PresetNameMaxBytes})");
+            return false;
+        }
+
+        var totalPackets = (nameBytes.Length + PresetNameChunkSize - 1) / PresetNameChunkSize;
+        if (totalPackets == 0) totalPackets = 1;
+
+        Debug.WriteLine($"[Protocol] 设置预设名称 [{deviceKey}] deviceType={deviceType}, name=\"{name}\", packets={totalPackets}");
+
+        for (int i = 0; i < totalPackets; i++)
+        {
+            var cmd = BuildSetPresetNameCommand(deviceType, nameBytes, nameBytes.Length, i);
+            var ok = _manager.SendToDevice(deviceKey, cmd);
+            if (!ok)
+            {
+                Debug.WriteLine($"[Protocol] 设置预设名称发送失败 (packet {i}/{totalPackets})");
+                return false;
+            }
+        }
+
+        return true;
     }
 }
