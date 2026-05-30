@@ -5,22 +5,95 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="800"
+             d:DesignHeight="884" d:DesignWidth="1202"
              Background="Transparent">
-    <Grid>
+    <UserControl.Resources>
+        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C60E0E" Offset="0"/>
+            <GradientStop Color="#600707" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Background" Value="#1F2937"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#333333"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#2D3748"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#4A5568"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#1A202C"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style x:Key="ActionButtonPathStyle" TargetType="Path">
+            <Setter Property="Fill">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#C60E0E" Offset="0"/>
+                        <GradientStop Color="#600707" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Stretch" Value="Fill"/>
+        </Style>
+
+        <Style x:Key="PresetListButtonPathStyle" TargetType="Path">
+            <Setter Property="Fill">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#C60E0E" Offset="0"/>
+                        <GradientStop Color="#600707" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Stretch" Value="Fill"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="0">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 设备信息区 -->
+        <!-- 第一行：设备信息区 -->
         <Grid Grid.Row="0" Margin="0,0,0,19">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
+            <Grid Grid.Row="0" >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -32,15 +105,16 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
+                <!-- 设备图标 -->
                 <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,3" VerticalAlignment="Bottom"/>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="基 座" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="DeviceModelName" Text="基座" FontSize="26" Foreground="#EEEEEE" Margin="10,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
-                </StackPanel>
+                <!-- 设备名称 -->
+                <TextBlock x:Name="DeviceModelName" Grid.Column="1" Text="基座" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
 
+                <!-- 垂直分割线1 -->
                 <Border Grid.Column="2" Width="1" Height="26" Background="#EEEEEE" Margin="20,0,20,0" VerticalAlignment="Center"/>
 
+                <!-- 连接状态 -->
                 <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                     <Viewbox Width="22" Height="26" Margin="0,0,10,0">
                         <Canvas Width="22" Height="26">
@@ -63,15 +137,177 @@
                     <TextBlock x:Name="ConnectionStatusText" Text="未连接" FontSize="22" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </StackPanel>
 
+                <!-- 垂直分割线2 -->
                 <Border Grid.Column="5" Width="1" Height="26" Background="#EEEEEE" Margin="20,0,20,0" VerticalAlignment="Center"/>
 
+                <!-- 固件版本 -->
                 <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="固件版本:" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
                     <TextBlock x:Name="FirmwareVersionText" Text="---" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                    <Border x:Name="NewVersionAvailableBorder" BorderThickness="0,0,0,1" BorderBrush="#C60E0E" Padding="0,0,0,0" Margin="10,0,0,0" VerticalAlignment="Center" Cursor="Hand" Visibility="Collapsed" MouseLeftButtonDown="NewVersionAvailable_Click">
+                        <TextBlock x:Name="NewVersionAvailableText" Text="新版本可用" FontSize="22" Foreground="#C60E0E"/>
+                    </Border>
                 </StackPanel>
             </Grid>
 
             <Border Grid.Row="1" Height="1" Background="#99383838" Margin="0,4,0,0" CornerRadius="1"/>
         </Grid>
+
+        <!-- 第二行：预设管理区 -->
+        <Grid Grid.Row="1" Margin="0,0,0,19">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 当前预设边框 -->
+            <Grid Grid.Column="0" Width="388" Height="37">
+                <Path Data="M393 5H10.1733L5 11V42H6.552H387.827L393 36V5Z" Fill="#33EEEEEE" Stretch="Fill"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,15,0">
+                    <TextBlock Text="当前" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <Border Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
+                    <Viewbox Width="15" Height="17" Margin="0,0,8,0">
+                        <Grid Width="15" Height="17">
+                            <!-- 官方预设图标（旗帜） -->
+                            <Canvas x:Name="OfficialPresetIcon" Width="15" Height="17">
+                                <Path Data="M9.85 15.7504L5.3 12.2888L0.75 15.7504V5.36576C0.75 5.05974 0.886964 4.76626 1.13076 4.54987C1.37456 4.33348 1.70522 4.21191 2.05 4.21191H8.55C8.89478 4.21191 9.22544 4.33348 9.46924 4.54987C9.71304 4.76626 9.85 5.05974 9.85 5.36576V15.7504Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.64844 0.75H12.4484C12.7932 0.75 13.1239 0.871566 13.3677 1.08795C13.6115 1.30434 13.7484 1.59783 13.7484 1.90385V12.2885"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                            <!-- 个人预设图标（人物） -->
+                            <Canvas x:Name="PersonalPresetIcon" Width="15" Height="17" Visibility="Collapsed">
+                                <Path Data="M8.24962 8.25C10.4279 8.25 12.1938 6.57107 12.1938 4.5C12.1938 2.42893 10.4279 0.75 8.24962 0.75C6.07132 0.75 4.30545 2.42893 4.30545 4.5C4.30545 6.57107 6.07132 8.25 8.24962 8.25Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.75 15.7505C15.2405 14.24 14.2397 12.9223 12.8917 11.9874C11.5438 11.0526 9.91845 10.5488 8.25 10.5488C6.58155 10.5488 4.9562 11.0526 3.60827 11.9874C2.26035 12.9223 1.25949 14.24 0.75 15.7505H15.75Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                            <!-- 板载图标（芯片） -->
+                            <Canvas x:Name="OnboardPresetIcon" Width="16" Height="16" Visibility="Collapsed">
+                                <Path Data="M13.625 12.9218V3.07812C13.625 2.6898 13.3102 2.375 12.9219 2.375H3.07802C2.68969 2.375 2.37489 2.6898 2.37489 3.07812V12.9218C2.37489 13.3101 2.68969 13.6249 3.07802 13.6249H12.9219C13.3102 13.6249 13.625 13.3101 13.625 12.9218Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                <Path Data="M10.8299 10.8083V5.19141H5.21292V10.8083H10.8299Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 4.25H13.625"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 4.25H0.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 8H13.625"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 8H0.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 11.75H13.625"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 11.75H0.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M11.7607 0.5V2.375"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M11.7607 13.625V15.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M8.02145 0.5V2.375"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M8.02145 13.625V15.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.2822 0.5V2.375"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.2822 13.625V15.5"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                        </Grid>
+                    </Viewbox>
+                    <TextBlock x:Name="PresetNameText" Text="Default" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="ModifiedIndicator" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Visibility="Collapsed">
+                        <Run Text="(" Foreground="#EEEEEE"/>
+                        <Run Text="已更改" Foreground="#C60E0E"/>
+                        <Run Text=")" Foreground="#EEEEEE"/>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+
+            <!-- 功能按钮 -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+                <!-- 撤回按钮 -->
+                <Grid x:Name="UndoButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="UndoButton_Click">
+                    <Path x:Name="UndoButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="撤回" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <!-- 保存按钮 -->
+                <Grid x:Name="SaveButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveButton_Click">
+                    <Path x:Name="SaveButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="保存" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <!-- 另存为按钮 -->
+                <Grid Width="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveAsButton_Click">
+                    <Path x:Name="SaveAsButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="另存为" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <!-- 导出按钮 -->
+                <Grid Width="80" Height="37"
+                      MouseLeftButtonDown="ExportButton_Click">
+                    <Path x:Name="ExportButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="导出" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- 预设列表按钮 -->
+            <Grid Grid.Column="3" Width="115" Height="37"
+                  MouseLeftButtonDown="PresetListButton_Click">
+                <Path x:Name="PresetListButtonPath" Data="M120 5H11L5 11V42H5.46H114L120 36V5Z"
+                      Style="{StaticResource PresetListButtonPathStyle}" Cursor="Hand"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Viewbox Width="15" Height="15" Margin="0,0,10,0">
+                        <Canvas Width="15" Height="15">
+                            <Path Data="M13.75 0.75H0.75"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M13.75 5.08398H6.25"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M13.75 9.41602H6.25"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M13.75 13.75H0.75"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M2.75 5.08398L1.25 7.25065L2.75 9.41732"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="预设列表" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- 第三行：一般设置区 -->
+        <Grid Grid.Row="2" Width="246" Height="45" Margin="0,0,0,19" HorizontalAlignment="Left">
+            <Path Data="M15.068 1.5H236.476C237.802 1.50012 239.013 2.24907 239.606 3.43457L243.262 10.7471C243.692 11.6067 243.75 12.6056 243.422 13.5088L233.353 41.1963C232.85 42.5793 231.536 43.4999 230.064 43.5H8.65591C7.33044 43.4999 6.1189 42.7509 5.52603 41.5654L1.86978 34.2529C1.43998 33.3933 1.38216 32.3944 1.7106 31.4912L11.779 3.80371C12.282 2.4207 13.5964 1.50008 15.068 1.5Z">
+                <Path.Fill>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#C60E0E" Offset="0"/>
+                        <GradientStop Color="#600707" Offset="1"/>
+                    </LinearGradientBrush>
+                </Path.Fill>
+            </Path>
+            <TextBlock Text="基 座" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+
+        <!-- 第四行：基座参数调节区（占位，后续实现） -->
+        <Grid Grid.Row="3"/>
     </Grid>
 </UserControl>

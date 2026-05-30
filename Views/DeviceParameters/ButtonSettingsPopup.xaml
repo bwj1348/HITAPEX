@@ -1,0 +1,747 @@
+<UserControl x:Class="HITAPEX.Views.DeviceParameters.ButtonSettingsPopup"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             mc:Ignorable="d"
+             d:DesignHeight="639" d:DesignWidth="455">
+
+    <UserControl.Resources>
+        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C60E0E" Offset="0"/>
+            <GradientStop Color="#600707" Offset="1"/>
+        </LinearGradientBrush>
+
+        <!-- 色块单选样式（与方向盘参数界面一致） -->
+        <Style x:Key="PopupColorBlockRadioStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="43"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="0,0,-3,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="43" Height="40">
+                            <Path x:Name="LargeBorder" Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
+                                  Stroke="{TemplateBinding Background}" StrokeThickness="10" Fill="Transparent" Stretch="None">
+                                <Path.Clip>
+                                    <PathGeometry Figures="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"/>
+                                </Path.Clip>
+                            </Path>
+                            <Path x:Name="SmallFill" Data="M14.6091 35.5566H30.2471L37.9336 4.44553H33.0743H12.312L4.62549 35.5566H14.6091Z"
+                                  Fill="{TemplateBinding Background}" Stretch="None"/>
+                            <Path x:Name="DisabledOverlay"
+                                  Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
+                                  Fill="#991B1B1B" Stretch="None"
+                                  Visibility="Collapsed" IsHitTestVisible="False"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- DualStateSvgToggleStyle（与方向盘参数界面一致） -->
+        <Style x:Key="PopupDualStateSvgToggleStyle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Viewbox Stretch="Fill">
+                            <Grid Width="46" Height="24">
+                                <Path Data="M20.6406 23.5L26.3906 0.5H45.3594L39.6094 23.5H20.6406Z" Fill="#C60E0E" Stroke="#801111" StrokeThickness="1"/>
+                                <Path Data="M0.640625 23.5L6.39062 0.5H25.3594L19.6094 23.5H0.640625Z" Fill="#22C55E" Stroke="#1F6B3B" StrokeThickness="1"/>
+                                <Path Opacity="0.2" Fill="Black" Data="M6.06897 8H14L16 0H13.931H6L4 8H6.06897Z M14.069 16H22L24 8H21.931H14L12 16H14.069Z M34.069 16H42L44 8H41.931H34L32 16H34.069Z M2.06897 24H10L12 16H9.93103H2L0 24H2.06897Z M22.069 24H30L32 16H29.931H22L20 24H22.069Z M26.069 8H34L36 0H33.931H26L24 8H26.069Z"/>
+                                <Grid x:Name="ThumbContainer">
+                                    <Grid.RenderTransform>
+                                        <TranslateTransform x:Name="ThumbTranslate" X="-20"/>
+                                    </Grid.RenderTransform>
+                                    <Path Data="M20.6406 23.5L26.3906 0.5H45.3594L39.6094 23.5H20.6406Z" Fill="#727273" Stroke="#424242" StrokeThickness="1"/>
+                                    <Path Opacity="0.2" Fill="Black" Data="M34.069 16H42L44 8H41.931H34L32 16H34.069Z M22.069 24H30L32 16H29.931H22L20 24H22.069Z M26.069 8H34L36 0H33.931H26L24 8H26.069Z"/>
+                                </Grid>
+                            </Grid>
+                        </Viewbox>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTranslate" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTranslate" Storyboard.TargetProperty="X" To="-20" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 确认按钮 -->
+        <Style x:Key="PopupConfirmButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="173"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Path Data="M0 6V32H166L172 26V0H6L0 6Z"
+                                  Fill="{StaticResource AccentGradient}"
+                                  Stretch="Fill" Width="173" Height="32"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 取消按钮 -->
+        <Style x:Key="PopupCancelButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="173"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Path Data="M0 6V32H166L172 26V0H6L0 6Z"
+                                  Fill="#33EEEEEE"
+                                  Stretch="Fill" Width="173" Height="32"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 速度滑块样式（无 EventSetter，由代码动态绑定） -->
+        <Style x:Key="PopupSpeedSliderStyle" TargetType="Slider">
+            <Setter Property="Width" Value="341"/>
+            <Setter Property="Height" Value="33"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="5"/>
+            <Setter Property="Value" Value="3"/>
+            <Setter Property="TickFrequency" Value="1"/>
+            <Setter Property="IsSnapToTickEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="33" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                            <Grid.Resources>
+                                <GeometryGroup x:Key="TrackGeometry">
+                                    <PathGeometry Figures="M0 0H65.5768L61.9999 5H0V0Z"/>
+                                    <PathGeometry Figures="M72.7297 0H134.73L131.153 5H69.1528L72.7297 0Z"/>
+                                    <PathGeometry Figures="M141.885 0H202.692L199.115 5H138.308L141.885 0Z"/>
+                                    <PathGeometry Figures="M67.9629 0H70.3475L66.7706 5H64.386L67.9629 0Z"/>
+                                    <PathGeometry Figures="M137.116 0H139.5L135.923 5H133.539L137.116 0Z"/>
+                                    <PathGeometry Figures="M209.847 0H271.847L268.27 5H206.27L209.847 0Z"/>
+                                    <PathGeometry Figures="M205.076 0H207.461L203.884 5H201.5L205.076 0Z"/>
+                                    <PathGeometry Figures="M279 0H341V5H275.423L279 0Z"/>
+                                    <PathGeometry Figures="M274.229 0H276.614L273.037 5H270.652L274.229 0Z"/>
+                                </GeometryGroup>
+                            </Grid.Resources>
+
+                            <Viewbox Height="5" VerticalAlignment="Top" Stretch="Fill">
+                                <Grid>
+                                    <Path Data="{StaticResource TrackGeometry}"
+                                          Width="341" Height="5" Stretch="None">
+                                        <Path.Fill>
+                                            <LinearGradientBrush x:Name="TrackFillBrush"
+                                                                 StartPoint="0,0" EndPoint="1,0">
+                                                <GradientStop Color="#600707" Offset="0"/>
+                                                <GradientStop Color="#C60E0E" Offset="0.5"/>
+                                                <GradientStop Color="#EEEEEE" Offset="0.5"/>
+                                                <GradientStop Color="#EEEEEE" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                    <Path x:Name="TrackOverlay" Data="{StaticResource TrackGeometry}"
+                                          Width="341" Height="5" Stretch="None"
+                                          Fill="#991B1B1B" Visibility="Collapsed"/>
+                                </Grid>
+                            </Viewbox>
+
+                            <Track x:Name="PART_Track" VerticalAlignment="Stretch" Margin="-10,0,-10,0">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+
+                                <Track.Thumb>
+                                    <Thumb Width="20" Height="18">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Canvas Width="20" Height="18"
+                                                        Background="Transparent" Cursor="Hand">
+                                                    <Path Data="M19.1494 17.5H0.850586L10 1.03027L19.1494 17.5Z"
+                                                          Stroke="#C60E0E" StrokeThickness="1"
+                                                          Width="20" Height="18" Stretch="None"/>
+                                                    <Path Data="M4 16L10 4L16 16H4Z"
+                                                          Fill="#C60E0E"
+                                                          Width="20" Height="18" Stretch="None"/>
+                                                    <Path x:Name="ThumbOverlay"
+                                                          Data="M19.1494 17.5H0.850586L10 1.03027L19.1494 17.5Z"
+                                                          Fill="#1B1B1B" Stroke="#1B1B1B" StrokeThickness="1" Opacity="0.6"
+                                                          Width="20" Height="18" Stretch="None"
+                                                          Visibility="Collapsed"/>
+                                                </Canvas>
+                                                <ControlTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource AncestorType=Slider}}" Value="False">
+                                                        <Setter TargetName="ThumbOverlay" Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Tag, RelativeSource={RelativeSource Self}}" Value="False">
+                                <Setter TargetName="TrackOverlay" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 下拉框样式（与方向盘参数界面一致） -->
+        <Style x:Key="PopupComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontFamily" Value="{StaticResource OrbitronFont}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <ControlTemplate.Resources>
+                            <Style TargetType="ScrollBar">
+                                <Setter Property="Background" Value="#D9D9D9"/>
+                                <Setter Property="Width" Value="3"/>
+                                <Setter Property="Margin" Value="0,4,8,4"/>
+                                <Setter Property="MinWidth" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ScrollBar">
+                                            <Border Background="{TemplateBinding Background}" Width="{TemplateBinding Width}" CornerRadius="1.5">
+                                                <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                                    <Track.Thumb>
+                                                        <Thumb>
+                                                            <Thumb.Template>
+                                                                <ControlTemplate TargetType="Thumb">
+                                                                    <Border Background="#C60E0E" CornerRadius="1.5" Margin="0"/>
+                                                                </ControlTemplate>
+                                                            </Thumb.Template>
+                                                        </Thumb>
+                                                    </Track.Thumb>
+                                                </Track>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ControlTemplate.Resources>
+                        <Grid>
+                            <Grid>
+                                <Border Background="#EEEEEE" Opacity="0.2" Margin="6,0,6,0"/>
+                                <Polygon Points="0,6 6,0 6,6" Fill="#EEEEEE" Opacity="0.2"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                <Border Background="#EEEEEE" Opacity="0.2" Width="6"
+                                        HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                                <Border Background="#EEEEEE" Opacity="0.2" Width="6"
+                                        HorizontalAlignment="Right" Margin="0,0,0,6"/>
+                                <Polygon Points="0,0 6,0 0,6" Fill="#EEEEEE" Opacity="0.2"
+                                         HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                            </Grid>
+
+                            <ToggleButton x:Name="ToggleButton" Background="Transparent" BorderThickness="0"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Cursor="Hand">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <TextBlock x:Name="ContentSite" Text="{TemplateBinding SelectionBoxItem}"
+                                       TextTrimming="CharacterEllipsis" FontSize="16"
+                                       Foreground="#EEEEEE" VerticalAlignment="Center"
+                                       HorizontalAlignment="Left" Margin="10,0,43,0"
+                                       IsHitTestVisible="False"/>
+
+                            <Path x:Name="Arrow" Data="M13.0605 1.06055L7.06055 7.06055L1.06055 1.06055"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  HorizontalAlignment="Right" Margin="0,0,10,0"
+                                  VerticalAlignment="Center" IsHitTestVisible="False"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Path.RenderTransform>
+                            </Path>
+
+                            <Popup x:Name="Popup" IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" Placement="Bottom"
+                                   VerticalOffset="-11" PopupAnimation="Fade">
+                                <Grid Width="{TemplateBinding ActualWidth}">
+                                    <Grid>
+                                        <Border Background="#474747" Margin="0,11,6,0"/>
+                                        <Border Background="#474747" Width="6"
+                                                HorizontalAlignment="Right" Margin="0,11,0,6"/>
+                                        <Polygon Points="0,11 6,5 6,11" Fill="#474747"
+                                                 HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                                        <Polygon Points="0,0 6,0 0,6" Fill="#474747"
+                                                 HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                        <Border Height="1" Background="#EEEEEE" VerticalAlignment="Top"
+                                                Margin="0,11,6,0"/>
+                                        <Line X1="0" Y1="11" X2="6" Y2="6"
+                                              Stroke="#EEEEEE" StrokeThickness="1"
+                                              HorizontalAlignment="Right" VerticalAlignment="Top"
+                                              StrokeEndLineCap="Round"/>
+                                    </Grid>
+
+                                    <ScrollViewer MaxHeight="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=179}" VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  Margin="0,17,0,5">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Arrow"
+                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                To="180" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Arrow"
+                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="#EEEEEE"/>
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}"
+                                            Padding="0,8" Margin="8,2,8,2">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="23"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Path x:Name="CheckMark" Grid.Column="0"
+                                                  Data="M11.75 0.75L5.1532 9.75L0.75 6.37909"
+                                                  Stroke="#EEEEEE" StrokeThickness="1.5" Stretch="None"
+                                                  VerticalAlignment="Top" HorizontalAlignment="Center"
+                                                  Visibility="Hidden" Margin="0,5,0,0"/>
+                                            <TextBlock Grid.Column="1" Text="{TemplateBinding Content}"
+                                                       TextWrapping="Wrap" VerticalAlignment="Center"
+                                                       HorizontalAlignment="Left"/>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="ItemBorder" Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                                        <GradientStop Color="#600707" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsMouseOver" Value="True"/>
+                                                <Condition Property="IsSelected" Value="False"/>
+                                            </MultiTrigger.Conditions>
+                                            <Setter TargetName="ItemBorder" Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                                        <GradientStop Color="#600707" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </MultiTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Panel.ZIndex="1000">
+        <!-- 半透明遮罩层 -->
+        <Border x:Name="OverlayBackground" Background="#991B1B1B"/>
+
+        <!-- 弹窗主体 -->
+        <Border x:Name="PopupPanel" Width="455" Height="639"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Cursor="Arrow">
+            <Grid>
+                <!-- 弹窗形状背景 -->
+                <Path Data="M455 0H15L0 15V639H440L455 624V0Z"
+                      Fill="#4A4A4A"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <!-- SVG 背景图案 -->
+                <svgc:SvgViewbox Source="/Assets/Group1265485082.svg"
+                                 Width="455" Height="639" Stretch="Fill"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <!-- 装饰性斜角边框 -->
+                <Path Data="M414.5 0.5V585.793L402.793 597.5H0.5V12.207L12.207 0.5H414.5Z"
+                      Stroke="#99EEEEEE" StrokeThickness="1"
+                      Fill="Transparent"
+                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                <!-- 内容区域 -->
+                <Grid Margin="41">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- 第一行：按键设置 标题 -->
+                    <TextBlock Grid.Row="0" Text="按 键 灯 设 置"
+                               FontSize="26" FontWeight="Bold"
+                               Foreground="#EEEEEE"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,20"/>
+
+                    <!-- 第二行：选中的按键名称 -->
+                    <TextBlock x:Name="KeyNameText" Grid.Row="1" Text="B1"
+                               FontSize="26" FontWeight="Bold"
+                               Foreground="#C60E0E"
+                               FontFamily="{StaticResource OrbitronFont}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,20"/>
+
+                    <!-- 第三行：按键灯颜色 -->
+                    <Grid Grid.Row="2" Margin="0,0,0,20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="按 键 灯 颜 色" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal">
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#C60E0E" IsChecked="True"/>
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#FF6A00"/>
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#FFC800"/>
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#16C642"/>
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#28F9DD"/>
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#2840F9"/>
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#C128F9"/>
+                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                         Background="#EEEEEE"/>
+                            <RadioButton GroupName="KeyColor" Width="43" Height="40" Margin="0,0,-3,0" Cursor="Hand">
+                                <RadioButton.Template>
+                                    <ControlTemplate TargetType="RadioButton">
+                                        <Grid Width="43" Height="40">
+                                            <Path x:Name="OuterPath" Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
+                                                  Fill="#969696" Stroke="#5A5A5A" StrokeThickness="2" Stretch="None"/>
+                                            <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                  Data="M23.0418 26.666H36.0233L39.2969 13.3334H35.9104H22.9289L19.6553 26.666H23.0418Z"/>
+                                            <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                  Data="M3.39679 40H16.3783L19.6519 26.6674H16.2654H3.28391L0.0103149 40H3.39679Z"/>
+                                            <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                  Data="M9.94562 13.334H22.9271L26.2007 0.00137043H22.8142H9.83273L6.55914 13.334H9.94562Z"/>
+                                        </Grid>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="OuterPath" Property="Stroke" Value="#80000000"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- 第四行：遥测功能 -->
+                    <Grid Grid.Row="3" Margin="0,0,0,20">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="0,0,0,20">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0" HorizontalAlignment="Left">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="遥 测 功 能" FontSize="18" FontWeight="Bold" Margin="18,0,0,0"
+                                       Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <CheckBox x:Name="TelemetryToggle" HorizontalAlignment="Right"
+                                      Style="{StaticResource PopupDualStateSvgToggleStyle}" IsChecked="True"/>
+                        </Grid>
+                        <Grid Grid.Row="1">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
+                                            <Setter Property="OpacityMask">
+                                                <Setter.Value>
+                                                    <SolidColorBrush Color="#80000000"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="IsHitTestVisible" Value="False"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <ComboBox Style="{StaticResource PopupComboBoxStyle}"
+                                      Tag="201" SelectedIndex="0">
+                                <ComboBoxItem Content="ABS介入"/>
+                                <ComboBoxItem Content="TC介入"/>
+                                <ComboBoxItem Content="DRS可用"/>
+                                <ComboBoxItem Content="DRS开启"/>
+                                <ComboBoxItem Content="车轮抱死"/>
+                                <ComboBoxItem Content="维修区限速"/>
+                                <ComboBoxItem Content="车轮打滑"/>
+                            </ComboBox>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 第五行：按键灯触发遥测颜色 -->
+                    <Grid Grid.Row="4" Margin="0,0,0,20">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
+                                        <Setter Property="OpacityMask">
+                                            <Setter.Value>
+                                                <SolidColorBrush Color="#80000000"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="IsHitTestVisible" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="按键灯触发遥测颜色"
+                                   FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                        <Grid Grid.Row="1">
+                            <StackPanel x:Name="TeleColorPanel" Orientation="Horizontal">
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#C60E0E" IsChecked="True"/>
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#FF6A00"/>
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#FFC800"/>
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#16C642"/>
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#28F9DD"/>
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#2840F9"/>
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#C128F9"/>
+                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                             Background="#EEEEEE"/>
+                                <RadioButton GroupName="TeleColor" Width="43" Height="40" Margin="0,0,-3,0" Cursor="Hand">
+                                    <RadioButton.Template>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Grid Width="43" Height="40">
+                                                <Path x:Name="OuterPath2" Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
+                                                      Fill="#969696" Stroke="#5A5A5A" StrokeThickness="2" Stretch="None"/>
+                                                <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                      Data="M23.0418 26.666H36.0233L39.2969 13.3334H35.9104H22.9289L19.6553 26.666H23.0418Z"/>
+                                                <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                      Data="M3.39679 40H16.3783L19.6519 26.6674H16.2654H3.28391L0.0103149 40H3.39679Z"/>
+                                                <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                      Data="M9.94562 13.334H22.9271L26.2007 0.00137043H22.8142H9.83273L6.55914 13.334H9.94562Z"/>
+                                            </Grid>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="OuterPath2" Property="Stroke" Value="#80000000"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </RadioButton.Template>
+                                </RadioButton>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 第六行：速度 -->
+                    <Grid Grid.Row="5" Margin="0,0,0,20">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
+                                        <Setter Property="OpacityMask">
+                                            <Setter.Value>
+                                                <SolidColorBrush Color="#80000000"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Setter Property="IsHitTestVisible" Value="False"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="速度"
+                                   FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                        <Slider x:Name="PopupSpeedSlider" Grid.Row="1"
+                                Style="{StaticResource PopupSpeedSliderStyle}"
+                                Value="3" Width="341"
+                                ValueChanged="SpeedSlider_ValueChanged"/>
+                    </Grid>
+
+                    <!-- 第七行：占位 -->
+                    <Grid Grid.Row="6"/>
+
+                    <!-- 第八行：确定 / 取消 按钮 -->
+                    <Grid Grid.Row="7">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0"
+                                Style="{StaticResource PopupConfirmButtonStyle}"
+                                HorizontalAlignment="Left"
+                                Content="确定"
+                                Click="ConfirmButton_Click"/>
+
+                        <Button Grid.Column="1"
+                                Style="{StaticResource PopupCancelButtonStyle}"
+                                HorizontalAlignment="Right"
+                                Content="取消"
+                                Click="CancelButton_Click"/>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

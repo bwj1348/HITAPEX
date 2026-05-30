@@ -380,9 +380,9 @@
 
             <!-- 预设列表按钮 -->
             <Grid Grid.Column="3" Width="115" Height="37"
-                  MouseLeftButtonDown="PresetListButton_Click">
+                  MouseLeftButtonDown="PresetListButton_Click" Cursor="Hand">
                 <Path x:Name="PresetListButtonPath" Data="M120 5H11L5 11V42H5.46H114L120 36V5Z" 
-                      Style="{StaticResource PresetListButtonPathStyle}" Cursor="Hand"/>
+                      Style="{StaticResource PresetListButtonPathStyle}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Viewbox Width="15" Height="15" Margin="0,0,10,0">
                         <Canvas Width="15" Height="15">

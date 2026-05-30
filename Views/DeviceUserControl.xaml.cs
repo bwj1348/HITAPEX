@@ -17,7 +17,9 @@ public partial class DeviceUserControl : UserControl
     private bool _isCheckingUnsaved;
     private EventHandler? _fadeOutCompleted;
 
+    public BaseParameterControl? BaseControl => _baseControl;
     public PedalParameterControl? PedalControl => _pedalControl;
+    public SteeringWheelParameterControl? SteeringWheelControl => _steeringWheelControl;
 
     public DeviceUserControl()
     {
@@ -137,6 +139,36 @@ public partial class DeviceUserControl : UserControl
                 {
                     _isCheckingUnsaved = true;
                     _pedalControl.ShowUnsavedDialog(
+                        onSaved: () =>
+                        {
+                            _isCheckingUnsaved = false;
+                            ShowControl(targetControl, true);
+                        },
+                        onCancelled: () =>
+                        {
+                            _isCheckingUnsaved = false;
+                            ShowControl(targetControl, true);
+                        });
+                }
+                else if (_currentControl == _steeringWheelControl && _steeringWheelControl is { HasUnsavedChanges: true })
+                {
+                    _isCheckingUnsaved = true;
+                    _steeringWheelControl.ShowUnsavedDialog(
+                        onSaved: () =>
+                        {
+                            _isCheckingUnsaved = false;
+                            ShowControl(targetControl, true);
+                        },
+                        onCancelled: () =>
+                        {
+                            _isCheckingUnsaved = false;
+                            ShowControl(targetControl, true);
+                        });
+                }
+                else if (_currentControl == _baseControl && _baseControl is { HasUnsavedChanges: true })
+                {
+                    _isCheckingUnsaved = true;
+                    _baseControl.ShowUnsavedDialog(
                         onSaved: () =>
                         {
                             _isCheckingUnsaved = false;

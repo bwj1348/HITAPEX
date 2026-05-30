@@ -5,22 +5,874 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="800"
+             d:DesignHeight="884" d:DesignWidth="1202"
              Background="Transparent">
-    <Grid>
+    <UserControl.Resources>
+        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C60E0E" Offset="0"/>
+            <GradientStop Color="#600707" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="TabSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C60E0E" Offset="0"/>
+            <GradientStop Color="#600707" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Background" Value="#1F2937"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#333333"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="6">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#2D3748"/>
+                                <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="#4A5568"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonBorder" Property="Background" Value="#1A202C"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentGradient}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <Style x:Key="ActionButtonPathStyle" TargetType="Path">
+            <Setter Property="Fill">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#C60E0E" Offset="0"/>
+                        <GradientStop Color="#600707" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Stretch" Value="Fill"/>
+        </Style>
+
+        <Style x:Key="PresetListButtonPathStyle" TargetType="Path">
+            <Setter Property="Fill">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                        <GradientStop Color="#C60E0E" Offset="0"/>
+                        <GradientStop Color="#600707" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Stretch" Value="Fill"/>
+        </Style>
+
+        <!-- 选项卡样式（左） -->
+        <Style x:Key="SectionTabStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Width" Value="246"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="246" Height="45">
+                            <Path x:Name="ButtonPath"
+                                  Data="M15.9058 1.5H236.7C237.984 1.5 239.165 2.20315 239.777 3.33203L243.752 10.666C244.245 11.5751 244.31 12.6562 243.931 13.6182L233.025 41.2832C232.498 42.6205 231.207 43.4999 229.769 43.5H8.9751C7.69107 43.4999 6.50985 42.7968 5.89795 41.668L1.92236 34.334C1.42962 33.4249 1.36443 32.3438 1.74365 31.3818L12.6499 3.7168C13.1771 2.37956 14.4684 1.50019 15.9058 1.5Z"
+                                  Stretch="Fill"
+                                  Fill="Transparent"
+                                  Stroke="{StaticResource TabSelectedGradient}"
+                                  StrokeThickness="3"/>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      TextElement.Foreground="#FFFFFF"
+                                      TextElement.FontWeight="Bold"
+                                      TextElement.FontSize="22"
+                                      TextElement.FontStyle="Italic"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 选项卡样式（右） -->
+        <Style x:Key="SectionTabStyle2" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Width" Value="246"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="244" Height="45">
+                            <Path x:Name="ButtonPath"
+                                  Data="M12.5693 1.5H234.862C236.146 1.5001 237.328 2.20313 237.939 3.33203L241.914 10.666C242.407 11.575 242.472 12.6553 242.093 13.6172L231.188 41.2832C230.66 42.6205 229.369 43.4998 227.932 43.5H5.00488C2.53554 43.4999 0.843171 41.0117 1.75 38.7148L11.2217 14.7236C11.9285 12.9335 11.8061 10.9222 10.8867 9.23145L9.49512 6.67188C8.22694 4.33976 9.91476 1.5002 12.5693 1.5Z"
+                                  Stretch="Fill"
+                                  Fill="Transparent"
+                                  Stroke="{StaticResource TabSelectedGradient}"
+                                  StrokeThickness="3"/>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"
+                                      TextElement.Foreground="#FFFFFF"
+                                      TextElement.FontWeight="Bold"
+                                      TextElement.FontSize="22"
+                                      TextElement.FontStyle="Italic"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 圆形按键样式 (26×26) -->
+        <Style x:Key="SmallButtonStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid>
+                            <Ellipse x:Name="GlowCircle" Width="44" Height="44" Visibility="Collapsed"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush GradientOrigin="0.5,0.5" Center="0.5,0.5"
+                                                         RadiusX="0.5" RadiusY="0.5">
+                                        <GradientStop Color="#940A0A" Offset="0.63"/>
+                                        <GradientStop Color="#33940A0A" Offset="1"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse x:Name="OuterRing" Fill="#C60E0E"
+                                     Width="32" Height="32" Visibility="Collapsed"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Ellipse x:Name="ButtonCircle" Fill="#1B1B1B" Width="26" Height="26"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="#AAAAAA"
+                                              TextElement.FontSize="12"
+                                              TextElement.FontWeight="Bold"
+                                              TextElement.FontFamily="{StaticResource OrbitronFont}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="GlowCircle" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="OuterRing" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 圆形大按键样式 (43×43) -->
+        <Style x:Key="LargeButtonStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="65"/>
+            <Setter Property="Height" Value="65"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#AAAAAA"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid>
+                            <Ellipse x:Name="GlowCircle" Width="65" Height="65" Visibility="Collapsed"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush GradientOrigin="0.5,0.5" Center="0.5,0.5"
+                                                         RadiusX="0.5" RadiusY="0.5">
+                                        <GradientStop Color="#940A0A" Offset="0.63"/>
+                                        <GradientStop Color="#33940A0A" Offset="1"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                            </Ellipse>
+                            <Ellipse x:Name="OuterRing" Fill="#C60E0E" Visibility="Collapsed"
+                                     Width="51" Height="51"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Ellipse x:Name="ButtonCircle" Fill="#1B1B1B" Width="43" Height="43"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="#AAAAAA"
+                                              TextElement.FontSize="12"
+                                              TextElement.FontWeight="Bold"
+                                              TextElement.FontFamily="{StaticResource OrbitronFont}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="GlowCircle" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="OuterRing" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 上箭头按键样式 (B4, B14) -->
+        <Style x:Key="ArrowUpButtonStyle" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal">
+                            <Path x:Name="ArrowPath" Width="14" Height="8"
+                                  Data="M1 6L6.5 1L12 6"
+                                  Stretch="Uniform"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                  StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  VerticalAlignment="Center" Margin="0,0,3,0"/>
+                            <ContentPresenter x:Name="Label" VerticalAlignment="Center"
+                                              TextElement.Foreground="#EEEEEE"
+                                              TextElement.FontSize="12"
+                                              TextElement.FontWeight="Bold"
+                                              TextElement.FontFamily="{StaticResource OrbitronFont}"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self}}" Value="">
+                                <Setter TargetName="ArrowPath" Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 下箭头按键样式 (B5, B15) -->
+        <Style x:Key="ArrowDownButtonStyle" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal">
+                            <Path x:Name="ArrowPath" Width="14" Height="8"
+                              Data="M1 1L6.5 6L12 1"
+                              Stretch="Uniform"
+                              Stroke="#EEEEEE" StrokeThickness="1.5"
+                              StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              VerticalAlignment="Center" Margin="0,0,3,0"/>
+                            <ContentPresenter x:Name="Label" VerticalAlignment="Center"
+                                          TextElement.Foreground="#EEEEEE"
+                                          TextElement.FontSize="12"
+                                          TextElement.FontWeight="Bold"
+                                          TextElement.FontFamily="{StaticResource OrbitronFont}"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Content, RelativeSource={RelativeSource Self}}" Value="">
+                                <Setter TargetName="ArrowPath" Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- DualStateSvgToggleStyle -->
+        <Style x:Key="DualStateSvgToggleStyle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Viewbox Stretch="Fill">
+                            <Grid Width="46" Height="24">
+                                <Path Data="M20.6406 23.5L26.3906 0.5H45.3594L39.6094 23.5H20.6406Z" Fill="#C60E0E" Stroke="#801111" StrokeThickness="1"/>
+                                <Path Data="M0.640625 23.5L6.39062 0.5H25.3594L19.6094 23.5H0.640625Z" Fill="#22C55E" Stroke="#1F6B3B" StrokeThickness="1"/>
+                                <Path Opacity="0.2" Fill="Black" Data="M6.06897 8H14L16 0H13.931H6L4 8H6.06897Z M14.069 16H22L24 8H21.931H14L12 16H14.069Z M34.069 16H42L44 8H41.931H34L32 16H34.069Z M2.06897 24H10L12 16H9.93103H2L0 24H2.06897Z M22.069 24H30L32 16H29.931H22L20 24H22.069Z M26.069 8H34L36 0H33.931H26L24 8H26.069Z"/>
+                                <Grid x:Name="ThumbContainer">
+                                    <Grid.RenderTransform>
+                                        <TranslateTransform x:Name="ThumbTranslate" X="-20"/>
+                                    </Grid.RenderTransform>
+                                    <Path Data="M20.6406 23.5L26.3906 0.5H45.3594L39.6094 23.5H20.6406Z" Fill="#727273" Stroke="#424242" StrokeThickness="1"/>
+                                    <Path Opacity="0.2" Fill="Black" Data="M34.069 16H42L44 8H41.931H34L32 16H34.069Z M22.069 24H30L32 16H29.931H22L20 24H22.069Z M26.069 8H34L36 0H33.931H26L24 8H26.069Z"/>
+                                </Grid>
+                            </Grid>
+                        </Viewbox>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTranslate" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="ThumbTranslate" Storyboard.TargetProperty="X" To="-20" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 亮度滑块样式 -->
+        <Style x:Key="BrightnessSliderStyle" TargetType="Slider">
+            <Setter Property="Width" Value="345"/>
+            <Setter Property="Height" Value="15"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="100"/>
+            <Setter Property="Value" Value="50"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="15" VerticalAlignment="Center" SnapsToDevicePixels="True">
+
+                            <Track x:Name="PART_Track" VerticalAlignment="Center" Margin="-7.5,0,-7.5,0">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="5" Margin="7.5,0,-7.5,0">
+                                                    <Border.Background>
+                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                            <GradientStop Color="#600707" Offset="0"/>
+                                                            <GradientStop Color="#C60E0E" Offset="1"/>
+                                                        </LinearGradientBrush>
+                                                    </Border.Background>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Height="5" Background="#EEEEEE" Margin="-7.5,0,7.5,0"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+
+                                <Track.Thumb>
+                                    <Thumb Width="15" Height="15">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse Width="15" Height="15" Fill="#C60E0E" Cursor="Hand"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 色块单选样式 -->
+        <Style x:Key="ColorBlockRadioStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Margin" Value="0,0,-6,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="50" Height="35">
+                            <Path x:Name="LargeBorder" Data="M1.38327 34L12.2817 1H48.7065L37.8071 34H1.38327Z"
+                                  Stroke="{TemplateBinding Background}" StrokeThickness="10" Fill="Transparent" Stretch="None">
+                                <Path.Clip>
+                                    <PathGeometry Figures="M1.38327 34L12.2817 1H48.7065L37.8071 34H1.38327Z"/>
+                                </Path.Clip>
+                            </Path>
+                            <Path x:Name="SmallFill" Data="M17.1936 31.1113H35.5979L44.6442 3.88911H38.9253H14.4901L5.44388 31.1113H17.1936Z"
+                                  Fill="{TemplateBinding Background}" Stretch="None"/>
+                            <Path x:Name="DisabledOverlay"
+                                  Data="M1.38327 34L12.2817 1H48.7065L37.8071 34H1.38327Z"
+                                  Fill="#991B1B1B" Stretch="None"
+                                  Visibility="Collapsed" IsHitTestVisible="False"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 速度滑块样式（锯齿形分段轨道 + 三角形滑块） -->
+        <Style x:Key="SpeedSliderStyle" TargetType="Slider">
+            <Setter Property="Width" Value="341"/>
+            <Setter Property="Height" Value="33"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="5"/>
+            <Setter Property="Value" Value="3"/>
+            <Setter Property="TickFrequency" Value="1"/>
+            <Setter Property="IsSnapToTickEnabled" Value="True"/>
+            <EventSetter Event="ValueChanged" Handler="SpeedSlider_ValueChanged"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid Height="33" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                            <Grid.Resources>
+                                <GeometryGroup x:Key="TrackGeometry">
+                                    <PathGeometry Figures="M0 0H65.5768L61.9999 5H0V0Z"/>
+                                    <PathGeometry Figures="M72.7297 0H134.73L131.153 5H69.1528L72.7297 0Z"/>
+                                    <PathGeometry Figures="M141.885 0H202.692L199.115 5H138.308L141.885 0Z"/>
+                                    <PathGeometry Figures="M67.9629 0H70.3475L66.7706 5H64.386L67.9629 0Z"/>
+                                    <PathGeometry Figures="M137.116 0H139.5L135.923 5H133.539L137.116 0Z"/>
+                                    <PathGeometry Figures="M209.847 0H271.847L268.27 5H206.27L209.847 0Z"/>
+                                    <PathGeometry Figures="M205.076 0H207.461L203.884 5H201.5L205.076 0Z"/>
+                                    <PathGeometry Figures="M279 0H341V5H275.423L279 0Z"/>
+                                    <PathGeometry Figures="M274.229 0H276.614L273.037 5H270.652L274.229 0Z"/>
+                                </GeometryGroup>
+                            </Grid.Resources>
+
+                            <!-- 唯一的轨道路径，通过渐变填充 -->
+                            <Viewbox Height="5" VerticalAlignment="Top" Stretch="Fill">
+                                <Path Data="{StaticResource TrackGeometry}"
+                                      Width="341" Height="5" Stretch="None">
+                                    <Path.Fill>
+                                        <LinearGradientBrush x:Name="TrackFillBrush"
+                                                             StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#600707" Offset="0"/>
+                                            <GradientStop Color="#C60E0E" Offset="0.5"/>
+                                            <GradientStop Color="#EEEEEE" Offset="0.5"/>
+                                            <GradientStop Color="#EEEEEE" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Path.Fill>
+                                </Path>
+                            </Viewbox>
+
+                            <!-- Track 仅用于交互，不绘制轨道 -->
+                            <Track x:Name="PART_Track" VerticalAlignment="Stretch" Margin="-10,0,-10,0">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+
+                                <Track.Thumb>
+                                    <Thumb Width="20" Height="18">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Canvas Width="20" Height="18"
+                                                        Background="Transparent" Cursor="Hand">
+                                                    <Path Data="M19.1494 17.5H0.850586L10 1.03027L19.1494 17.5Z"
+                                                          Stroke="#C60E0E" StrokeThickness="1"
+                                                          Width="20" Height="18" Stretch="None"/>
+                                                    <Path Data="M4 16L10 4L16 16H4Z"
+                                                          Fill="#C60E0E"
+                                                          Width="20" Height="18" Stretch="None"/>
+                                                </Canvas>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 遥测效果 开始/暂停 按钮样式 -->
+        <Style x:Key="PlayPauseButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="35"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Width="35" Height="35">
+                            <Path x:Name="ButtonPath" Data="M6 0H35V29L29 35H0V6L6 0Z"
+                                  Stretch="Fill" Cursor="Hand">
+                                <Path.Fill>
+                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                        <GradientStop Color="#600707" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Path.Fill>
+                            </Path>
+                            <Viewbox Width="14" Height="17" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Grid>
+                                    <Path x:Name="PlayIcon" Width="13" Height="16"
+                                          Data="M0.75 14.4091C0.753872 14.6498 0.819246 14.8848 0.939018 15.0886C1.05879 15.2923 1.22838 15.4569 1.42935 15.5646C1.63004 15.6861 1.85663 15.75 2.08714 15.75C2.31765 15.75 2.54424 15.6861 2.74493 15.5646L12.0726 9.38244C12.2755 9.27766 12.4467 9.11364 12.5666 8.90922C12.6864 8.7048 12.75 8.4683 12.75 8.22689C12.75 7.98548 12.6864 7.74897 12.5666 7.54456C12.4467 7.34014 12.2755 7.17612 12.0726 7.07134L2.74493 0.93537C2.54424 0.813856 2.31765 0.75 2.08714 0.75C1.85663 0.75 1.63004 0.813856 1.42935 0.93537C1.22838 1.04305 1.05879 1.20771 0.939018 1.41143C0.819246 1.61516 0.753872 1.85017 0.75 2.09092V14.4091Z"
+                                          Stroke="#EEEEEE" StrokeThickness="1.5"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Stretch="Uniform" Visibility="Visible"/>
+                                    <Path x:Name="PauseIcon" Width="12" Height="16"
+                                          Data="M1 1V16 M11 1V16"
+                                          Stroke="#EEEEEE" StrokeThickness="2"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Stretch="Uniform" Visibility="Collapsed"/>
+                                </Grid>
+                            </Viewbox>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 下拉框样式（参考 PresetComboBoxStyle） -->
+        <Style x:Key="SteeringComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <ControlTemplate.Resources>
+                            <Style TargetType="ScrollBar">
+                                <Setter Property="Background" Value="#D9D9D9"/>
+                                <Setter Property="Width" Value="3"/>
+                                <Setter Property="Margin" Value="0,4,8,4"/>
+                                <Setter Property="MinWidth" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ScrollBar">
+                                            <Border Background="{TemplateBinding Background}" Width="{TemplateBinding Width}" CornerRadius="1.5">
+                                                <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                                    <Track.Thumb>
+                                                        <Thumb>
+                                                            <Thumb.Template>
+                                                                <ControlTemplate TargetType="Thumb">
+                                                                    <Border Background="#C60E0E" CornerRadius="1.5" Margin="0"/>
+                                                                </ControlTemplate>
+                                                            </Thumb.Template>
+                                                        </Thumb>
+                                                    </Track.Thumb>
+                                                </Track>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ControlTemplate.Resources>
+                        <Grid>
+                            <!-- 边框：由固定 6px 斜切角组成，不随拉伸变形 -->
+                            <Grid>
+                                <!-- 主体 -->
+                                <Border Background="#EEEEEE" Opacity="0.2" Margin="6,0,6,0"/>
+                                <!-- 左上斜角 -->
+                                <Polygon Points="0,6 6,0 6,6" Fill="#EEEEEE" Opacity="0.2"
+                                         HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                <!-- 左侧条（斜角下方） -->
+                                <Border Background="#EEEEEE" Opacity="0.2" Width="6"
+                                        HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                                <!-- 右侧条（斜角上方） -->
+                                <Border Background="#EEEEEE" Opacity="0.2" Width="6"
+                                        HorizontalAlignment="Right" Margin="0,0,0,6"/>
+                                <!-- 右下斜角 -->
+                                <Polygon Points="0,0 6,0 0,6" Fill="#EEEEEE" Opacity="0.2"
+                                         HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                            </Grid>
+
+                            <ToggleButton x:Name="ToggleButton" Background="Transparent" BorderThickness="0"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Cursor="Hand">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Grid Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <TextBlock x:Name="ContentSite" Text="{TemplateBinding SelectionBoxItem}"
+                                       TextTrimming="CharacterEllipsis" FontSize="16"
+                                       Foreground="#EEEEEE" VerticalAlignment="Center"
+                                       HorizontalAlignment="Left" Margin="10,0,43,0"
+                                       IsHitTestVisible="False"/>
+
+                            <Path x:Name="Arrow" Data="M13.0605 1.06055L7.06055 7.06055L1.06055 1.06055"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  HorizontalAlignment="Right" Margin="0,0,10,0"
+                                  VerticalAlignment="Center" IsHitTestVisible="False"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Path.RenderTransform>
+                            </Path>
+
+                            <Popup x:Name="Popup" IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" Placement="Bottom"
+                                   VerticalOffset="-11" PopupAnimation="Fade">
+                                <Grid Width="{TemplateBinding ActualWidth}">
+                                    <!-- 弹出框背景：固定 6px 斜切角 -->
+                                    <Grid>
+                                        <!-- 主体（顶部留 11px 给斜角区域） -->
+                                        <Border Background="#474747" Margin="0,11,6,0"/>
+                                        <!-- 右侧条（顶部斜角下方 y=5 + 底部斜角上方 y=H-6） -->
+                                        <Border Background="#474747" Width="6"
+                                                HorizontalAlignment="Right" Margin="0,11,0,6"/>
+                                        <!-- 右上斜角（填充对角线 (W-6,11)→(W,5) 下方区域） -->
+                                        <Polygon Points="0,11 6,5 6,11" Fill="#474747"
+                                                 HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                                        <!-- 右下斜角（填充对角线 (W,H-6)→(W-6,H) 上方区域） -->
+                                        <Polygon Points="0,0 6,0 0,6" Fill="#474747"
+                                                 HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                        <!-- 顶部边框横线 -->
+                                        <Border Height="1" Background="#EEEEEE" VerticalAlignment="Top"
+                                                Margin="0,11,6,0"/>
+                                        <!-- 顶部边框斜线（右上角） -->
+                                        <Line X1="0" Y1="11" X2="6" Y2="6"
+                                              Stroke="#EEEEEE" StrokeThickness="1"
+                                              HorizontalAlignment="Right" VerticalAlignment="Top"
+                                              StrokeEndLineCap="Round"/>
+                                    </Grid>
+
+                                    <ScrollViewer MaxHeight="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}, FallbackValue=179}" VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  Margin="0,17,0,5">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsDropDownOpen" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Arrow"
+                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                To="180" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Arrow"
+                                                Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                To="0" Duration="0:0:0.2">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="#EEEEEE"/>
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}"
+                                            Padding="0,8" Margin="8,2,8,2">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="23"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Path x:Name="CheckMark" Grid.Column="0"
+                                                  Data="M11.75 0.75L5.1532 9.75L0.75 6.37909"
+                                                  Stroke="#EEEEEE" StrokeThickness="1.5" Stretch="None"
+                                                  VerticalAlignment="Top" HorizontalAlignment="Center"
+                                                  Visibility="Hidden" Margin="0,5,0,0"/>
+
+                                            <TextBlock Grid.Column="1" Text="{TemplateBinding Content}"
+                                                       TextWrapping="Wrap" VerticalAlignment="Center"
+                                                       HorizontalAlignment="Left"/>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="ItemBorder" Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                                        <GradientStop Color="#600707" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                        <MultiTrigger>
+                                            <MultiTrigger.Conditions>
+                                                <Condition Property="IsMouseOver" Value="True"/>
+                                                <Condition Property="IsSelected" Value="False"/>
+                                            </MultiTrigger.Conditions>
+                                            <Setter TargetName="ItemBorder" Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                                        <GradientStop Color="#600707" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </MultiTrigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 拨片模式单选样式 -->
+        <Style x:Key="PaddleModeRadioStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="22" Height="18">
+                            <Path x:Name="OuterBorder"
+                                  Data="M20.7889 0.724723L20.5962 1.44828L16.6017 16.4486L16.4085 17.174H0.942669L1.13536 16.4504L5.13085 1.45016L5.32405 0.724723H20.7889Z"
+                                  Stroke="#C60E0E" StrokeThickness="1.5"
+                                  Fill="Transparent" Stretch="None"/>
+                            <Path x:Name="InnerFill"
+                                  Data="M14.984 0H3.49626L0 13H11.5044L14.984 0Z"
+                                  Fill="#C60E0E" Stretch="None" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="InnerFill" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+    </UserControl.Resources>
+
+    <Grid Margin="0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 设备信息区 -->
+        <!-- 背景图：从中间到上下两端渐隐（覆盖第三行起） -->
+        <Image Source="/Assets/NeoX.png" Width="796" Height="719" Stretch="Uniform" VerticalAlignment="Top" HorizontalAlignment="Center"
+               Grid.RowSpan="5" Panel.ZIndex="0" Margin="0,-45,0,0"
+               IsHitTestVisible="False">
+            <Image.OpacityMask>
+                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                    <GradientStop Color="#00EEEEEE" Offset="0.20"/>
+                    <GradientStop Color="#1AEEEEEE" Offset="0.21"/>
+                    <GradientStop Color="#33EEEEEE" Offset="0.23"/>
+                    <GradientStop Color="#4DEEEEEE" Offset="0.25"/>
+                    <GradientStop Color="#66EEEEEE" Offset="0.27"/>
+                    <GradientStop Color="#80EEEEEE" Offset="0.29"/>
+                    <GradientStop Color="#73EEEEEE" Offset="0.30"/>
+                    <GradientStop Color="#CCEEEEEE" Offset="0.32"/>
+                    <GradientStop Color="#E6EEEEEE" Offset="0.52"/>
+                    <GradientStop Color="#FFEEEEEE" Offset="0.57"/>
+                    <GradientStop Color="#E6EEEEEE" Offset="0.77"/>
+                    <GradientStop Color="#B3EEEEEE" Offset="0.77"/>
+                    <GradientStop Color="#99EEEEEE" Offset="0.78"/>
+                    <GradientStop Color="#80EEEEEE" Offset="0.78"/>
+                    <GradientStop Color="#66EEEEEE" Offset="0.79"/>
+                    <GradientStop Color="#4DEEEEEE" Offset="0.79"/>
+                    <GradientStop Color="#33EEEEEE" Offset="0.80"/>
+                    <GradientStop Color="#1AEEEEEE" Offset="0.80"/>
+                    <GradientStop Color="#00EEEEEE" Offset="0.81"/>
+                </LinearGradientBrush>
+            </Image.OpacityMask>
+        </Image>
+
+        <!-- 第一行：设备信息区 -->
         <Grid Grid.Row="0" Margin="0,0,0,19">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
+            <Grid Grid.Row="0" >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
@@ -34,10 +886,7 @@
 
                 <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,3" VerticalAlignment="Bottom"/>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="面 盘" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="DeviceModelName" Text="面盘" FontSize="26" Foreground="#EEEEEE" Margin="10,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
-                </StackPanel>
+                <TextBlock x:Name="DeviceModelName" Grid.Column="1" Text="面盘" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
 
                 <Border Grid.Column="2" Width="1" Height="26" Background="#EEEEEE" Margin="20,0,20,0" VerticalAlignment="Center"/>
 
@@ -68,10 +917,935 @@
                 <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="固件版本:" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
                     <TextBlock x:Name="FirmwareVersionText" Text="---" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                    <Border x:Name="NewVersionAvailableBorder" BorderThickness="0,0,0,1" BorderBrush="#C60E0E" Padding="0,0,0,0" Margin="10,0,0,0" VerticalAlignment="Center" Cursor="Hand" Visibility="Collapsed" MouseLeftButtonDown="NewVersionAvailable_Click">
+                        <TextBlock x:Name="NewVersionAvailableText" Text="新版本可用" FontSize="22" Foreground="#C60E0E"/>
+                    </Border>
                 </StackPanel>
             </Grid>
 
             <Border Grid.Row="1" Height="1" Background="#99383838" Margin="0,4,0,0" CornerRadius="1"/>
         </Grid>
+
+        <!-- 第二行：预设管理区 -->
+        <Grid Grid.Row="1" Margin="0,0,0,19">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid Grid.Column="0" Width="388" Height="37">
+                <Path Data="M393 5H10.1733L5 11V42H6.552H387.827L393 36V5Z" Fill="#33EEEEEE" Stretch="Fill"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,15,0">
+                    <TextBlock Text="当前" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <Border Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
+                    <Viewbox Width="15" Height="17" Margin="0,0,8,0">
+                        <Grid Width="15" Height="17">
+                            <Canvas x:Name="OfficialPresetIcon" Width="15" Height="17">
+                                <Path Data="M9.85 15.7504L5.3 12.2888L0.75 15.7504V5.36576C0.75 5.05974 0.886964 4.76626 1.13076 4.54987C1.37456 4.33348 1.70522 4.21191 2.05 4.21191H8.55C8.89478 4.21191 9.22544 4.33348 9.46924 4.54987C9.71304 4.76626 9.85 5.05974 9.85 5.36576V15.7504Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.64844 0.75H12.4484C12.7932 0.75 13.1239 0.871566 13.3677 1.08795C13.6115 1.30434 13.7484 1.59783 13.7484 1.90385V12.2885"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                            <Canvas x:Name="PersonalPresetIcon" Width="15" Height="17" Visibility="Collapsed">
+                                <Path Data="M8.24962 8.25C10.4279 8.25 12.1938 6.57107 12.1938 4.5C12.1938 2.42893 10.4279 0.75 8.24962 0.75C6.07132 0.75 4.30545 2.42893 4.30545 4.5C4.30545 6.57107 6.07132 8.25 8.24962 8.25Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.75 15.7505C15.2405 14.24 14.2397 12.9223 12.8917 11.9874C11.5438 11.0526 9.91845 10.5488 8.25 10.5488C6.58155 10.5488 4.9562 11.0526 3.60827 11.9874C2.26035 12.9223 1.25949 14.24 0.75 15.7505H15.75Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                            <Canvas x:Name="OnboardPresetIcon" Width="16" Height="16" Visibility="Collapsed">
+                                <Path Data="M13.625 12.9218V3.07812C13.625 2.6898 13.3102 2.375 12.9219 2.375H3.07802C2.68969 2.375 2.37489 2.6898 2.37489 3.07812V12.9218C2.37489 13.3101 2.68969 13.6249 3.07802 13.6249H12.9219C13.3102 13.6249 13.625 13.3101 13.625 12.9218Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                <Path Data="M10.8299 10.8083V5.19141H5.21292V10.8083H10.8299Z"
+                                      Stroke="#EEEEEE" StrokeThickness="1.5" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 4.25H13.625" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 4.25H0.5" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 8H13.625" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 8H0.5" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M15.5 11.75H13.625" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M2.375 11.75H0.5" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M11.7607 0.5V2.375" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M11.7607 13.625V15.5" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M8.02145 0.5V2.375" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M8.02145 13.625V15.5" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.2822 0.5V2.375" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                <Path Data="M4.2822 13.625V15.5" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            </Canvas>
+                        </Grid>
+                    </Viewbox>
+                    <TextBlock x:Name="PresetNameText" Text="Default" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="ModifiedIndicator" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Visibility="Collapsed">
+                        <Run Text="(" Foreground="#EEEEEE"/>
+                        <Run Text="已更改" Foreground="#C60E0E"/>
+                        <Run Text=")" Foreground="#EEEEEE"/>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+                <Grid x:Name="UndoButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="UndoButton_Click">
+                    <Path x:Name="UndoButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="撤回" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <Grid x:Name="SaveButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveButton_Click">
+                    <Path x:Name="SaveButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="保存" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <Grid Width="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveAsButton_Click">
+                    <Path x:Name="SaveAsButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="另存为" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <Grid Width="80" Height="37"
+                      MouseLeftButtonDown="ExportButton_Click">
+                    <Path x:Name="ExportButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    <TextBlock Text="导出" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+            </StackPanel>
+
+            <Grid Grid.Column="3" Width="115" Height="37"
+                  MouseLeftButtonDown="PresetListButton_Click" Cursor="Hand">
+                <Path x:Name="PresetListButtonPath" Data="M120 5H11L5 11V42H5.46H114L120 36V5Z"
+                      Style="{StaticResource PresetListButtonPathStyle}"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Viewbox Width="15" Height="15" Margin="0,0,10,0">
+                        <Canvas Width="15" Height="15">
+                            <Path Data="M13.75 0.75H0.75" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M13.75 5.08398H6.25" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M13.75 9.41602H6.25" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M13.75 13.75H0.75" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                            <Path Data="M2.75 5.08398L1.25 7.25065L2.75 9.41732" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock Text="预设列表" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+        <!-- 第三行：选项卡 + 按键响应指示器 -->
+        <Grid Grid.Row="2" Margin="0,0,0,19">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <RadioButton x:Name="ButtonTab" GroupName="SectionTabs" Content="按 键 &amp; 转 速 灯"
+                             Style="{StaticResource SectionTabStyle}" IsChecked="True"
+                             Checked="SectionTab_Checked"/>
+                <RadioButton x:Name="PaddleTab" GroupName="SectionTabs" Content="拨 片"
+                             Style="{StaticResource SectionTabStyle2}"
+                             Checked="SectionTab_Checked"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 第四行：按键位置叠加层（覆盖在背景图上） -->
+        <Canvas Grid.Row="3" Panel.ZIndex="1" Width="796" HorizontalAlignment="Center" >
+            <!-- 按钮悬停图形 -->
+            <Path x:Name="RpmSettingsTrigger" Data="M240.35 11.5L254.5 26.5938V36.0498L236.662 44.5H227.501L219.9 38.7998L219.5 38.5H47.5459L38.5459 44.5H29.3379L11.5 36.0498V26.5938L25.6504 11.5H240.35Z"
+                  Fill="Transparent" StrokeThickness="3"
+                  Cursor="Hand" Stretch="None"
+                  Canvas.Left="266" Canvas.Top="31"
+                  MouseLeftButtonDown="RpmSettingsTrigger_Click">
+                <Path.Style>
+                    <Style TargetType="Path">
+                        <Setter Property="Stroke" Value="Transparent"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Stroke" Value="#C60E0E"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="10" Color="#940A0A"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Path.Style>
+            </Path>
+
+            <!-- B1 - B3: 左上按键 -->
+            <RadioButton x:Name="Btn1" GroupName="KeyButtons" Canvas.Left="215" Canvas.Top="9" IsChecked="True"
+                         Style="{StaticResource SmallButtonStyle}" Content="B1" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn2" GroupName="KeyButtons" Canvas.Left="176" Canvas.Top="54"
+                         Style="{StaticResource SmallButtonStyle}" Content="B2" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn3" GroupName="KeyButtons" Canvas.Left="230" Canvas.Top="79"
+                         Style="{StaticResource SmallButtonStyle}" Content="B3" Checked="KeyButton_Checked"/>
+
+            <!-- B4: 左侧上箭头 + B4 -->
+            <RadioButton x:Name="Btn4" GroupName="KeyButtons" Canvas.Left="165" Canvas.Top="117"
+                         Style="{StaticResource ArrowUpButtonStyle}" Content="B4" Checked="KeyButton_Checked"/>
+
+            <!-- B5: 左侧下箭头 + B5 -->
+            <RadioButton x:Name="Btn5" GroupName="KeyButtons" Canvas.Left="165" Canvas.Top="197"
+                         Style="{StaticResource ArrowDownButtonStyle}" Content="B5" Checked="KeyButton_Checked" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+            <!-- B6 - B9: 左下按键 -->
+            <RadioButton x:Name="Btn6" GroupName="KeyButtons" Canvas.Left="203" Canvas.Top="227"
+                         Style="{StaticResource SmallButtonStyle}" Content="B6" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn7" GroupName="KeyButtons" Canvas.Left="262.5" Canvas.Top="230.5"
+                         Style="{StaticResource SmallButtonStyle}" Content="B7" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn8" GroupName="KeyButtons" Canvas.Left="217" Canvas.Top="285"
+                         Style="{StaticResource SmallButtonStyle}" Content="B8" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn9" GroupName="KeyButtons" Canvas.Left="276" Canvas.Top="288.5"
+                         Style="{StaticResource SmallButtonStyle}" Content="B9" Checked="KeyButton_Checked"/>
+
+            <!-- B10: 中央大按键 -->
+            <RadioButton x:Name="Btn10" GroupName="KeyButtons" Canvas.Left="366" Canvas.Top="261"
+                         Style="{StaticResource LargeButtonStyle}" Content="B10" Checked="KeyButton_Checked"/>
+
+            <!-- B11 - B13: 右上按键 -->
+            <RadioButton x:Name="Btn11" GroupName="KeyButtons" Canvas.Left="537" Canvas.Top="9"
+                         Style="{StaticResource SmallButtonStyle}" Content="B11" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn12" GroupName="KeyButtons" Canvas.Left="576" Canvas.Top="54"
+                         Style="{StaticResource SmallButtonStyle}" Content="B12" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn13" GroupName="KeyButtons" Canvas.Left="522" Canvas.Top="79"
+                         Style="{StaticResource SmallButtonStyle}" Content="B13" Checked="KeyButton_Checked"/>
+
+            <!-- B14: 右侧上箭头 + B14 -->
+            <RadioButton x:Name="Btn14" GroupName="KeyButtons" Canvas.Left="592" Canvas.Top="117"
+                         Style="{StaticResource ArrowUpButtonStyle}" Content="B14" Checked="KeyButton_Checked" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+
+            <!-- B15: 右侧下箭头 + B15 -->
+            <RadioButton x:Name="Btn15" GroupName="KeyButtons" Canvas.Left="592" Canvas.Top="197"
+                         Style="{StaticResource ArrowDownButtonStyle}" Content="B15" Checked="KeyButton_Checked"/>
+
+            <!-- B16 - B19: 右下方按键 -->
+            <RadioButton x:Name="Btn16" GroupName="KeyButtons" Canvas.Left="490" Canvas.Top="230.5"
+                         Style="{StaticResource SmallButtonStyle}" Content="B16" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn17" GroupName="KeyButtons" Canvas.Left="549" Canvas.Top="227"
+                         Style="{StaticResource SmallButtonStyle}" Content="B17" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn18" GroupName="KeyButtons" Canvas.Left="476.5" Canvas.Top="288.5"
+                         Style="{StaticResource SmallButtonStyle}" Content="B18" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn19" GroupName="KeyButtons" Canvas.Left="536" Canvas.Top="285"
+                         Style="{StaticResource SmallButtonStyle}" Content="B19" Checked="KeyButton_Checked"/>
+        </Canvas>
+
+        <!-- 按键响应指示器（左下角） -->
+        <Grid HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0,0,0,0"
+              Width="126" Height="96" Grid.Row="3">
+            <Path Data="M125.5 0.5V89.793L119.793 95.5H0.5V6.20703L6.20703 0.5H125.5Z"
+                  Stroke="#C60E0E" StrokeThickness="1" Stretch="Fill"/>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="按键响应" FontSize="18" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="KeyResponseName" Text="---" FontSize="30" Foreground="#EEEEEE"
+                   FontWeight="Bold" HorizontalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"
+                   Margin="0,10,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- 第五行：内容区域（由选项卡控制） -->
+        <Grid Grid.Row="4" Width="1201" Height="330" VerticalAlignment="Bottom" Margin="0,34,0,0">
+            <!-- 按键&amp;转速灯 内容 -->
+            <Grid x:Name="ButtonContentPanel" Visibility="Visible">
+                <Path Data="M0 15V330H1185.48L1201 315V0H15.5168L0 15Z"
+                      Stroke="#33EEEEEE" StrokeThickness="1" Fill="Transparent"
+                      Stretch="Fill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+                <Grid Margin="21">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="378"/>
+                        <ColumnDefinition Width="2"/>
+                        <ColumnDefinition Width="399"/>
+                        <ColumnDefinition Width="2"/>
+                        <ColumnDefinition Width="378"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ═══ 第一列：全局设置 ═══ -->
+                    <Grid Grid.Column="0" Margin="0,0,19,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 第一行：全局设置标题 -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="全 局 设 置" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- 第二行：按键颜色 -->
+                        <Grid Grid.Row="1" Margin="0,0,0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid Margin="0,0,0,10">
+                                <TextBlock Text="按键灯颜色" FontSize="16" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                <CheckBox x:Name="KeyColorToggle" HorizontalAlignment="Right"
+                                          Style="{StaticResource DualStateSvgToggleStyle}" IsChecked="True"
+                                          Checked="KeyColorToggle_Checked" Unchecked="KeyColorToggle_Unchecked"/>
+                            </Grid>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal">
+                                <RadioButton x:Name="ColorRed" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#C60E0E" IsChecked="True" Checked="KeyColor_Checked"/>
+                                <RadioButton x:Name="ColorOrange" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#FF6A00" Checked="KeyColor_Checked"/>
+                                <RadioButton x:Name="ColorYellow" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#FFC800" Checked="KeyColor_Checked"/>
+                                <RadioButton x:Name="ColorGreen" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#16C642" Checked="KeyColor_Checked"/>
+                                <RadioButton x:Name="ColorCyan" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#28F9DD" Checked="KeyColor_Checked"/>
+                                <RadioButton x:Name="ColorBlue" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#2840F9" Checked="KeyColor_Checked"/>
+                                <RadioButton x:Name="ColorPurple" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#C128F9" Checked="KeyColor_Checked"/>
+                                <RadioButton x:Name="ColorWhite" GroupName="KeyColor" Style="{StaticResource ColorBlockRadioStyle}"
+                                                 Background="#EEEEEE" Checked="KeyColor_Checked"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- 第三行：按键灯亮度 -->
+                        <Grid Grid.Row="2" Margin="0,0,0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <TextBlock Text="按键灯亮度" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="KeyBrightnessPercent" Text="50%" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                           FontFamily="{StaticResource OrbitronFont}"/>
+                            </Grid>
+                            <Slider x:Name="KeyBrightnessSlider" Grid.Row="1" Margin="0,12,0,0"
+                                    Style="{StaticResource BrightnessSliderStyle}"
+                                    ValueChanged="BrightnessSlider_ValueChanged"/>
+                        </Grid>
+
+                        <!-- 第四行：转速灯亮度 -->
+                        <Grid Grid.Row="3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <TextBlock Text="转速灯亮度" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="RpmBrightnessPercent" Text="50%" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                           FontFamily="{StaticResource OrbitronFont}"/>
+                            </Grid>
+                            <Slider x:Name="RpmBrightnessSlider" Grid.Row="1" Margin="0,12,0,0"
+                                    Style="{StaticResource BrightnessSliderStyle}"
+                                    ValueChanged="BrightnessSlider_ValueChanged"/>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 分隔线1 -->
+                    <Border Grid.Column="1" Width="2" Background="#33EEEEEE" VerticalAlignment="Stretch" CornerRadius="1.5"/>
+
+                    <!-- ═══ 第二列：显示设置 ═══ -->
+                    <Grid Grid.Column="2" Margin="20,0,20,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 第一行：显示按键编号 -->
+                        <Grid Margin="0,0,0,20">
+                            <TextBlock Text="显示按键编号" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <CheckBox x:Name="ShowKeyNumberToggle" HorizontalAlignment="Right"
+                                      Style="{StaticResource DualStateSvgToggleStyle}" IsChecked="True"
+                                      Checked="ShowKeyNumberToggle_Checked" Unchecked="ShowKeyNumberToggle_Unchecked"/>
+                        </Grid>
+
+                        <!-- 第二行：睡眠灯光时间 -->
+                        <Grid Grid.Row="1" Margin="0,0,0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="睡眠灯光时间" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <ComboBox x:Name="SleepTimeCombo" Grid.Row="1"
+                                      Style="{StaticResource SteeringComboBoxStyle}" Width="359" Height="35" Tag="121" FontFamily="{StaticResource OrbitronFont}"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="5 分钟"/>
+                                <ComboBoxItem Content="10 分钟"/>
+                                <ComboBoxItem Content="15 分钟"/>
+                                <ComboBoxItem Content="30 分钟"/>
+                                <ComboBoxItem Content="60 分钟"/>
+                                <ComboBoxItem Content="从不"/>
+                            </ComboBox>
+                        </Grid>
+
+                        <!-- 第三行：待机灯效 -->
+                        <Grid Grid.Row="2" Margin="0,0,0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="待机灯效" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <ComboBox x:Name="StandbyEffectCombo" Grid.Row="1"
+                                      Style="{StaticResource SteeringComboBoxStyle}"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="呼吸"/>
+                                <ComboBoxItem Content="关灯"/>
+                            </ComboBox>
+                        </Grid>
+
+                        <!-- 第四行：速度滑块 -->
+                        <Grid Grid.Row="3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="速度" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <Slider x:Name="SpeedSlider" Grid.Row="1" Style="{StaticResource SpeedSliderStyle}"
+                                    Value="3"/>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 分隔线2 -->
+                    <Border Grid.Column="3" Width="2" Background="#33EEEEEE" VerticalAlignment="Stretch" CornerRadius="1.5"/>
+
+                    <!-- ═══ 第三列：遥测效果预览 ═══ -->
+                    <Grid Grid.Column="4" Margin="20,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="遥测效果预览" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ComboBox x:Name="TelemetryEffectCombo" Margin="0,0,10,0"
+                                          Style="{StaticResource SteeringComboBoxStyle}" Width="314" Height="35" Tag="201" FontFamily="{StaticResource OrbitronFont}"
+                                          SelectedIndex="0">
+                                    <ComboBoxItem Content="ABS介入"/>
+                                    <ComboBoxItem Content="TC介入"/>
+                                    <ComboBoxItem Content="DRS可用"/>
+                                    <ComboBoxItem Content="DRS开启"/>
+                                    <ComboBoxItem Content="车轮抱死"/>
+                                    <ComboBoxItem Content="维修区限速"/>
+                                    <ComboBoxItem Content="车轮打滑"/>
+                                </ComboBox>
+
+                                <Button x:Name="PlayPauseButton" Grid.Column="1"
+                                        Style="{StaticResource PlayPauseButtonStyle}"
+                                        Click="PlayPauseButton_Click"/>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- 拨片 内容 -->
+            <Grid x:Name="PaddleContentPanel" Visibility="Collapsed">
+                <Path Data="M0 15V330H1185.48L1201 315V0H15.5168L0 15Z"
+                      Stroke="#33EEEEEE" StrokeThickness="1" Fill="Transparent"
+                      Stretch="Fill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+                <Grid Margin="21">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="378"/>
+                        <ColumnDefinition Width="2"/>
+                        <ColumnDefinition Width="399"/>
+                        <ColumnDefinition Width="2"/>
+                        <ColumnDefinition Width="378"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ═══════════════════ 第一列：离合拨片 ═══════════════════ -->
+                    <Grid Grid.Column="0" Margin="0,0,20,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 第一行：离合拨片标题 -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="离 合 拨 片" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- 第二行：模式单选 -->
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
+                            <RadioButton x:Name="CombinedAxisRadio" GroupName="ClutchMode"
+                                         Style="{StaticResource PaddleModeRadioStyle}" IsChecked="True"
+                                         Checked="ClutchMode_Checked"/>
+                            <TextBlock Text="合成轴" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+
+                            <RadioButton x:Name="IndependentAxisRadio" GroupName="ClutchMode"
+                                         Style="{StaticResource PaddleModeRadioStyle}"
+                                         Checked="ClutchMode_Checked"/>
+                            <TextBlock Text="独立轴" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+
+                            <RadioButton x:Name="KeyModeRadio" GroupName="ClutchMode"
+                                         Style="{StaticResource PaddleModeRadioStyle}"
+                                         Checked="ClutchMode_Checked"/>
+                            <TextBlock Text="按键" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- 第三行：动态内容（根据模式切换） -->
+                        <!-- ═══ 合成轴模式 ═══ -->
+                        <Grid x:Name="CombinedAxisPanel" Grid.Row="2" Visibility="Visible">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="左 离 合" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,10,0"/>
+                                <TextBlock Grid.Column="1" x:Name="CombinedLeftPercent" Text="0%"
+                                           FontSize="16" Foreground="#C60E0E" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}"/>
+                                <TextBlock Grid.Column="4" Text="右 离 合" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                <TextBlock Grid.Column="3" x:Name="CombinedRightPercent" Text="0%"
+                                           FontSize="16" Foreground="#C60E0E" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}" Margin="0,0,10,0"/>
+                            </Grid>
+
+                            <!-- 进度条 -->
+                            <Grid Grid.Row="1">
+                                <!-- 进度条本体 -->
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- 顶部：左上角 + 右上角 -->
+                                    <Grid Grid.Row="0" Height="6">
+                                        <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                        <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                    </Grid>
+
+                                    <!-- 中部：进度条 -->
+                                    <Grid Grid.Row="1" Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="CombinedProgressFillCol" Width="0"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#11622F" Offset="0"/>
+                                                    <GradientStop Color="#4CE083" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Border Grid.Column="1" Height="7" VerticalAlignment="Center">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#C60E0E" Offset="0"/>
+                                                    <GradientStop Color="#600707" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Path Data="M3.90737 7.12579H1.28906L5.65291 -0.175781H8.27122L3.90737 7.12579Z M-0.748878 7.12579H-3.36719L0.996663 -0.175781H3.61497L-0.748878 7.12579Z M8.55972 7.12579H5.94141L10.3053 -0.175781H12.9236L8.55972 7.12579Z M13.2082 7.12579H10.5898L14.9537 -0.175781H17.572L13.2082 7.12579Z M17.8644 7.12579H15.2461L19.6099 -0.175781H22.2283L17.8644 7.12579Z M22.5207 7.12579H19.9023L24.2662 -0.175781H26.8845L22.5207 7.12579Z M27.173 7.12579H24.5547L28.9185 -0.175781H31.5368L27.173 7.12579Z M31.8292 7.12579H29.2109L33.5748 -0.175781H36.1931L31.8292 7.12579Z M36.4855 7.12579H33.8672L38.231 -0.175781H40.8493L36.4855 7.12579Z M41.1417 7.12579H38.5234L42.8873 -0.175781H45.5056L41.1417 7.12579Z M45.8019 7.12579H43.1836L47.5474 -0.175781H50.1658L45.8019 7.12579Z M50.4464 7.12579H47.8281L52.192 -0.175781H54.8103L50.4464 7.12579Z M55.1104 7.12579H52.4921L56.8559 -0.175781H59.4742L55.1104 7.12579Z M59.7589 7.12579H57.1406L61.5045 -0.175781H64.1228L59.7589 7.12579Z M64.4152 7.12579H61.7969L66.1607 -0.175781H68.779L64.4152 7.12579Z M69.0753 7.12579H66.457L70.8209 -0.175781H73.4392L69.0753 7.12579Z M73.7199 7.12579H71.1016L75.4654 -0.175781H78.0837L73.7199 7.12579Z M78.3878 7.12579H75.7695L80.1334 -0.175781H82.7517L78.3878 7.12579Z M83.0363 7.12579H80.418L84.7818 -0.175781H87.4001L83.0363 7.12579Z M87.6925 7.12579H85.0742L89.4381 -0.175781H92.0564L87.6925 7.12579Z M92.3488 7.12579H89.7305L94.0943 -0.175781H96.7126L92.3488 7.12579Z M96.9972 7.12579H94.3789L98.7428 -0.175781H101.361L96.9972 7.12579Z M101.65 7.12579H99.0312L103.395 -0.175781H106.013L101.65 7.12579Z M106.314 7.12579H103.695L108.059 -0.175781H110.677L106.314 7.12579Z M110.966 7.12579H108.348L112.712 -0.175781H115.33L110.966 7.12579Z M115.614 7.12579H112.996L117.36 -0.175781H119.978L115.614 7.12579Z M120.271 7.12579H117.652L122.016 -0.175781H124.635L120.271 7.12579Z M124.935 7.12579H122.316L126.68 -0.175781H129.299L124.935 7.12579Z M129.579 7.12579H126.961L131.325 -0.175781H133.943L129.579 7.12579Z M134.243 7.12579H131.625L135.989 -0.175781H138.607L134.243 7.12579Z M138.884 7.12579H136.266L140.629 -0.175781H143.248L138.884 7.12579Z M143.544 7.12579H140.926L145.29 -0.175781H147.908L143.544 7.12579Z M148.193 7.12579H145.574L149.938 -0.175781H152.556L148.193 7.12579Z M152.853 7.12579H150.234L154.598 -0.175781H157.217L152.853 7.12579Z M157.509 7.12579H154.891L159.254 -0.175781H161.873L157.509 7.12579Z M162.165 7.12579H159.547L163.911 -0.175781H166.529L162.165 7.12579Z M166.825 7.12579H164.207L168.571 -0.175781H171.189L166.825 7.12579Z M171.478 7.12579H168.859L173.223 -0.175781H175.842L171.478 7.12579Z M176.13 7.12579H173.512L177.876 -0.175781H180.494L176.13 7.12579Z M180.782 7.12579H178.164L182.528 -0.175781H185.146L180.782 7.12579Z M185.439 7.12579H182.82L187.184 -0.175781H189.802L185.439 7.12579Z M190.087 7.12579H187.469L191.833 -0.175781H194.451L190.087 7.12579Z M194.743 7.12579H192.125L196.489 -0.175781H199.107L194.743 7.12579Z M199.403 7.12579H196.785L201.149 -0.175781H203.767L199.403 7.12579Z M204.056 7.12579H201.438L205.801 -0.175781H208.42L204.056 7.12579Z M208.716 7.12579H206.098L210.462 -0.175781H213.08L208.716 7.12579Z M213.368 7.12579H210.75L215.114 -0.175781H217.732L213.368 7.12579Z M218.028 7.12579H215.41L219.774 -0.175781H222.392L218.028 7.12579Z M222.681 7.12579H220.063L224.427 -0.175781H227.045L222.681 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M231.993 7.12579H229.375L233.739 -0.175781H236.357L231.993 7.12579Z M236.646 7.12579H234.027L238.391 -0.175781H241.01L236.646 7.12579Z M241.302 7.12579H238.684L243.047 -0.175781H245.666L241.302 7.12579Z M245.946 7.12579H243.328L247.692 -0.175781H250.31L245.946 7.12579Z M250.607 7.12579H247.988L252.352 -0.175781H254.97L250.607 7.12579Z M255.263 7.12579H252.645L257.008 -0.175781H259.627L255.263 7.12579Z M259.919 7.12579H257.301L261.665 -0.175781H264.283L259.919 7.12579Z M264.571 7.12579H261.953L266.317 -0.175781H268.935L264.571 7.12579Z M269.216 7.12579H266.598L270.962 -0.175781H273.58L269.216 7.12579Z M273.88 7.12579H271.262L275.626 -0.175781H278.244L273.88 7.12579Z M278.528 7.12579H275.91L280.274 -0.175781H282.892L278.528 7.12579Z M283.189 7.12579H280.57L284.934 -0.175781H287.552L283.189 7.12579Z M287.845 7.12579H285.227L289.59 -0.175781H292.209L287.845 7.12579Z M292.497 7.12579H289.879L294.243 -0.175781H296.861L292.497 7.12579Z M297.161 7.12579H294.543L298.907 -0.175781H301.525L297.161 7.12579Z M301.81 7.12579H299.191L303.555 -0.175781H306.174L301.81 7.12579Z M306.462 7.12579H303.844L308.208 -0.175781H310.826L306.462 7.12579Z M311.118 7.12579H308.5L312.864 -0.175781H315.482L311.118 7.12579Z M315.775 7.12579H313.156L317.52 -0.175781H320.138L315.775 7.12579Z M320.423 7.12579H317.805L322.169 -0.175781H324.787L320.423 7.12579Z M325.083 7.12579H322.465L326.829 -0.175781H329.447L325.083 7.12579Z M329.743 7.12579H327.125L331.489 -0.175781H334.107L329.743 7.12579Z M334.392 7.12579H331.773L336.137 -0.175781H338.756L334.392 7.12579Z M339.052 7.12579H336.434L340.797 -0.175781H343.416L339.052 7.12579Z M343.708 7.12579H341.09L345.454 -0.175781H348.072L343.708 7.12579Z M348.357 7.12579H345.738L350.102 -0.175781H352.72L348.357 7.12579Z M353.009 7.12579H350.39L354.754 -0.175781H357.373L353.009 7.12579Z M357.661 7.12579H355.043L359.407 -0.175781H362.025L357.661 7.12579Z"
+                                              Fill="#EEEEEE" Opacity="0.3" Stretch="None" Grid.ColumnSpan="2"/>
+                                    </Grid>
+
+                                    <!-- 底部：左下角 + 右下角 -->
+                                    <Grid Grid.Row="2" Height="6">
+                                        <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                        <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                                    </Grid>
+                                </Grid>
+
+                                <!-- 滑动指示器覆盖层 -->
+                                <Canvas>
+                                    <Rectangle x:Name="ClutchPointIndicator"
+                                               Fill="#EEEEEE" Width="4" Height="7"
+                                               Canvas.Top="9" Canvas.Left="0"
+                                               IsHitTestVisible="False"/>
+                                    <Canvas x:Name="ClutchPointThumb"
+                                            Width="20" Height="18"
+                                            Canvas.Top="19" Canvas.Left="-8"
+                                            Background="Transparent"
+                                            Cursor="Hand"
+                                            MouseLeftButtonDown="ClutchPointThumb_MouseLeftButtonDown"
+                                            MouseLeftButtonUp="ClutchPointThumb_MouseLeftButtonUp"
+                                            MouseMove="ClutchPointThumb_MouseMove">
+                                        <Path Data="M19.1494 17.5H0.850586L10 1.03027L19.1494 17.5Z"
+                                              Stroke="#C60E0E" StrokeThickness="1"
+                                              Width="20" Height="18" Stretch="None"/>
+                                        <Path Data="M4 16L10 4L16 16H4Z"
+                                              Fill="#C60E0E"
+                                              Width="20" Height="18" Stretch="None"/>
+                                    </Canvas>
+                                </Canvas>
+                            </Grid>
+
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,22,0,0" HorizontalAlignment="Center">
+                                <TextBlock Text="离 合 点：" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                <TextBlock x:Name="ClutchPointPercent" Text="0%" FontSize="16" Width="50"
+                                           Foreground="#C60E0E" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- ═══ 独立轴模式 ═══ -->
+                        <Grid x:Name="IndependentAxisPanel" Grid.Row="2" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 左拨片进度条 -->
+                            <Grid Grid.Row="0" Margin="0,0,0,20">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <TextBlock Text="左拨片" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"
+                                               HorizontalAlignment="Left"/>
+                                    <TextBlock x:Name="LeftPaddlePercent" Text="0%" FontSize="16" Foreground="#C60E0E" FontWeight="Bold"
+                                               FontFamily="{StaticResource OrbitronFont}" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Grid Grid.Row="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Height="6">
+                                        <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                        <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                    <Grid Grid.Row="1" Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="LeftPaddleProgressFillCol" Width="0"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#11622F" Offset="0"/>
+                                                    <GradientStop Color="#4CE083" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Border Grid.Column="1" Height="7" VerticalAlignment="Center">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#C60E0E" Offset="0"/>
+                                                    <GradientStop Color="#600707" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Path Data="M3.90737 7.12579H1.28906L5.65291 -0.175781H8.27122L3.90737 7.12579Z M-0.748878 7.12579H-3.36719L0.996663 -0.175781H3.61497L-0.748878 7.12579Z M8.55972 7.12579H5.94141L10.3053 -0.175781H12.9236L8.55972 7.12579Z M13.2082 7.12579H10.5898L14.9537 -0.175781H17.572L13.2082 7.12579Z M17.8644 7.12579H15.2461L19.6099 -0.175781H22.2283L17.8644 7.12579Z M22.5207 7.12579H19.9023L24.2662 -0.175781H26.8845L22.5207 7.12579Z M27.173 7.12579H24.5547L28.9185 -0.175781H31.5368L27.173 7.12579Z M31.8292 7.12579H29.2109L33.5748 -0.175781H36.1931L31.8292 7.12579Z M36.4855 7.12579H33.8672L38.231 -0.175781H40.8493L36.4855 7.12579Z M41.1417 7.12579H38.5234L42.8873 -0.175781H45.5056L41.1417 7.12579Z M45.8019 7.12579H43.1836L47.5474 -0.175781H50.1658L45.8019 7.12579Z M50.4464 7.12579H47.8281L52.192 -0.175781H54.8103L50.4464 7.12579Z M55.1104 7.12579H52.4921L56.8559 -0.175781H59.4742L55.1104 7.12579Z M59.7589 7.12579H57.1406L61.5045 -0.175781H64.1228L59.7589 7.12579Z M64.4152 7.12579H61.7969L66.1607 -0.175781H68.779L64.4152 7.12579Z M69.0753 7.12579H66.457L70.8209 -0.175781H73.4392L69.0753 7.12579Z M73.7199 7.12579H71.1016L75.4654 -0.175781H78.0837L73.7199 7.12579Z M78.3878 7.12579H75.7695L80.1334 -0.175781H82.7517L78.3878 7.12579Z M83.0363 7.12579H80.418L84.7818 -0.175781H87.4001L83.0363 7.12579Z M87.6925 7.12579H85.0742L89.4381 -0.175781H92.0564L87.6925 7.12579Z M92.3488 7.12579H89.7305L94.0943 -0.175781H96.7126L92.3488 7.12579Z M96.9972 7.12579H94.3789L98.7428 -0.175781H101.361L96.9972 7.12579Z M101.65 7.12579H99.0312L103.395 -0.175781H106.013L101.65 7.12579Z M106.314 7.12579H103.695L108.059 -0.175781H110.677L106.314 7.12579Z M110.966 7.12579H108.348L112.712 -0.175781H115.33L110.966 7.12579Z M115.614 7.12579H112.996L117.36 -0.175781H119.978L115.614 7.12579Z M120.271 7.12579H117.652L122.016 -0.175781H124.635L120.271 7.12579Z M124.935 7.12579H122.316L126.68 -0.175781H129.299L124.935 7.12579Z M129.579 7.12579H126.961L131.325 -0.175781H133.943L129.579 7.12579Z M134.243 7.12579H131.625L135.989 -0.175781H138.607L134.243 7.12579Z M138.884 7.12579H136.266L140.629 -0.175781H143.248L138.884 7.12579Z M143.544 7.12579H140.926L145.29 -0.175781H147.908L143.544 7.12579Z M148.193 7.12579H145.574L149.938 -0.175781H152.556L148.193 7.12579Z M152.853 7.12579H150.234L154.598 -0.175781H157.217L152.853 7.12579Z M157.509 7.12579H154.891L159.254 -0.175781H161.873L157.509 7.12579Z M162.165 7.12579H159.547L163.911 -0.175781H166.529L162.165 7.12579Z M166.825 7.12579H164.207L168.571 -0.175781H171.189L166.825 7.12579Z M171.478 7.12579H168.859L173.223 -0.175781H175.842L171.478 7.12579Z M176.13 7.12579H173.512L177.876 -0.175781H180.494L176.13 7.12579Z M180.782 7.12579H178.164L182.528 -0.175781H185.146L180.782 7.12579Z M185.439 7.12579H182.82L187.184 -0.175781H189.802L185.439 7.12579Z M190.087 7.12579H187.469L191.833 -0.175781H194.451L190.087 7.12579Z M194.743 7.12579H192.125L196.489 -0.175781H199.107L194.743 7.12579Z M199.403 7.12579H196.785L201.149 -0.175781H203.767L199.403 7.12579Z M204.056 7.12579H201.438L205.801 -0.175781H208.42L204.056 7.12579Z M208.716 7.12579H206.098L210.462 -0.175781H213.08L208.716 7.12579Z M213.368 7.12579H210.75L215.114 -0.175781H217.732L213.368 7.12579Z M218.028 7.12579H215.41L219.774 -0.175781H222.392L218.028 7.12579Z M222.681 7.12579H220.063L224.427 -0.175781H227.045L222.681 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M231.993 7.12579H229.375L233.739 -0.175781H236.357L231.993 7.12579Z M236.646 7.12579H234.027L238.391 -0.175781H241.01L236.646 7.12579Z M241.302 7.12579H238.684L243.047 -0.175781H245.666L241.302 7.12579Z M245.946 7.12579H243.328L247.692 -0.175781H250.31L245.946 7.12579Z M250.607 7.12579H247.988L252.352 -0.175781H254.97L250.607 7.12579Z M255.263 7.12579H252.645L257.008 -0.175781H259.627L255.263 7.12579Z M259.919 7.12579H257.301L261.665 -0.175781H264.283L259.919 7.12579Z M264.571 7.12579H261.953L266.317 -0.175781H268.935L264.571 7.12579Z M269.216 7.12579H266.598L270.962 -0.175781H273.58L269.216 7.12579Z M273.88 7.12579H271.262L275.626 -0.175781H278.244L273.88 7.12579Z M278.528 7.12579H275.91L280.274 -0.175781H282.892L278.528 7.12579Z M283.189 7.12579H280.57L284.934 -0.175781H287.552L283.189 7.12579Z M287.845 7.12579H285.227L289.59 -0.175781H292.209L287.845 7.12579Z M292.497 7.12579H289.879L294.243 -0.175781H296.861L292.497 7.12579Z M297.161 7.12579H294.543L298.907 -0.175781H301.525L297.161 7.12579Z M301.81 7.12579H299.191L303.555 -0.175781H306.174L301.81 7.12579Z M306.462 7.12579H303.844L308.208 -0.175781H310.826L306.462 7.12579Z M311.118 7.12579H308.5L312.864 -0.175781H315.482L311.118 7.12579Z M315.775 7.12579H313.156L317.52 -0.175781H320.138L315.775 7.12579Z M320.423 7.12579H317.805L322.169 -0.175781H324.787L320.423 7.12579Z M325.083 7.12579H322.465L326.829 -0.175781H329.447L325.083 7.12579Z M329.743 7.12579H327.125L331.489 -0.175781H334.107L329.743 7.12579Z M334.392 7.12579H331.773L336.137 -0.175781H338.756L334.392 7.12579Z M339.052 7.12579H336.434L340.797 -0.175781H343.416L339.052 7.12579Z M343.708 7.12579H341.09L345.454 -0.175781H348.072L343.708 7.12579Z M348.357 7.12579H345.738L350.102 -0.175781H352.72L348.357 7.12579Z M353.009 7.12579H350.39L354.754 -0.175781H357.373L353.009 7.12579Z M357.661 7.12579H355.043L359.407 -0.175781H362.025L357.661 7.12579Z"
+                                              Fill="#EEEEEE" Opacity="0.3" Stretch="None" Grid.ColumnSpan="2"/>
+                                    </Grid>
+                                    <Grid Grid.Row="2" Height="6">
+                                        <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                        <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+
+                            <!-- 右拨片进度条 -->
+                            <Grid Grid.Row="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <TextBlock Text="右拨片" FontSize="14" Foreground="#EEEEEE" FontWeight="Bold"
+                                               HorizontalAlignment="Left"/>
+                                    <TextBlock x:Name="RightPaddlePercent" Text="0%" FontSize="16" Foreground="#C60E0E" FontWeight="Bold"
+                                               FontFamily="{StaticResource OrbitronFont}" HorizontalAlignment="Right"/>
+                                </Grid>
+
+                                <Grid Grid.Row="1">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" Height="6">
+                                        <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                        <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                    </Grid>
+                                    <Grid Grid.Row="1" Margin="0,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="RightPaddleProgressFillCol" Width="0"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#11622F" Offset="0"/>
+                                                    <GradientStop Color="#4CE083" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Border Grid.Column="1" Height="7" VerticalAlignment="Center">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#C60E0E" Offset="0"/>
+                                                    <GradientStop Color="#600707" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+                                        <Path Data="M3.90737 7.12579H1.28906L5.65291 -0.175781H8.27122L3.90737 7.12579Z M-0.748878 7.12579H-3.36719L0.996663 -0.175781H3.61497L-0.748878 7.12579Z M8.55972 7.12579H5.94141L10.3053 -0.175781H12.9236L8.55972 7.12579Z M13.2082 7.12579H10.5898L14.9537 -0.175781H17.572L13.2082 7.12579Z M17.8644 7.12579H15.2461L19.6099 -0.175781H22.2283L17.8644 7.12579Z M22.5207 7.12579H19.9023L24.2662 -0.175781H26.8845L22.5207 7.12579Z M27.173 7.12579H24.5547L28.9185 -0.175781H31.5368L27.173 7.12579Z M31.8292 7.12579H29.2109L33.5748 -0.175781H36.1931L31.8292 7.12579Z M36.4855 7.12579H33.8672L38.231 -0.175781H40.8493L36.4855 7.12579Z M41.1417 7.12579H38.5234L42.8873 -0.175781H45.5056L41.1417 7.12579Z M45.8019 7.12579H43.1836L47.5474 -0.175781H50.1658L45.8019 7.12579Z M50.4464 7.12579H47.8281L52.192 -0.175781H54.8103L50.4464 7.12579Z M55.1104 7.12579H52.4921L56.8559 -0.175781H59.4742L55.1104 7.12579Z M59.7589 7.12579H57.1406L61.5045 -0.175781H64.1228L59.7589 7.12579Z M64.4152 7.12579H61.7969L66.1607 -0.175781H68.779L64.4152 7.12579Z M69.0753 7.12579H66.457L70.8209 -0.175781H73.4392L69.0753 7.12579Z M73.7199 7.12579H71.1016L75.4654 -0.175781H78.0837L73.7199 7.12579Z M78.3878 7.12579H75.7695L80.1334 -0.175781H82.7517L78.3878 7.12579Z M83.0363 7.12579H80.418L84.7818 -0.175781H87.4001L83.0363 7.12579Z M87.6925 7.12579H85.0742L89.4381 -0.175781H92.0564L87.6925 7.12579Z M92.3488 7.12579H89.7305L94.0943 -0.175781H96.7126L92.3488 7.12579Z M96.9972 7.12579H94.3789L98.7428 -0.175781H101.361L96.9972 7.12579Z M101.65 7.12579H99.0312L103.395 -0.175781H106.013L101.65 7.12579Z M106.314 7.12579H103.695L108.059 -0.175781H110.677L106.314 7.12579Z M110.966 7.12579H108.348L112.712 -0.175781H115.33L110.966 7.12579Z M115.614 7.12579H112.996L117.36 -0.175781H119.978L115.614 7.12579Z M120.271 7.12579H117.652L122.016 -0.175781H124.635L120.271 7.12579Z M124.935 7.12579H122.316L126.68 -0.175781H129.299L124.935 7.12579Z M129.579 7.12579H126.961L131.325 -0.175781H133.943L129.579 7.12579Z M134.243 7.12579H131.625L135.989 -0.175781H138.607L134.243 7.12579Z M138.884 7.12579H136.266L140.629 -0.175781H143.248L138.884 7.12579Z M143.544 7.12579H140.926L145.29 -0.175781H147.908L143.544 7.12579Z M148.193 7.12579H145.574L149.938 -0.175781H152.556L148.193 7.12579Z M152.853 7.12579H150.234L154.598 -0.175781H157.217L152.853 7.12579Z M157.509 7.12579H154.891L159.254 -0.175781H161.873L157.509 7.12579Z M162.165 7.12579H159.547L163.911 -0.175781H166.529L162.165 7.12579Z M166.825 7.12579H164.207L168.571 -0.175781H171.189L166.825 7.12579Z M171.478 7.12579H168.859L173.223 -0.175781H175.842L171.478 7.12579Z M176.13 7.12579H173.512L177.876 -0.175781H180.494L176.13 7.12579Z M180.782 7.12579H178.164L182.528 -0.175781H185.146L180.782 7.12579Z M185.439 7.12579H182.82L187.184 -0.175781H189.802L185.439 7.12579Z M190.087 7.12579H187.469L191.833 -0.175781H194.451L190.087 7.12579Z M194.743 7.12579H192.125L196.489 -0.175781H199.107L194.743 7.12579Z M199.403 7.12579H196.785L201.149 -0.175781H203.767L199.403 7.12579Z M204.056 7.12579H201.438L205.801 -0.175781H208.42L204.056 7.12579Z M208.716 7.12579H206.098L210.462 -0.175781H213.08L208.716 7.12579Z M213.368 7.12579H210.75L215.114 -0.175781H217.732L213.368 7.12579Z M218.028 7.12579H215.41L219.774 -0.175781H222.392L218.028 7.12579Z M222.681 7.12579H220.063L224.427 -0.175781H227.045L222.681 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M227.329 7.12579H224.711L229.075 -0.175781H231.693L227.329 7.12579Z M231.993 7.12579H229.375L233.739 -0.175781H236.357L231.993 7.12579Z M236.646 7.12579H234.027L238.391 -0.175781H241.01L236.646 7.12579Z M241.302 7.12579H238.684L243.047 -0.175781H245.666L241.302 7.12579Z M245.946 7.12579H243.328L247.692 -0.175781H250.31L245.946 7.12579Z M250.607 7.12579H247.988L252.352 -0.175781H254.97L250.607 7.12579Z M255.263 7.12579H252.645L257.008 -0.175781H259.627L255.263 7.12579Z M259.919 7.12579H257.301L261.665 -0.175781H264.283L259.919 7.12579Z M264.571 7.12579H261.953L266.317 -0.175781H268.935L264.571 7.12579Z M269.216 7.12579H266.598L270.962 -0.175781H273.58L269.216 7.12579Z M273.88 7.12579H271.262L275.626 -0.175781H278.244L273.88 7.12579Z M278.528 7.12579H275.91L280.274 -0.175781H282.892L278.528 7.12579Z M283.189 7.12579H280.57L284.934 -0.175781H287.552L283.189 7.12579Z M287.845 7.12579H285.227L289.59 -0.175781H292.209L287.845 7.12579Z M292.497 7.12579H289.879L294.243 -0.175781H296.861L292.497 7.12579Z M297.161 7.12579H294.543L298.907 -0.175781H301.525L297.161 7.12579Z M301.81 7.12579H299.191L303.555 -0.175781H306.174L301.81 7.12579Z M306.462 7.12579H303.844L308.208 -0.175781H310.826L306.462 7.12579Z M311.118 7.12579H308.5L312.864 -0.175781H315.482L311.118 7.12579Z M315.775 7.12579H313.156L317.52 -0.175781H320.138L315.775 7.12579Z M320.423 7.12579H317.805L322.169 -0.175781H324.787L320.423 7.12579Z M325.083 7.12579H322.465L326.829 -0.175781H329.447L325.083 7.12579Z M329.743 7.12579H327.125L331.489 -0.175781H334.107L329.743 7.12579Z M334.392 7.12579H331.773L336.137 -0.175781H338.756L334.392 7.12579Z M339.052 7.12579H336.434L340.797 -0.175781H343.416L339.052 7.12579Z M343.708 7.12579H341.09L345.454 -0.175781H348.072L343.708 7.12579Z M348.357 7.12579H345.738L350.102 -0.175781H352.72L348.357 7.12579Z M353.009 7.12579H350.39L354.754 -0.175781H357.373L353.009 7.12579Z M357.661 7.12579H355.043L359.407 -0.175781H362.025L357.661 7.12579Z"
+                                              Fill="#EEEEEE" Opacity="0.3" Stretch="None" Grid.ColumnSpan="2"/>
+                                    </Grid>
+                                    <Grid Grid.Row="2" Height="6">
+                                        <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                        <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
+                                              Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                              HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+
+                        <!-- ═══ 按键模式 ═══ -->
+                        <Grid x:Name="KeyModePanel" Grid.Row="2" Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Grid Width="80" Height="35"
+                                      MouseLeftButtonDown="PaddleKeyButton_Click">
+                                    <Path Data="M6 0H80V29L74 35H0V6L6 0Z"
+                                          Fill="#33EEEEEE" Stretch="Fill"/>
+                                    <TextBlock x:Name="PaddleKeyB20" Text="B20" FontSize="16" FontWeight="Bold"
+                                               Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <Grid Width="80" Height="35" Margin="10,0,0,0"
+                                      MouseLeftButtonDown="PaddleKeyButton_Click">
+                                    <Path Data="M6 0H80V29L74 35H0V6L6 0Z"
+                                          Fill="#33EEEEEE" Stretch="Fill"/>
+                                    <TextBlock x:Name="PaddleKeyB21" Text="B21" FontSize="16" FontWeight="Bold"
+                                               Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+                        <!-- 第四行：开始校准按钮 -->
+                        <Grid Grid.Row="3" Width="359" Height="35" HorizontalAlignment="Center"
+                              Margin="0,20,0,0"
+                              MouseLeftButtonDown="PaddleStartCalibration_Click">
+                            <Path Data="M5.7748 0H359V29L353.225 35H0V6L5.7748 0Z"
+                                  Style="{StaticResource PresetListButtonPathStyle}" Cursor="Hand"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                                    <Canvas Width="17" Height="17">
+                                        <Path Data="M12.2891 0.75H14.5968C14.9028 0.75 15.1963 0.871566 15.4126 1.08795C15.629 1.30434 15.7506 1.59783 15.7506 1.90385V4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                        <Path Data="M0.75 4.21154V1.90385C0.75 1.59783 0.871566 1.30434 1.08795 1.08795C1.30434 0.871566 1.59783 0.75 1.90385 0.75H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                        <Path Data="M12.2891 15.7506H14.5968C14.9028 15.7506 15.1963 15.629 15.4126 15.4126C15.629 15.1963 15.7506 14.9028 15.7506 14.5968V12.2891" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                        <Path Data="M0.75 12.2881V14.5958C0.75 14.9018 0.871566 15.1953 1.08795 15.4117C1.30434 15.6281 1.59783 15.7496 1.90385 15.7496H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                        <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock Text="开 始 校 准" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+
+                    <!-- 分隔线1 -->
+                    <Border Grid.Column="1" Width="2" Background="#33EEEEEE" VerticalAlignment="Stretch" CornerRadius="1.5"/>
+
+                    <!-- ═══════════════════ 第二列：换挡拨片 ═══════════════════ -->
+                    <Grid Grid.Column="2" Margin="20,0,20,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- 第一行：换挡拨片标题 -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="换 挡 拨 片" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- 第二行：提示文字 -->
+                        <TextBlock Grid.Row="1" Text="请按下需要校准的拨片，系统将自动识别当前输入，然后点击&quot;校准&quot;"
+                                   FontSize="16" Foreground="#EEEEEE" TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+                        <!-- 第三行：左/右拨片校准区 -->
+                        <StackPanel Grid.Row="2" Orientation="Horizontal">
+                            <!-- 左拨片校准 -->
+                            <Grid Margin="0,0,11,0" Width="174" Height="117">
+                                <Path Data="M173.5 0.5V110.793L167.793 116.5H0.5V6.20703L6.20703 0.5H173.5Z"
+                                      Stroke="#C60E0E" StrokeThickness="1" Fill="Transparent" Stretch="Fill"/>
+                                <Grid Margin="11">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="左 拨 片" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,10">
+                                        <Ellipse x:Name="LeftShiftPaddleStatusDot" Width="5" Height="5"
+                                                 Fill="#80EEEEEE" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="LeftShiftPaddleStatus" Text="等待输入..."
+                                                   FontSize="14" Foreground="#80EEEEEE"/>
+                                    </StackPanel>
+                                    <Grid Grid.Row="2" Width="152" Height="35"
+                                          MouseLeftButtonDown="ShiftPaddleCalibrate_Click">
+                                        <Path x:Name="LeftShiftPaddleCalibratePath" Data="M6 0H152V29L146 35H0V6L6 0Z"
+                                              Fill="#33EEEEEE" Cursor="Hand"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                                                <Canvas Width="17" Height="17">
+                                                    <Path Data="M12.2891 0.75H14.5968C14.9028 0.75 15.1963 0.871566 15.4126 1.08795C15.629 1.30434 15.7506 1.59783 15.7506 1.90385V4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M0.75 4.21154V1.90385C0.75 1.59783 0.871566 1.30434 1.08795 1.08795C1.30434 0.871566 1.59783 0.75 1.90385 0.75H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M12.2891 15.7506H14.5968C14.9028 15.7506 15.1963 15.629 15.4126 15.4126C15.629 15.1963 15.7506 14.9028 15.7506 14.5968V12.2891" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M0.75 12.2881V14.5958C0.75 14.9018 0.871566 15.1953 1.08795 15.4117C1.30434 15.6281 1.59783 15.7496 1.90385 15.7496H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="校 准" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+
+                            <!-- 右拨片校准 -->
+                            <Grid Width="174" Height="117">
+                                <Path Data="M173.5 0.5V110.793L167.793 116.5H0.5V6.20703L6.20703 0.5H173.5Z"
+                                      Stroke="#C60E0E" StrokeThickness="1" Fill="Transparent" Stretch="Fill"/>
+                                <Grid Margin="11">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="右 拨 片" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,10">
+                                        <Ellipse x:Name="RightShiftPaddleStatusDot" Width="5" Height="5"
+                                                 Fill="#80EEEEEE" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="RightShiftPaddleStatus" Text="等待输入..."
+                                                   FontSize="14" Foreground="#80EEEEEE"/>
+                                    </StackPanel>
+                                    <Grid Grid.Row="2" Width="152" Height="35"
+                                          MouseLeftButtonDown="ShiftPaddleCalibrate_Click">
+                                        <Path x:Name="RightShiftPaddleCalibratePath" Data="M6 0H152V29L146 35H0V6L6 0Z"
+                                              Fill="#33EEEEEE" Cursor="Hand"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                                                <Canvas Width="17" Height="17">
+                                                    <Path Data="M12.2891 0.75H14.5968C14.9028 0.75 15.1963 0.871566 15.4126 1.08795C15.629 1.30434 15.7506 1.59783 15.7506 1.90385V4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M0.75 4.21154V1.90385C0.75 1.59783 0.871566 1.30434 1.08795 1.08795C1.30434 0.871566 1.59783 0.75 1.90385 0.75H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M12.2891 15.7506H14.5968C14.9028 15.7506 15.1963 15.629 15.4126 15.4126C15.629 15.1963 15.7506 14.9028 15.7506 14.5968V12.2891" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M0.75 12.2881V14.5958C0.75 14.9018 0.871566 15.1953 1.08795 15.4117C1.30434 15.6281 1.59783 15.7496 1.90385 15.7496H4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock Text="校 准" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- 分隔线2 -->
+                    <Border Grid.Column="3" Width="2" Background="#33EEEEEE" VerticalAlignment="Stretch" CornerRadius="1.5"/>
+
+                    <!-- ═══════════════════ 第三列 ═══════════════════ -->
+                    <Grid Grid.Column="4" Margin="18,0,0,0"/>
+                </Grid>
+            </Grid>
+        </Grid>
     </Grid>
+
 </UserControl>

@@ -115,28 +115,62 @@ public partial class MainWindow : Window
 
         if (sender is RadioButton radioButton && radioButton.DataContext is NavigationItem navItem)
         {
-            // 检查踏板参数是否有未保存的更改
-            if (_viewModel.CurrentView is DeviceUserControl deviceControl
-                && deviceControl.PedalControl is { HasUnsavedChanges: true })
+            // 检查设备参数是否有未保存的更改
+            if (_viewModel.CurrentView is DeviceUserControl deviceControl)
             {
-                _isCheckingUnsavedNavigation = true;
+                if (deviceControl.PedalControl is { HasUnsavedChanges: true })
+                {
+                    _isCheckingUnsavedNavigation = true;
+                    deviceControl.PedalControl.ShowUnsavedDialog(
+                        onSaved: () =>
+                        {
+                            _isCheckingUnsavedNavigation = false;
+                            _viewModel.SelectedNavigationItem = navItem;
+                        },
+                        onCancelled: () =>
+                        {
+                            _isCheckingUnsavedNavigation = false;
+                            _viewModel.SelectedNavigationItem = navItem;
+                        });
+                    return;
+                }
 
-                deviceControl.PedalControl.ShowUnsavedDialog(
-                    onSaved: () =>
-                    {
-                        _isCheckingUnsavedNavigation = false;
-                        _viewModel.SelectedNavigationItem = navItem;
-                    },
-                    onCancelled: () =>
-                    {
-                        _isCheckingUnsavedNavigation = false;
-                        _viewModel.SelectedNavigationItem = navItem;
-                    });
+                if (deviceControl.SteeringWheelControl is { HasUnsavedChanges: true })
+                {
+                    _isCheckingUnsavedNavigation = true;
+                    deviceControl.SteeringWheelControl.ShowUnsavedDialog(
+                        onSaved: () =>
+                        {
+                            _isCheckingUnsavedNavigation = false;
+                            _viewModel.SelectedNavigationItem = navItem;
+                        },
+                        onCancelled: () =>
+                        {
+                            _isCheckingUnsavedNavigation = false;
+                            _viewModel.SelectedNavigationItem = navItem;
+                        });
+                    return;
+                }
+
+                if (deviceControl.BaseControl is { HasUnsavedChanges: true })
+                {
+                    _isCheckingUnsavedNavigation = true;
+                    deviceControl.BaseControl.ShowUnsavedDialog(
+                        onSaved: () =>
+                        {
+                            _isCheckingUnsavedNavigation = false;
+                            _viewModel.SelectedNavigationItem = navItem;
+                        },
+                        onCancelled: () =>
+                        {
+                            _isCheckingUnsavedNavigation = false;
+                            _viewModel.SelectedNavigationItem = navItem;
+                        });
+                    return;
+                }
             }
-            else
-            {
-                _viewModel.SelectedNavigationItem = navItem;
-            }
+
+            _viewModel.SelectedNavigationItem = navItem;
         }
     }
 
