@@ -77,6 +77,8 @@
             <Setter Property="Minimum" Value="0"/>
             <Setter Property="Maximum" Value="100"/>
             <Setter Property="Value" Value="80"/>
+            <Setter Property="TickFrequency" Value="1"/>
+            <Setter Property="IsSnapToTickEnabled" Value="True"/>
             <Setter Property="Orientation" Value="Vertical"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -341,6 +343,41 @@
                                   Data="M1.26842 34L9.18248 1H35.1034L27.1893 34H1.26842Z"
                                   Fill="#991B1B1B" Stretch="None"
                                   Visibility="Collapsed" IsHitTestVisible="False"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="StrobeColorRadioStyle" TargetType="RadioButton">
+            <Setter Property="Width" Value="41"/>
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Margin" Value="0,0,-4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="41" Height="35">
+                            <Path x:Name="LargeBorder" Data="M1.30556 34L10.1952 1H39.5546L30.6649 34H1.30556Z"
+                          Stroke="{TemplateBinding Background}" StrokeThickness="10" Fill="Transparent" Stretch="None">
+                                <Path.Clip>
+                                    <PathGeometry Figures="M1.30556 34L10.1952 1H39.5546L30.6649 34H1.30556Z"/>
+                                </Path.Clip>
+                            </Path>
+                            <Path x:Name="SmallFill" Data="M14.0258 31.1113H29.0391L36.4186 3.88911H31.7534H11.8204L4.44101 31.1113H14.0258Z" Width="32" Height="28"
+                          Fill="{TemplateBinding Background}" Stretch="Fill" Margin="1,1,1.5,1"/>
+                            <Path x:Name="DisabledOverlay"
+                          Data="M1.30556 34L10.1952 1H39.5546L30.6649 34H1.30556Z"
+                          Fill="#991B1B1B" Stretch="None"
+                          Visibility="Collapsed" IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
@@ -887,10 +924,6 @@
                                               Fill="#EEEEEE" Stretch="None"/>
                                     </Grid>
                                 </Canvas>
-                                <!-- 爆闪颜色覆盖层（在滑动条上层，避让滑块） -->
-                                <Canvas x:Name="StrobeOverlayCanvas" Height="315"
-                                        VerticalAlignment="Top" HorizontalAlignment="Stretch"
-                                        Panel.ZIndex="2" IsHitTestVisible="False"/>
                                 <StackPanel x:Name="SliderStackPanel" Orientation="Horizontal"
                                             HorizontalAlignment="Center" Panel.ZIndex="1">
                                 <!-- 滑块1: #C60E0E -->
@@ -1179,7 +1212,8 @@
                                 <!-- 左侧：四个曲线类型选项 -->
                                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                                     <!-- 选项1：线性 -->
-                                    <RadioButton Style="{StaticResource CurveTypeRadioStyle}"
+                                    <RadioButton x:Name="CurveLinearRadio"
+                                                 Style="{StaticResource CurveTypeRadioStyle}"
                                                  GroupName="RpmCurveType" IsChecked="True"
                                                  Margin="0,0,15,0">
                                         <Viewbox Width="14" Height="14">
@@ -1191,7 +1225,8 @@
                                         </Viewbox>
                                     </RadioButton>
                                     <!-- 选项2：外凸曲线 -->
-                                    <RadioButton Style="{StaticResource CurveTypeRadioStyle}"
+                                    <RadioButton x:Name="CurveConvexRadio"
+                                                 Style="{StaticResource CurveTypeRadioStyle}"
                                                  GroupName="RpmCurveType"
                                                  Margin="0,0,15,0">
                                         <Viewbox Width="14" Height="14">
@@ -1203,7 +1238,8 @@
                                         </Viewbox>
                                     </RadioButton>
                                     <!-- 选项3：内凹曲线 -->
-                                    <RadioButton Style="{StaticResource CurveTypeRadioStyle}"
+                                    <RadioButton x:Name="CurveConcaveRadio"
+                                                 Style="{StaticResource CurveTypeRadioStyle}"
                                                  GroupName="RpmCurveType"
                                                  Margin="0,0,7,0">
                                         <Viewbox Width="14" Height="14">
@@ -1218,8 +1254,9 @@
                                     <!-- 分隔线 -->
                                     <Border Width="1" Height="25" Background="#4DEEEEEE" CornerRadius="0.5" VerticalAlignment="Center" Margin="0,0,7,0"/>
 
-                                    <!-- 选项5：自定义 -->
-                                    <RadioButton Style="{StaticResource CurveTypeRadioStyle}"
+                                    <!-- 选项4：自定义 -->
+                                    <RadioButton x:Name="CurveCustomRadio"
+                                                 Style="{StaticResource CurveTypeRadioStyle}"
                                                  GroupName="RpmCurveType">
                                         <Viewbox Width="14" Height="14">
                                             <Canvas Width="26" Height="26">
@@ -1253,7 +1290,7 @@
                                     </RadioButton>
                                 </StackPanel>
 
-                                <!-- 右侧：百分比/转速RPM 单选框 -->
+                                <!-- 右侧：百分比/转速RPM 单选框 (暂时禁用)
                                 <StackPanel Grid.Column="1" Orientation="Horizontal"
                                             HorizontalAlignment="Right" VerticalAlignment="Center">
                                     <RadioButton x:Name="PercentModeRadio" GroupName="RpmDisplayMode"
@@ -1268,6 +1305,7 @@
                                     <TextBlock Text="转速RPM" FontSize="16" Foreground="#EEEEEE"
                                                FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}" VerticalAlignment="Center"/>
                                 </StackPanel>
+                                -->
                             </Grid>
                         </Grid>
 
@@ -1438,7 +1476,8 @@
                                                    Foreground="#EEEEEE"  Margin="0,0,0,10">
                                         </TextBlock>
                                         <Grid Grid.Row="1">
-                                            <ComboBox Style="{StaticResource PopupComboBoxStyle}"
+                                            <ComboBox x:Name="RpmLightModeCombo"
+                                                      Style="{StaticResource PopupComboBoxStyle}"
                                                       SelectedIndex="0" Width="300" Height="35">
                                                 <ComboBoxItem Content="序列"/>
                                                 <ComboBoxItem Content="扩散"/>
@@ -1524,40 +1563,36 @@
                                                    Foreground="#EEEEEE" Margin="0,0,0,10"/>
                                         <StackPanel Grid.Row="1" Orientation="Horizontal">
                                             <RadioButton x:Name="StrobeColor1" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#C60E0E" IsChecked="True"
                                                          Checked="StrobeColor_Checked"/>
                                             <RadioButton x:Name="StrobeColor2" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#FF6A00"
                                                          Checked="StrobeColor_Checked"/>
                                             <RadioButton x:Name="StrobeColor3" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#FFC800"
                                                          Checked="StrobeColor_Checked"/>
                                             <RadioButton x:Name="StrobeColor4" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#16C642"
                                                          Checked="StrobeColor_Checked"/>
                                             <RadioButton x:Name="StrobeColor5" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#28F9DD"
                                                          Checked="StrobeColor_Checked"/>
                                             <RadioButton x:Name="StrobeColor6" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#2840F9"
                                                          Checked="StrobeColor_Checked"/>
                                             <RadioButton x:Name="StrobeColor7" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#C128F9"
                                                          Checked="StrobeColor_Checked"/>
                                             <RadioButton x:Name="StrobeColor8" GroupName="StrobeColor"
-                                                         Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                         Style="{StaticResource StrobeColorRadioStyle}"
                                                          Background="#EEEEEE"
-                                                         Checked="StrobeColor_Checked"/>
-                                            <RadioButton x:Name="StrobeColor9" GroupName="StrobeColor"
-                                                         Style="{StaticResource RpmColorBlockCustomStyle}"
-                                                         Background="#373737"
                                                          Checked="StrobeColor_Checked"/>
                                         </StackPanel>
                                     </Grid>
@@ -1620,7 +1655,7 @@
                                                     </Path>
                                                 </Grid>
                                             </Viewbox>
-                                            <TextBlock Text="遥 测 模 式" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                            <TextBlock Text="基 础 灯 光" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <ComboBox Grid.Row="1" x:Name="BaseLightModeComboBox"
                                                   Style="{StaticResource PopupComboBoxStyle}"

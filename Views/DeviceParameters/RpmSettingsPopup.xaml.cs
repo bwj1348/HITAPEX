@@ -19,7 +19,6 @@ public partial class RpmSettingsPopup : UserControl
         InitializeComponent();
         Loaded += (_, _) =>
         {
-            InitStrobeOverlay();
             UpdateCapLinePosition();
             CapLineCanvas.SizeChanged += (_, _) => UpdateCapLinePosition();
             UpdateSpeedSliderFill(RpmSpeedSlider1);
@@ -27,7 +26,6 @@ public partial class RpmSettingsPopup : UserControl
             RpmTelemetryToggle.Checked += (_, _) => UpdateRightSideMaskedControls();
             RpmTelemetryToggle.Unchecked += (_, _) => UpdateRightSideMaskedControls();
             UpdateRightSideMaskedControls();
-            RpmSpeedSlider2.Value = BaseLightModeComboBox.SelectedIndex == 0 ? 0 : 3;
         };
     }
 
@@ -148,28 +146,29 @@ public partial class RpmSettingsPopup : UserControl
         else if (sender == ColorBlock11) _activeLeftBlockIndex = 11;
         else if (sender == ColorBlock12) _activeLeftBlockIndex = 12;
 
-        var rightBlock = _activeLeftBlockIndex switch
+        // 根据当前选中色块的实际颜色同步右侧灯光色板
+        if (sender is RadioButton rb && rb.Background is SolidColorBrush brush)
         {
-            1 => RpmLightColor1, 2 => RpmLightColor2, 3 => RpmLightColor3,
-            4 => RpmLightColor4, 5 => RpmLightColor5, 6 => RpmLightColor6,
-            7 => RpmLightColor7, 8 => RpmLightColor8, 9 => RpmLightColor9,
-            10 => RpmLightColor1, 11 => RpmLightColor2, 12 => RpmLightColor3,
-            _ => null
-        };
-        if (rightBlock != null)
-            rightBlock.IsChecked = true;
+            var colorIdx = ColorToIndex(brush.Color);
+            var lightColors = GetLightColorRadios();
+            if (colorIdx >= 0 && colorIdx < lightColors.Length && lightColors[colorIdx] != null)
+                lightColors[colorIdx].IsChecked = true;
+        }
 
-        var strobeBlock = _activeLeftBlockIndex switch
-        {
-            1 => StrobeColor1, 2 => StrobeColor2, 3 => StrobeColor3,
-            4 => StrobeColor4, 5 => StrobeColor5, 6 => StrobeColor6,
-            7 => StrobeColor7, 8 => StrobeColor8, 9 => StrobeColor9,
-            10 => StrobeColor1, 11 => StrobeColor2, 12 => StrobeColor3,
-            _ => null
-        };
-        if (strobeBlock != null)
-            strobeBlock.IsChecked = true;
+        // 同步统一的爆闪颜色到右侧爆闪色板
+        var scIdx = Math.Clamp(_strobeColor, 0, 7);
+        var strobeRadios = GetStrobeColorRadios();
+        if (scIdx < strobeRadios.Length && strobeRadios[scIdx] != null)
+            strobeRadios[scIdx].IsChecked = true;
     }
+
+    private RadioButton?[] GetLightColorRadios() => new RadioButton?[]
+        { RpmLightColor1, RpmLightColor2, RpmLightColor3, RpmLightColor4, RpmLightColor5,
+          RpmLightColor6, RpmLightColor7, RpmLightColor8, RpmLightColor9 };
+
+    private RadioButton?[] GetStrobeColorRadios() => new RadioButton?[]
+        { StrobeColor1, StrobeColor2, StrobeColor3, StrobeColor4, StrobeColor5,
+          StrobeColor6, StrobeColor7, StrobeColor8 };
 
     private void RightLightColor_Checked(object sender, RoutedEventArgs e)
     {
@@ -304,8 +303,6 @@ public partial class RpmSettingsPopup : UserControl
         Canvas.SetLeft(CapPercentLabel, 0);
         Canvas.SetTop(CapPercentLabel, y - 7);
         CapPercentLabel.Text = $"{_capValue:F0}";
-
-        UpdateStrobeOverlay();
     }
 
     private void CapTriangle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -321,7 +318,8 @@ public partial class RpmSettingsPopup : UserControl
 
         var pos = e.GetPosition(CapLineCanvas);
         var y = Math.Clamp(pos.Y, 0, 315);
-        var newCap = (1 - y / 315) * 100;
+        // 步长设为 1，确保百分比为整数
+        var newCap = Math.Round((1 - y / 315) * 100);
 
         var maxSlider = GetMaxSliderValue();
         _capValue = Math.Clamp(newCap, maxSlider, 100);
@@ -345,7 +343,8 @@ public partial class RpmSettingsPopup : UserControl
     {
         if (_isDraggingCap || _isClamping) return;
 
-        if (e.NewValue > _capValue)
+        // _capValue == 0 表示爆闪触发值未配置，不进行截断
+        if (_capValue > 0 && e.NewValue > _capValue)
         {
             _isClamping = true;
             ((Slider)sender).Value = _capValue;
@@ -357,107 +356,11 @@ public partial class RpmSettingsPopup : UserControl
     }
 
     private int _strobeMode; // 0=与转速灯颜色一致, 1=自定义, 2=关灯
-    private readonly Color[] _strobeColors =
-    {
-        Color.FromRgb(0xC6, 0x0E, 0x0E), // 1: red
-        Color.FromRgb(0xFF, 0x6A, 0x00), // 2: orange
-        Color.FromRgb(0xFF, 0xC8, 0x00), // 3: yellow
-        Color.FromRgb(0x16, 0xC6, 0x42), // 4: green
-        Color.FromRgb(0x28, 0xF9, 0xDD), // 5: cyan
-        Color.FromRgb(0x28, 0x40, 0xF9), // 6: blue
-        Color.FromRgb(0xC1, 0x28, 0xF9), // 7: purple
-        Color.FromRgb(0xEE, 0xEE, 0xEE), // 8: white
-        Color.FromRgb(0x37, 0x37, 0x37), // 9: dark gray
-        Color.FromRgb(0xC6, 0x0E, 0x0E), // 10: red
-        Color.FromRgb(0xFF, 0x6A, 0x00), // 11: orange
-        Color.FromRgb(0xFF, 0xC8, 0x00), // 12: yellow
-    };
-    private readonly Rectangle?[] _strobeOverlays = new Rectangle?[12];
-
-    private void InitStrobeOverlay()
-    {
-        if (StrobeOverlayCanvas == null) return;
-
-        for (int i = 0; i < 12; i++)
-        {
-            var rect = new Rectangle
-            {
-                Width = 6,
-                RadiusX = 3,
-                RadiusY = 3,
-                IsHitTestVisible = false,
-                Visibility = Visibility.Collapsed
-            };
-            _strobeOverlays[i] = rect;
-            StrobeOverlayCanvas.Children.Add(rect);
-        }
-    }
-
-    private void UpdateStrobeOverlay()
-    {
-        if (_strobeOverlays[0] == null || StrobeOverlayCanvas == null) return;
-
-        if (_strobeMode != 1) // not custom mode
-        {
-            foreach (var overlay in _strobeOverlays)
-                overlay!.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        var capY = 315 * (1 - _capValue / 100);
-
-        Slider[] allSliders = { RpmSlider1, RpmSlider2, RpmSlider3, RpmSlider4,
-            RpmSlider5, RpmSlider6, RpmSlider7, RpmSlider8,
-            RpmSlider9, RpmSlider10, RpmSlider11, RpmSlider12 };
-
-        for (int i = 0; i < 12; i++)
-        {
-            var overlay = _strobeOverlays[i]!;
-            var slider = allSliders[i];
-
-            try
-            {
-                var parentGrid = StrobeOverlayCanvas.Parent as UIElement;
-                if (parentGrid == null) continue;
-
-                var sliderPos = slider.TransformToAncestor(parentGrid)
-                    .Transform(new Point(0, 0));
-                Canvas.SetLeft(overlay, sliderPos.X + 5);
-            }
-            catch
-            {
-                var x = i * 46;
-                Canvas.SetLeft(overlay, x + 5);
-            }
-
-            Canvas.SetTop(overlay, 0);
-            overlay.Height = capY + 3;
-
-            Geometry baseClip = new RectangleGeometry(new Rect(0, 0, 6, capY));
-            var sliderValue = slider.Value;
-            var thumbCenterY = 315 * (1 - sliderValue / 100);
-            var thumbTop = thumbCenterY - 8;
-            if (thumbTop < capY)
-            {
-                var holeY = Math.Max(0, thumbTop);
-                var holeHeight = Math.Min(16, capY - holeY);
-                if (holeHeight > 0)
-                {
-                    var hole = new RectangleGeometry(new Rect(0, holeY, 6, holeHeight));
-                    baseClip = new CombinedGeometry(GeometryCombineMode.Exclude, baseClip, hole);
-                }
-            }
-            overlay.Clip = baseClip;
-
-            overlay.Fill = new SolidColorBrush(_strobeColors[i]);
-            overlay.Visibility = Visibility.Visible;
-        }
-    }
+    private int _strobeColor; // 12灯统一的爆闪颜色索引 (0=红~7=白)
 
     private void StrobeModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         _strobeMode = StrobeModeComboBox.SelectedIndex;
-        UpdateStrobeOverlay();
         UpdateRightSideMaskedControls();
     }
 
@@ -479,34 +382,203 @@ public partial class RpmSettingsPopup : UserControl
             StrobeColor6.IsChecked = false;
             StrobeColor7.IsChecked = false;
             StrobeColor8.IsChecked = false;
-            StrobeColor9.IsChecked = false;
         }
         else
         {
-            StrobeColor1.IsChecked = true;
+            // 按统一爆闪颜色选中对应色板
+            var colorIdx = Math.Clamp(_strobeColor, 0, 7);
+            var radios = GetStrobeColorRadios();
+            if (colorIdx < radios.Length && radios[colorIdx] != null)
+                radios[colorIdx].IsChecked = true;
         }
 
         var speedMasked = telemetryOff || strobeMode == 2;
-        RpmSpeedSlider1.Value = speedMasked ? 0 : 3;
+        if (speedMasked)
+            RpmSpeedSlider1.Value = 0;
     }
 
     private void BaseLightModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (RpmSpeedSlider2 == null) return;
-        RpmSpeedSlider2.Value = BaseLightModeComboBox.SelectedIndex == 0 ? 0 : 3;
+        // 仅在切换到"恒亮"时强制设为 0，其他模式保持已加载的预设值
+        if (BaseLightModeComboBox.SelectedIndex == 0)
+            RpmSpeedSlider2.Value = 0;
     }
 
     private void StrobeColor_Checked(object sender, RoutedEventArgs e)
     {
         if (sender is not RadioButton rb) return;
 
-        var idx = _activeLeftBlockIndex - 1;
         if (rb.Background is SolidColorBrush brush)
-            _strobeColors[idx] = brush.Color;
+            _strobeColor = ColorToIndex(brush.Color);
         else
-            _strobeColors[idx] = Color.FromRgb(0x37, 0x37, 0x37);
-
-        if (_strobeMode == 1)
-            UpdateStrobeOverlay();
+            _strobeColor = 0;
     }
+
+    // ══════════════════════════════════════════
+    //  预设绑定：加载 / 读取转速灯参数
+    // ══════════════════════════════════════════
+
+    private static readonly Color[] RpmColorMap =
+    {
+        Color.FromRgb(0xC6, 0x0E, 0x0E), // 0: 红
+        Color.FromRgb(0xFF, 0x6A, 0x00), // 1: 橙
+        Color.FromRgb(0xFF, 0xC8, 0x00), // 2: 黄
+        Color.FromRgb(0x16, 0xC6, 0x42), // 3: 绿
+        Color.FromRgb(0x28, 0xF9, 0xDD), // 4: 青
+        Color.FromRgb(0x28, 0x40, 0xF9), // 5: 蓝
+        Color.FromRgb(0xC1, 0x28, 0xF9), // 6: 紫
+        Color.FromRgb(0xEE, 0xEE, 0xEE), // 7: 白
+        Color.FromRgb(0x37, 0x37, 0x37), // 8: 无
+    };
+
+    private static int ColorToIndex(Color c)
+    {
+        for (int i = 0; i < RpmColorMap.Length; i++)
+            if (ColorsEqual(c, RpmColorMap[i].R, RpmColorMap[i].G, RpmColorMap[i].B))
+                return i;
+        return 0;
+    }
+
+    /// <summary>从预设快照加载所有转速灯参数到弹窗 UI</summary>
+    public void LoadSettings(int[] rpmColors, double[] rpmValues, double rpmCapValue,
+        int rpmCurveType, int rpmDisplayMode, int rpmLightMode, int rpmStrobeMode,
+        int rpmStrobeColor, int rpmSpeed, int rpmBaseLightMode, int rpmBaseLightSpeed,
+        bool rpmTelemetryEnabled)
+    {
+        var allBlocks = new RadioButton?[] { ColorBlock1, ColorBlock2, ColorBlock3, ColorBlock4,
+            ColorBlock5, ColorBlock6, ColorBlock7, ColorBlock8, ColorBlock9, ColorBlock10,
+            ColorBlock11, ColorBlock12 };
+        var allSliders = AllRpmSliders;
+
+        // ── 爆闪 cap 值必须在滑块之前设置 ──
+        // 滑块的 ValueChanged 处理器会检查 e.NewValue > _capValue 并将超限值截断到 _capValue。
+        // 若 _capValue 残留上一次的 0，所有非零滑块值会被截断为 0。
+        _capValue = rpmCapValue;
+        UpdateCapLinePosition();
+
+        // 转速灯颜色 & 滑块值（12 灯逐一设置）
+        for (int i = 0; i < 12; i++)
+        {
+            var color = RpmColorMap[Math.Clamp(rpmColors[i], 0, RpmColorMap.Length - 1)];
+            if (allBlocks[i] != null)
+            {
+                allBlocks[i]!.Background = new SolidColorBrush(color);
+            }
+            if (allSliders[i] != null)
+            {
+                allSliders[i].Value = rpmValues[i];
+                allSliders[i].Background = CreateGradient(color);
+                allSliders[i].Foreground = new SolidColorBrush(color);
+            }
+        }
+
+        // 曲线类型
+        switch (rpmCurveType)
+        {
+            case 0: CurveLinearRadio!.IsChecked = true; break;
+            case 1: CurveConvexRadio!.IsChecked = true; break;
+            case 2: CurveConcaveRadio!.IsChecked = true; break;
+            case 3: CurveCustomRadio!.IsChecked = true; break;
+        }
+
+        // 显示模式 (暂时禁用)
+        _ = rpmDisplayMode; // 暂时保留参数，后续可恢复
+        // if (rpmDisplayMode == 0)
+        //     PercentModeRadio!.IsChecked = true;
+        // else
+        //     RpmModeRadio!.IsChecked = true;
+
+        // 右侧面板参数
+        if (RpmTelemetryToggle != null)
+            RpmTelemetryToggle.IsChecked = rpmTelemetryEnabled;
+
+        if (RpmLightModeCombo != null)
+            RpmLightModeCombo.SelectedIndex = rpmLightMode;
+
+        if (StrobeModeComboBox != null)
+            StrobeModeComboBox.SelectedIndex = rpmStrobeMode;
+
+        if (RpmSpeedSlider1 != null)
+            RpmSpeedSlider1.Value = rpmSpeed;
+
+        if (BaseLightModeComboBox != null)
+            BaseLightModeComboBox.SelectedIndex = rpmBaseLightMode;
+
+        if (RpmSpeedSlider2 != null)
+            RpmSpeedSlider2.Value = rpmBaseLightSpeed;
+
+        UpdateRightSideMaskedControls();
+
+        // 爆闪颜色 — 必须在 UpdateRightSideMaskedControls() 之后设置
+        _strobeColor = Math.Clamp(rpmStrobeColor, 0, 7);
+
+        // 同步当前选中块的右侧颜色选中状态
+        if (_activeLeftBlockIndex >= 1 && _activeLeftBlockIndex <= 12)
+        {
+            var block = allBlocks[_activeLeftBlockIndex - 1];
+            if (block?.Background is SolidColorBrush blockBrush)
+            {
+                var colorIdx = ColorToIndex(blockBrush.Color);
+                var lightColors = GetLightColorRadios();
+                if (colorIdx >= 0 && colorIdx < lightColors.Length && lightColors[colorIdx] != null)
+                    lightColors[colorIdx].IsChecked = true;
+            }
+        }
+    }
+
+    /// <summary>获取 12 个转速灯的颜色索引</summary>
+    public int[] GetRpmColors()
+    {
+        var allBlocks = new RadioButton?[] { ColorBlock1, ColorBlock2, ColorBlock3, ColorBlock4,
+            ColorBlock5, ColorBlock6, ColorBlock7, ColorBlock8, ColorBlock9, ColorBlock10,
+            ColorBlock11, ColorBlock12 };
+        var result = new int[12];
+        for (int i = 0; i < 12; i++)
+        {
+            if (allBlocks[i]?.Background is SolidColorBrush brush)
+                result[i] = ColorToIndex(brush.Color);
+        }
+        return result;
+    }
+
+    /// <summary>获取 12 个转速灯滑块值</summary>
+    public double[] GetRpmValues() => AllRpmSliders.Select(s => s.Value).ToArray();
+
+    /// <summary>获取爆闪 cap 百分比</summary>
+    public double GetRpmCapValue() => _capValue;
+
+    /// <summary>获取曲线类型 (0=线性,1=外凸,2=内凹,3=自定义)</summary>
+    public int GetRpmCurveType()
+    {
+        if (CurveLinearRadio?.IsChecked == true) return 0;
+        if (CurveConvexRadio?.IsChecked == true) return 1;
+        if (CurveConcaveRadio?.IsChecked == true) return 2;
+        if (CurveCustomRadio?.IsChecked == true) return 3;
+        return 0;
+    }
+
+    /// <summary>获取显示模式 (0=百分比,1=转速RPM) (暂时禁用)</summary>
+    // public int GetRpmDisplayMode() => RpmModeRadio?.IsChecked == true ? 1 : 0;
+
+    /// <summary>获取灯光模式 (0=序列,1=扩散,2=汇聚)</summary>
+    public int GetRpmLightMode() => RpmLightModeCombo?.SelectedIndex ?? 0;
+
+    /// <summary>获取爆闪模式 (0=与转速灯颜色一致,1=自定义,2=关灯)</summary>
+    public int GetRpmStrobeMode() => StrobeModeComboBox?.SelectedIndex ?? 0;
+
+    /// <summary>获取统一的爆闪颜色索引 (0=红~7=白)</summary>
+    public int GetRpmStrobeColor() => Math.Clamp(_strobeColor, 0, 7);
+
+    /// <summary>获取爆闪速度档位</summary>
+    public int GetRpmSpeed() => (int)(RpmSpeedSlider1?.Value ?? 0);
+
+    /// <summary>获取基础灯光模式 (0=恒亮,1=呼吸,2=彩色循环)</summary>
+    public int GetRpmBaseLightMode() => BaseLightModeComboBox?.SelectedIndex ?? 0;
+
+    /// <summary>获取基础灯光速度档位</summary>
+    public int GetRpmBaseLightSpeed() => (int)(RpmSpeedSlider2?.Value ?? 0);
+
+    /// <summary>获取遥测模式是否启用</summary>
+    public bool GetRpmTelemetryEnabled() => RpmTelemetryToggle?.IsChecked == true;
 }

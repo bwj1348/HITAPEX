@@ -482,10 +482,6 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
@@ -505,224 +501,307 @@
                                HorizontalAlignment="Center"
                                Margin="0,0,0,20"/>
 
-                    <!-- 第三行：按键灯颜色 -->
-                    <Grid Grid.Row="2" Margin="0,0,0,20">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
-                                <Grid Width="8" Height="26" Opacity="0.9">
-                                    <Grid.Effect>
-                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
-                                    </Grid.Effect>
-                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
-                                        <Path.Fill>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                <GradientStop Color="#C60E0E" Offset="0"/>
-                                                <GradientStop Color="#600707" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Path.Fill>
-                                    </Path>
-                                </Grid>
-                            </Viewbox>
-                            <TextBlock Text="按 键 灯 颜 色" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Orientation="Horizontal">
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#C60E0E" IsChecked="True"/>
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#FF6A00"/>
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#FFC800"/>
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#16C642"/>
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#28F9DD"/>
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#2840F9"/>
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#C128F9"/>
-                            <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                         Background="#EEEEEE"/>
-                            <RadioButton GroupName="KeyColor" Width="43" Height="40" Margin="0,0,-3,0" Cursor="Hand">
-                                <RadioButton.Template>
-                                    <ControlTemplate TargetType="RadioButton">
-                                        <Grid Width="43" Height="40">
-                                            <Path x:Name="OuterPath" Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
-                                                  Fill="#969696" Stroke="#5A5A5A" StrokeThickness="2" Stretch="None"/>
-                                            <Path Opacity="0.2" Fill="Black" Stretch="None"
-                                                  Data="M23.0418 26.666H36.0233L39.2969 13.3334H35.9104H22.9289L19.6553 26.666H23.0418Z"/>
-                                            <Path Opacity="0.2" Fill="Black" Stretch="None"
-                                                  Data="M3.39679 40H16.3783L19.6519 26.6674H16.2654H3.28391L0.0103149 40H3.39679Z"/>
-                                            <Path Opacity="0.2" Fill="Black" Stretch="None"
-                                                  Data="M9.94562 13.334H22.9271L26.2007 0.00137043H22.8142H9.83273L6.55914 13.334H9.94562Z"/>
-                                        </Grid>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsChecked" Value="True">
-                                                <Setter TargetName="OuterPath" Property="Stroke" Value="#80000000"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </RadioButton.Template>
-                            </RadioButton>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- 第四行：遥测功能 -->
-                    <Grid Grid.Row="3" Margin="0,0,0,20">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid Grid.Row="0" Margin="0,0,0,20">
-                            <Viewbox Width="8" Height="26" Margin="0,0,10,0" HorizontalAlignment="Left">
-                                <Grid Width="8" Height="26" Opacity="0.9">
-                                    <Grid.Effect>
-                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
-                                    </Grid.Effect>
-                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
-                                        <Path.Fill>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                <GradientStop Color="#C60E0E" Offset="0"/>
-                                                <GradientStop Color="#600707" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Path.Fill>
-                                    </Path>
-                                </Grid>
-                            </Viewbox>
-                            <TextBlock Text="遥 测 功 能" FontSize="18" FontWeight="Bold" Margin="18,0,0,0"
-                                       Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                            <CheckBox x:Name="TelemetryToggle" HorizontalAlignment="Right"
-                                      Style="{StaticResource PopupDualStateSvgToggleStyle}" IsChecked="True"/>
-                        </Grid>
-                        <Grid Grid.Row="1">
-                            <Grid.Style>
-                                <Style TargetType="Grid">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
-                                            <Setter Property="OpacityMask">
-                                                <Setter.Value>
-                                                    <SolidColorBrush Color="#80000000"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                            <Setter Property="IsHitTestVisible" Value="False"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Grid.Style>
-                            <ComboBox Style="{StaticResource PopupComboBoxStyle}"
-                                      Tag="201" SelectedIndex="0">
-                                <ComboBoxItem Content="ABS介入"/>
-                                <ComboBoxItem Content="TC介入"/>
-                                <ComboBoxItem Content="DRS可用"/>
-                                <ComboBoxItem Content="DRS开启"/>
-                                <ComboBoxItem Content="车轮抱死"/>
-                                <ComboBoxItem Content="维修区限速"/>
-                                <ComboBoxItem Content="车轮打滑"/>
-                            </ComboBox>
-                        </Grid>
-                    </Grid>
-
-                    <!-- 第五行：按键灯触发遥测颜色 -->
-                    <Grid Grid.Row="4" Margin="0,0,0,20">
-                        <Grid.Style>
-                            <Style TargetType="Grid">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
-                                        <Setter Property="OpacityMask">
-                                            <Setter.Value>
-                                                <SolidColorBrush Color="#80000000"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="IsHitTestVisible" Value="False"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Grid.Style>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="按键灯触发遥测颜色"
-                                   FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
-                        <Grid Grid.Row="1">
-                            <StackPanel x:Name="TeleColorPanel" Orientation="Horizontal">
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#C60E0E" IsChecked="True"/>
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#FF6A00"/>
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#FFC800"/>
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#16C642"/>
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#28F9DD"/>
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#2840F9"/>
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#C128F9"/>
-                                <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
-                                             Background="#EEEEEE"/>
-                                <RadioButton GroupName="TeleColor" Width="43" Height="40" Margin="0,0,-3,0" Cursor="Hand">
-                                    <RadioButton.Template>
-                                        <ControlTemplate TargetType="RadioButton">
-                                            <Grid Width="43" Height="40">
-                                                <Path x:Name="OuterPath2" Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
-                                                      Fill="#969696" Stroke="#5A5A5A" StrokeThickness="2" Stretch="None"/>
-                                                <Path Opacity="0.2" Fill="Black" Stretch="None"
-                                                      Data="M23.0418 26.666H36.0233L39.2969 13.3334H35.9104H22.9289L19.6553 26.666H23.0418Z"/>
-                                                <Path Opacity="0.2" Fill="Black" Stretch="None"
-                                                      Data="M3.39679 40H16.3783L19.6519 26.6674H16.2654H3.28391L0.0103149 40H3.39679Z"/>
-                                                <Path Opacity="0.2" Fill="Black" Stretch="None"
-                                                      Data="M9.94562 13.334H22.9271L26.2007 0.00137043H22.8142H9.83273L6.55914 13.334H9.94562Z"/>
+                    <!-- 滚动区域 -->
+                    <ScrollViewer Grid.Row="2" Margin="0,0,0,20"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="ScrollBar">
+                                <Setter Property="Width" Value="3"/>
+                                <Setter Property="MinWidth" Value="0"/>
+                                <Setter Property="Margin" Value="10,0,-10,0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ScrollBar">
+                                            <Grid>
+                                                <Border Background="#EEEEEE" CornerRadius="2" Width="2.5"/>
+                                                <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                                    <Track.Thumb>
+                                                        <Thumb>
+                                                            <Thumb.Template>
+                                                                <ControlTemplate TargetType="Thumb">
+                                                                    <Border Background="#C60E0E" CornerRadius="2" Width="3"/>
+                                                                </ControlTemplate>
+                                                            </Thumb.Template>
+                                                        </Thumb>
+                                                    </Track.Thumb>
+                                                </Track>
                                             </Grid>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsChecked" Value="True">
-                                                    <Setter TargetName="OuterPath2" Property="Stroke" Value="#80000000"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
                                         </ControlTemplate>
-                                    </RadioButton.Template>
-                                </RadioButton>
-                            </StackPanel>
-                        </Grid>
-                    </Grid>
-
-                    <!-- 第六行：速度 -->
-                    <Grid Grid.Row="5" Margin="0,0,0,20">
-                        <Grid.Style>
-                            <Style TargetType="Grid">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
-                                        <Setter Property="OpacityMask">
-                                            <Setter.Value>
-                                                <SolidColorBrush Color="#80000000"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="IsHitTestVisible" Value="False"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
+                                    </Setter.Value>
+                                </Setter>
                             </Style>
-                        </Grid.Style>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="速度"
-                                   FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
-                        <Slider x:Name="PopupSpeedSlider" Grid.Row="1"
-                                Style="{StaticResource PopupSpeedSliderStyle}"
-                                Value="3" Width="341"
-                                ValueChanged="SpeedSlider_ValueChanged"/>
-                    </Grid>
+                        </ScrollViewer.Resources>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                    <!-- 第七行：占位 -->
-                    <Grid Grid.Row="6"/>
+                            <!-- 第三行：按键灯颜色 -->
+                            <Grid Grid.Row="0" Margin="0,0,0,20">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                                    <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                        <Grid Width="8" Height="26" Opacity="0.9">
+                                            <Grid.Effect>
+                                                <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                            </Grid.Effect>
+                                            <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                                <Path.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                                        <GradientStop Color="#600707" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Path.Fill>
+                                            </Path>
+                                        </Grid>
+                                    </Viewbox>
+                                    <TextBlock Text="按 键 灯 颜 色" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel x:Name="KeyColorPanel" Grid.Row="1" Orientation="Horizontal">
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#C60E0E" IsChecked="True"/>
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#FF6A00"/>
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#FFC800"/>
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#16C642"/>
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#28F9DD"/>
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#2840F9"/>
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#C128F9"/>
+                                    <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                 Background="#EEEEEE"/>
+                                    <RadioButton GroupName="KeyColor" Width="43" Height="40" Margin="0,0,-3,0" Cursor="Hand">
+                                        <RadioButton.Template>
+                                            <ControlTemplate TargetType="RadioButton">
+                                                <Grid Width="43" Height="40">
+                                                    <Path x:Name="OuterPath" Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
+                                                          Fill="#969696" Stroke="#5A5A5A" StrokeThickness="2" Stretch="None"/>
+                                                    <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                          Data="M23.0418 26.666H36.0233L39.2969 13.3334H35.9104H22.9289L19.6553 26.666H23.0418Z"/>
+                                                    <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                          Data="M3.39679 40H16.3783L19.6519 26.6674H16.2654H3.28391L0.0103149 40H3.39679Z"/>
+                                                    <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                          Data="M9.94562 13.334H22.9271L26.2007 0.00137043H22.8142H9.83273L6.55914 13.334H9.94562Z"/>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsChecked" Value="True">
+                                                        <Setter TargetName="OuterPath" Property="Stroke" Value="#80000000"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </RadioButton.Template>
+                                    </RadioButton>
+                                </StackPanel>
+                            </Grid>
 
-                    <!-- 第八行：确定 / 取消 按钮 -->
-                    <Grid Grid.Row="7">
+                            <!-- 第四行：遥测功能 -->
+                            <Grid Grid.Row="1" Margin="0,0,0,20">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" Margin="0,0,0,20">
+                                    <Viewbox Width="8" Height="26" Margin="0,0,10,0" HorizontalAlignment="Left">
+                                        <Grid Width="8" Height="26" Opacity="0.9">
+                                            <Grid.Effect>
+                                                <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                            </Grid.Effect>
+                                            <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                                <Path.Fill>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                        <GradientStop Color="#C60E0E" Offset="0"/>
+                                                        <GradientStop Color="#600707" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Path.Fill>
+                                            </Path>
+                                        </Grid>
+                                    </Viewbox>
+                                    <TextBlock Text="遥 测 功 能" FontSize="18" FontWeight="Bold" Margin="18,0,0,0"
+                                               Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                    <CheckBox x:Name="TelemetryToggle" HorizontalAlignment="Right"
+                                              Style="{StaticResource PopupDualStateSvgToggleStyle}" IsChecked="True"/>
+                                </Grid>
+                                <Grid Grid.Row="1">
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
+                                                    <Setter Property="OpacityMask">
+                                                        <Setter.Value>
+                                                            <SolidColorBrush Color="#80000000"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Setter Property="IsHitTestVisible" Value="False"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <ComboBox x:Name="TeleFuncCombo" Style="{StaticResource PopupComboBoxStyle}"
+                                              Tag="201" SelectedIndex="0">
+                                        <ComboBoxItem Content="ABS介入"/>
+                                        <ComboBoxItem Content="TC介入"/>
+                                        <ComboBoxItem Content="DRS可用"/>
+                                        <ComboBoxItem Content="DRS开启"/>
+                                        <ComboBoxItem Content="车轮抱死"/>
+                                        <ComboBoxItem Content="维修区限速"/>
+                                        <ComboBoxItem Content="车轮打滑"/>
+                                    </ComboBox>
+                                </Grid>
+                            </Grid>
+
+                            <!-- 遥测灯效 -->
+                            <Grid Grid.Row="2" Margin="0,0,0,20">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
+                                                <Setter Property="OpacityMask">
+                                                    <Setter.Value>
+                                                        <SolidColorBrush Color="#80000000"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="遥 测 灯 效"
+                                           FontSize="16" FontWeight="Bold"
+                                           Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                                <ComboBox x:Name="TelemetryLightEffectComboBox" Grid.Row="1"
+                                          Style="{StaticResource PopupComboBoxStyle}"
+                                          SelectedIndex="0"
+                                          SelectionChanged="TelemetryLightEffectComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="常亮"/>
+                                    <ComboBoxItem Content="闪烁"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <!-- 按键灯触发遥测颜色 -->
+                            <Grid Grid.Row="3" Margin="0,0,0,20">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
+                                                <Setter Property="OpacityMask">
+                                                    <Setter.Value>
+                                                        <SolidColorBrush Color="#80000000"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="按键灯触发遥测颜色"
+                                           FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                                <Grid Grid.Row="1">
+                                    <StackPanel x:Name="TeleColorPanel" Orientation="Horizontal">
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#C60E0E" IsChecked="True"/>
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#FF6A00"/>
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#FFC800"/>
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#16C642"/>
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#28F9DD"/>
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#2840F9"/>
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#C128F9"/>
+                                        <RadioButton GroupName="TeleColor" Style="{StaticResource PopupColorBlockRadioStyle}"
+                                                     Background="#EEEEEE"/>
+                                        <RadioButton GroupName="TeleColor" Width="43" Height="40" Margin="0,0,-3,0" Cursor="Hand">
+                                            <RadioButton.Template>
+                                                <ControlTemplate TargetType="RadioButton">
+                                                    <Grid Width="43" Height="40">
+                                                        <Path x:Name="OuterPath2" Data="M1.27539 39L10.6055 1H41.2861L31.9551 39H1.27539Z"
+                                                              Fill="#969696" Stroke="#5A5A5A" StrokeThickness="2" Stretch="None"/>
+                                                        <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                              Data="M23.0418 26.666H36.0233L39.2969 13.3334H35.9104H22.9289L19.6553 26.666H23.0418Z"/>
+                                                        <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                              Data="M3.39679 40H16.3783L19.6519 26.6674H16.2654H3.28391L0.0103149 40H3.39679Z"/>
+                                                        <Path Opacity="0.2" Fill="Black" Stretch="None"
+                                                              Data="M9.94562 13.334H22.9271L26.2007 0.00137043H22.8142H9.83273L6.55914 13.334H9.94562Z"/>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsChecked" Value="True">
+                                                            <Setter TargetName="OuterPath2" Property="Stroke" Value="#80000000"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </RadioButton.Template>
+                                        </RadioButton>
+                                    </StackPanel>
+                                </Grid>
+                            </Grid>
+
+                            <!-- 速度 -->
+                            <Grid Grid.Row="4" Margin="0,0,0,20">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsChecked, ElementName=TelemetryToggle}" Value="False">
+                                                <Setter Property="OpacityMask">
+                                                    <Setter.Value>
+                                                        <SolidColorBrush Color="#80000000"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedIndex, ElementName=TelemetryLightEffectComboBox}" Value="0">
+                                                <Setter Property="OpacityMask">
+                                                    <Setter.Value>
+                                                        <SolidColorBrush Color="#80000000"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="速度"
+                                           FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
+                                <Slider x:Name="PopupSpeedSlider" Grid.Row="1"
+                                        Style="{StaticResource PopupSpeedSliderStyle}"
+                                        Value="3" Width="341"
+                                        ValueChanged="SpeedSlider_ValueChanged"/>
+                            </Grid>
+
+                            <!-- 占位 -->
+                            <Grid Grid.Row="5"/>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- 确定 / 取消 按钮 -->
+                    <Grid Grid.Row="3">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>

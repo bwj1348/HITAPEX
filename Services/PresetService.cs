@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using HITAPEX.Models.Usb;
 using HITAPEX.Views.DeviceParameters;
 
 namespace HITAPEX.Services;
@@ -24,6 +25,12 @@ public class PresetService
     /// <summary>加载官方预设（从安装目录 JSON 文件）</summary>
     public List<PresetItem> LoadOfficialPresets()
     {
+        return LoadOfficialPresets(null);
+    }
+
+    /// <summary>加载官方预设，按设备类型过滤</summary>
+    public List<PresetItem> LoadOfficialPresets(DeviceType? deviceType)
+    {
         try
         {
             if (!File.Exists(_officialFilePath))
@@ -35,6 +42,8 @@ public class PresetService
             {
                 foreach (var p in presets)
                     p.IsPersonal = false;
+                if (deviceType.HasValue)
+                    presets = presets.Where(p => p.DeviceType == deviceType.Value).ToList();
                 return presets;
             }
         }
@@ -48,6 +57,12 @@ public class PresetService
     /// <summary>加载个人预设（从 AppData 文件）</summary>
     public List<PresetItem> LoadPersonalPresets()
     {
+        return LoadPersonalPresets(null);
+    }
+
+    /// <summary>加载个人预设，按设备类型过滤</summary>
+    public List<PresetItem> LoadPersonalPresets(DeviceType? deviceType)
+    {
         try
         {
             if (!File.Exists(_personalFilePath))
@@ -59,6 +74,8 @@ public class PresetService
             {
                 foreach (var p in presets)
                     p.IsPersonal = true;
+                if (deviceType.HasValue)
+                    presets = presets.Where(p => p.DeviceType == deviceType.Value).ToList();
                 return presets;
             }
         }
@@ -69,7 +86,24 @@ public class PresetService
         return new List<PresetItem>();
     }
 
-    /// <summary>保存个人预设到 AppData 文件</summary>
+    /// <summary>保存指定设备类型的个人预设（合并其他类型预设后写入文件）</summary>
+    public void SavePersonalPresets(List<PresetItem> presets, DeviceType deviceType)
+    {
+        try
+        {
+            var allPresets = LoadPersonalPresets();
+            allPresets.RemoveAll(p => p.DeviceType == deviceType);
+            allPresets.AddRange(presets);
+            var json = JsonSerializer.Serialize(allPresets, JsonOptions);
+            File.WriteAllText(_personalFilePath, json);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[PresetService] 保存个人预设失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>保存全部个人预设（覆盖写入，用于兼容旧调用）</summary>
     public void SavePersonalPresets(List<PresetItem> presets)
     {
         try
@@ -93,6 +127,7 @@ public class PresetService
             Category = preset.Category,
             Games = preset.Games,
             Parameters = preset.Parameters,
+            WheelParameters = preset.WheelParameters,
             IsPersonal = true
         };
 

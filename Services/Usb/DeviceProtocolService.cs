@@ -440,6 +440,333 @@ public class DeviceProtocolService
     }
 
     // ════════════════════════════════════════════════════════════════
+    //  面盘转速灯基础模式协议 (0x2103)
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>预定义的UI颜色索引到RGB的映射表</summary>
+    public static readonly byte[][] ColorIndexToRgb =
+    {
+        new byte[] { 0xC6, 0x0E, 0x0E }, // 0: 红
+        new byte[] { 0xFF, 0x6A, 0x00 }, // 1: 橙
+        new byte[] { 0xFF, 0xC8, 0x00 }, // 2: 黄
+        new byte[] { 0x16, 0xC6, 0x42 }, // 3: 绿
+        new byte[] { 0x28, 0xF9, 0xDD }, // 4: 青
+        new byte[] { 0x28, 0x40, 0xF9 }, // 5: 蓝
+        new byte[] { 0xC1, 0x28, 0xF9 }, // 6: 紫
+        new byte[] { 0xEE, 0xEE, 0xEE }, // 7: 白
+        new byte[] { 0x00, 0x00, 0x00 }, // 8: 无(灭)
+    };
+
+    /// <summary>将RGB字节反查为UI颜色索引，未匹配时返回0（红）</summary>
+    public static int RgbToColorIndex(byte r, byte g, byte b)
+    {
+        for (int i = 0; i < ColorIndexToRgb.Length; i++)
+        {
+            if (ColorIndexToRgb[i][0] == r && ColorIndexToRgb[i][1] == g && ColorIndexToRgb[i][2] == b)
+                return i;
+        }
+        // 非精确匹配时返回最接近的索引
+        if (r == 0 && g == 0 && b == 0) return 8;
+        return 0;
+    }
+
+    /// <summary>
+    /// Build Set Wheel RPM Base Mode command (0x2103).
+    /// Protocol: [0x21, 0x03, 0x21, baseMode, speed, LED1_RGB(3B), ... LED12_RGB(3B), reserved...]
+    /// </summary>
+    public static byte[] BuildSetWheelRpmBaseModeCommand(byte baseMode, byte baseSpeed, byte[][] ledColors)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;
+        frame[1] = 0x03;
+        frame[2] = 0x21;
+        frame[3] = baseMode;
+        frame[4] = baseSpeed;
+        for (int i = 0; i < 12 && i < ledColors.Length; i++)
+        {
+            var color = ledColors[i];
+            if (color != null && color.Length >= 3)
+            {
+                frame[5 + i * 3] = color[0];
+                frame[6 + i * 3] = color[1];
+                frame[7 + i * 3] = color[2];
+            }
+        }
+        return frame;
+    }
+
+    /// <summary>Build Get Wheel RPM Base Mode command (0x2103).</summary>
+    public static byte[] BuildGetWheelRpmBaseModeCommand()
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;
+        frame[1] = 0x03;
+        frame[2] = 0x21;
+        return frame;
+    }
+
+    /// <summary>Parse Wheel RPM Base Mode response (0x2103).</summary>
+    public static WheelRpmBaseModeResponse? ParseWheelRpmBaseModeResponse(byte[] data)
+    {
+        if (data == null || data.Length < 41)
+            return null;
+        if (data[0] != 0xC1 || data[1] != 0x03 || data[2] != 0x21)
+            return null;
+
+        var response = new WheelRpmBaseModeResponse
+        {
+            BaseMode = data[3],
+            BaseSpeed = data[4]
+        };
+        for (int i = 0; i < 12; i++)
+        {
+            response.LedColors[i][0] = data[5 + i * 3];
+            response.LedColors[i][1] = data[6 + i * 3];
+            response.LedColors[i][2] = data[7 + i * 3];
+        }
+        return response;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  面盘转速灯转速指示协议 (0x2104)
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Build Set Wheel RPM Indicator command (0x2104).
+    /// Protocol: [0x21, 0x04, 0x21, triggerMode, LED1_val(2B), LED1_RGB(3B), ... LED12_val(2B), LED12_RGB(3B)]
+    /// </summary>
+    public static byte[] BuildSetWheelRpmIndicatorCommand(byte triggerMode, ushort[] triggerValues, byte[][] ledColors)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;
+        frame[1] = 0x04;
+        frame[2] = 0x21;
+        frame[3] = triggerMode;
+        for (int i = 0; i < 12; i++)
+        {
+            var offset = 4 + i * 5;
+            var val = i < triggerValues.Length ? triggerValues[i] : (ushort)0;
+            frame[offset] = (byte)(val & 0xFF);
+            frame[offset + 1] = (byte)((val >> 8) & 0xFF);
+            if (i < ledColors.Length && ledColors[i] != null && ledColors[i].Length >= 3)
+            {
+                frame[offset + 2] = ledColors[i][0];
+                frame[offset + 3] = ledColors[i][1];
+                frame[offset + 4] = ledColors[i][2];
+            }
+        }
+        return frame;
+    }
+
+    /// <summary>Build Get Wheel RPM Indicator command (0x2104).</summary>
+    public static byte[] BuildGetWheelRpmIndicatorCommand()
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;
+        frame[1] = 0x04;
+        frame[2] = 0x21;
+        return frame;
+    }
+
+    /// <summary>Parse Wheel RPM Indicator response (0x2104).</summary>
+    public static WheelRpmIndicatorResponse? ParseWheelRpmIndicatorResponse(byte[] data)
+    {
+        if (data == null || data.Length < 64)
+            return null;
+        if (data[0] != 0xC1 || data[1] != 0x04 || data[2] != 0x21)
+            return null;
+
+        var response = new WheelRpmIndicatorResponse
+        {
+            TriggerMode = data[3]
+        };
+        for (int i = 0; i < 12; i++)
+        {
+            var offset = 4 + i * 5;
+            response.TriggerValues[i] = (ushort)(data[offset] | (data[offset + 1] << 8));
+            response.LedColors[i][0] = data[offset + 2];
+            response.LedColors[i][1] = data[offset + 3];
+            response.LedColors[i][2] = data[offset + 4];
+        }
+        return response;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  面盘转速灯模式等属性协议 (0x2105)
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Build Set Wheel RPM Mode command (0x2105).
+    /// Protocol: [0x21, 0x05, 0x21, brightness, telemetryOff, lightMode, strobeMode, strobeSpeed, strobeColorRGB(3B), strobeTriggerValue, reserved...]
+    /// </summary>
+    public static byte[] BuildSetWheelRpmModeCommand(byte brightness, byte telemetryOff, byte lightMode,
+        byte strobeMode, byte strobeSpeed, byte strobeColorR, byte strobeColorG, byte strobeColorB, byte strobeTriggerValue)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;
+        frame[1] = 0x05;
+        frame[2] = 0x21;
+        frame[3] = brightness;
+        frame[4] = telemetryOff;
+        frame[5] = lightMode;
+        frame[6] = strobeMode;
+        frame[7] = strobeSpeed;
+        frame[8] = strobeColorR;
+        frame[9] = strobeColorG;
+        frame[10] = strobeColorB;
+        frame[11] = strobeTriggerValue;
+        return frame;
+    }
+
+    /// <summary>Build Get Wheel RPM Mode command (0x2105).</summary>
+    public static byte[] BuildGetWheelRpmModeCommand()
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;
+        frame[1] = 0x05;
+        frame[2] = 0x21;
+        return frame;
+    }
+
+    /// <summary>Parse Wheel RPM Mode response (0x2105).</summary>
+    public static WheelRpmModeResponse? ParseWheelRpmModeResponse(byte[] data)
+    {
+        if (data == null || data.Length < 12)
+            return null;
+        if (data[0] != 0xC1 || data[1] != 0x05 || data[2] != 0x21)
+            return null;
+
+        return new WheelRpmModeResponse
+        {
+            Brightness = data[3],
+            TelemetryOff = data[4],
+            LightMode = data[5],
+            StrobeMode = data[6],
+            StrobeSpeed = data[7],
+            StrobeColorR = data[8],
+            StrobeColorG = data[9],
+            StrobeColorB = data[10],
+            StrobeTriggerValue = data[11]
+        };
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  面盘按键灯协议 (0x2107)
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Build Set Wheel Button Light command (0x2107).
+    /// Protocol: [0x21, 0x07, 0x21, ledMode, ledIndex, brightness, colorRGB(3B), telemetryFunc, flashSpeed, telemetryColorRGB(3B), reserved...]
+    /// </summary>
+    public static byte[] BuildSetWheelButtonLightCommand(byte ledMode, byte ledIndex, byte brightness,
+        byte colorR, byte colorG, byte colorB, byte telemetryFunc, byte flashSpeed,
+        byte telemetryColorR, byte telemetryColorG, byte telemetryColorB)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;
+        frame[1] = 0x07;
+        frame[2] = 0x21;
+        frame[3] = ledMode;
+        frame[4] = ledIndex;
+        frame[5] = brightness;
+        frame[6] = colorR;
+        frame[7] = colorG;
+        frame[8] = colorB;
+        frame[9] = telemetryFunc;
+        frame[10] = flashSpeed;
+        frame[11] = telemetryColorR;
+        frame[12] = telemetryColorG;
+        frame[13] = telemetryColorB;
+        return frame;
+    }
+
+    /// <summary>Build Get Wheel Button Light command (0x2107), for a specific LED index.</summary>
+    public static byte[] BuildGetWheelButtonLightCommand(byte ledIndex)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;
+        frame[1] = 0x07;
+        frame[2] = 0x21;
+        frame[3] = ledIndex;
+        return frame;
+    }
+
+    /// <summary>Parse Wheel Button Light response (0x2107).</summary>
+    public static WheelButtonLightResponse? ParseWheelButtonLightResponse(byte[] data)
+    {
+        if (data == null || data.Length < 14)
+            return null;
+        if (data[0] != 0xC1 || data[1] != 0x07 || data[2] != 0x21)
+            return null;
+
+        return new WheelButtonLightResponse
+        {
+            LedMode = data[3],
+            LedIndex = data[4],
+            Brightness = data[5],
+            ColorR = data[6],
+            ColorG = data[7],
+            ColorB = data[8],
+            TelemetryFunc = data[9],
+            FlashSpeed = data[10],
+            TelemetryColorR = data[11],
+            TelemetryColorG = data[12],
+            TelemetryColorB = data[13]
+        };
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  面盘睡眠和拨片协议 (0x2108)
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Build Set Wheel Sleep and Paddle command (0x2108).
+    /// Protocol: [0x21, 0x08, 0x21, sleepTime, sleepEffect, sleepEffectSpeed, clutchPaddleMode, clutchBitePoint, reserved...]
+    /// </summary>
+    public static byte[] BuildSetWheelSleepAndPaddleCommand(byte sleepTime, byte sleepEffect, byte sleepEffectSpeed,
+        byte clutchPaddleMode, byte clutchBitePoint)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;
+        frame[1] = 0x08;
+        frame[2] = 0x21;
+        frame[3] = sleepTime;
+        frame[4] = sleepEffect;
+        frame[5] = sleepEffectSpeed;
+        frame[6] = clutchPaddleMode;
+        frame[7] = clutchBitePoint;
+        return frame;
+    }
+
+    /// <summary>Build Get Wheel Sleep and Paddle command (0x2108).</summary>
+    public static byte[] BuildGetWheelSleepAndPaddleCommand()
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;
+        frame[1] = 0x08;
+        frame[2] = 0x21;
+        return frame;
+    }
+
+    /// <summary>Parse Wheel Sleep and Paddle response (0x2108).</summary>
+    public static WheelSleepAndPaddleResponse? ParseWheelSleepAndPaddleResponse(byte[] data)
+    {
+        if (data == null || data.Length < 8)
+            return null;
+        if (data[0] != 0xC1 || data[1] != 0x08 || data[2] != 0x21)
+            return null;
+
+        return new WheelSleepAndPaddleResponse
+        {
+            SleepTime = data[3],
+            SleepEffect = data[4],
+            SleepEffectSpeed = data[5],
+            ClutchPaddleMode = data[6],
+            ClutchBitePoint = data[7]
+        };
+    }
+
+    // ════════════════════════════════════════════════════════════════
     //  预设名称协议 (0x21D0)
     // ════════════════════════════════════════════════════════════════
 

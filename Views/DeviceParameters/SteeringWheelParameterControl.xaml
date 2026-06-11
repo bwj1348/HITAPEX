@@ -156,7 +156,7 @@
             </Setter>
         </Style>
 
-        <!-- 圆形按键样式 (26×26) -->
+        <!-- 圆形按键样式 (26×26) — 视觉效果仅由 HID 数据驱动，点击不产生选中效果 -->
         <Style x:Key="SmallButtonStyle" TargetType="RadioButton">
             <Setter Property="Width" Value="44"/>
             <Setter Property="Height" Value="44"/>
@@ -189,18 +189,12 @@
                                               TextElement.FontWeight="Bold"
                                               TextElement.FontFamily="{StaticResource OrbitronFont}"/>
                         </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="GlowCircle" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="OuterRing" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- 圆形大按键样式 (43×43) -->
+        <!-- 圆形大按键样式 (43×43) — 视觉效果仅由 HID 数据驱动，点击不产生选中效果 -->
         <Style x:Key="LargeButtonStyle" TargetType="RadioButton">
             <Setter Property="Width" Value="65"/>
             <Setter Property="Height" Value="65"/>
@@ -233,12 +227,6 @@
                                               TextElement.FontWeight="Bold"
                                               TextElement.FontFamily="{StaticResource OrbitronFont}"/>
                         </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="GlowCircle" Property="Visibility" Value="Visible"/>
-                                <Setter TargetName="OuterRing" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -367,6 +355,8 @@
             <Setter Property="Minimum" Value="0"/>
             <Setter Property="Maximum" Value="100"/>
             <Setter Property="Value" Value="50"/>
+            <Setter Property="TickFrequency" Value="1"/>
+            <Setter Property="IsSnapToTickEnabled" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Slider">
@@ -1078,60 +1068,60 @@
             </Path>
 
             <!-- B1 - B3: 左上按键 -->
-            <RadioButton x:Name="Btn1" GroupName="KeyButtons" Canvas.Left="215" Canvas.Top="9" IsChecked="True"
-                         Style="{StaticResource SmallButtonStyle}" Content="B1" Checked="KeyButton_Checked"/>
+            <RadioButton x:Name="Btn1" GroupName="KeyButtons" Canvas.Left="215" Canvas.Top="9"
+                         Style="{StaticResource SmallButtonStyle}" Content="B1" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn2" GroupName="KeyButtons" Canvas.Left="176" Canvas.Top="54"
-                         Style="{StaticResource SmallButtonStyle}" Content="B2" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B2" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn3" GroupName="KeyButtons" Canvas.Left="230" Canvas.Top="79"
-                         Style="{StaticResource SmallButtonStyle}" Content="B3" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B3" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
 
-            <!-- B4: 左侧上箭头 + B4 -->
+            <!-- B4: 左侧上箭头 + B4 (方向键，无 HID 高亮效果) -->
             <RadioButton x:Name="Btn4" GroupName="KeyButtons" Canvas.Left="165" Canvas.Top="117"
-                         Style="{StaticResource ArrowUpButtonStyle}" Content="B4" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource ArrowUpButtonStyle}" Content="B4" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
 
-            <!-- B5: 左侧下箭头 + B5 -->
+            <!-- B5: 左侧下箭头 + B5 (方向键，无 HID 高亮效果) -->
             <RadioButton x:Name="Btn5" GroupName="KeyButtons" Canvas.Left="165" Canvas.Top="197"
-                         Style="{StaticResource ArrowDownButtonStyle}" Content="B5" Checked="KeyButton_Checked" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                         Style="{StaticResource ArrowDownButtonStyle}" Content="B5" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
             <!-- B6 - B9: 左下按键 -->
             <RadioButton x:Name="Btn6" GroupName="KeyButtons" Canvas.Left="203" Canvas.Top="227"
-                         Style="{StaticResource SmallButtonStyle}" Content="B6" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B6" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn7" GroupName="KeyButtons" Canvas.Left="262.5" Canvas.Top="230.5"
-                         Style="{StaticResource SmallButtonStyle}" Content="B7" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B7" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn8" GroupName="KeyButtons" Canvas.Left="217" Canvas.Top="285"
-                         Style="{StaticResource SmallButtonStyle}" Content="B8" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B8" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn9" GroupName="KeyButtons" Canvas.Left="276" Canvas.Top="288.5"
-                         Style="{StaticResource SmallButtonStyle}" Content="B9" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B9" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
 
             <!-- B10: 中央大按键 -->
             <RadioButton x:Name="Btn10" GroupName="KeyButtons" Canvas.Left="366" Canvas.Top="261"
-                         Style="{StaticResource LargeButtonStyle}" Content="B10" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource LargeButtonStyle}" Content="B10" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
 
             <!-- B11 - B13: 右上按键 -->
             <RadioButton x:Name="Btn11" GroupName="KeyButtons" Canvas.Left="537" Canvas.Top="9"
-                         Style="{StaticResource SmallButtonStyle}" Content="B11" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B11" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn12" GroupName="KeyButtons" Canvas.Left="576" Canvas.Top="54"
-                         Style="{StaticResource SmallButtonStyle}" Content="B12" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B12" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn13" GroupName="KeyButtons" Canvas.Left="522" Canvas.Top="79"
-                         Style="{StaticResource SmallButtonStyle}" Content="B13" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B13" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
 
-            <!-- B14: 右侧上箭头 + B14 -->
+            <!-- B14: 右侧上箭头 + B14 (方向键，无 HID 高亮效果) -->
             <RadioButton x:Name="Btn14" GroupName="KeyButtons" Canvas.Left="592" Canvas.Top="117"
-                         Style="{StaticResource ArrowUpButtonStyle}" Content="B14" Checked="KeyButton_Checked" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                         Style="{StaticResource ArrowUpButtonStyle}" Content="B14" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown" HorizontalAlignment="Center" VerticalAlignment="Top"/>
 
-            <!-- B15: 右侧下箭头 + B15 -->
+            <!-- B15: 右侧下箭头 + B15 (方向键，无 HID 高亮效果) -->
             <RadioButton x:Name="Btn15" GroupName="KeyButtons" Canvas.Left="592" Canvas.Top="197"
-                         Style="{StaticResource ArrowDownButtonStyle}" Content="B15" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource ArrowDownButtonStyle}" Content="B15" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
 
             <!-- B16 - B19: 右下方按键 -->
             <RadioButton x:Name="Btn16" GroupName="KeyButtons" Canvas.Left="490" Canvas.Top="230.5"
-                         Style="{StaticResource SmallButtonStyle}" Content="B16" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B16" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn17" GroupName="KeyButtons" Canvas.Left="549" Canvas.Top="227"
-                         Style="{StaticResource SmallButtonStyle}" Content="B17" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B17" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn18" GroupName="KeyButtons" Canvas.Left="476.5" Canvas.Top="288.5"
-                         Style="{StaticResource SmallButtonStyle}" Content="B18" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B18" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
             <RadioButton x:Name="Btn19" GroupName="KeyButtons" Canvas.Left="536" Canvas.Top="285"
-                         Style="{StaticResource SmallButtonStyle}" Content="B19" Checked="KeyButton_Checked"/>
+                         Style="{StaticResource SmallButtonStyle}" Content="B19" PreviewMouseLeftButtonDown="KeyButton_PreviewMouseLeftButtonDown"/>
         </Canvas>
 
         <!-- 按键响应指示器（左下角） -->

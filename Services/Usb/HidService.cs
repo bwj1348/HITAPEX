@@ -15,8 +15,11 @@ public class HidService : IHidService
     private CancellationTokenSource? _cts;
     private bool _disposed;
 
+    public event Action<UsbDeviceInfo>? HDeviceConnected;
+    public event Action<UsbDeviceInfo>? HDeviceDisconnected;
     public event Action<UsbDeviceInfo, HidPedalData>? PedalDataReceived;
     public event Action<UsbDeviceInfo, HidBaseData>? BaseDataReceived;
+    public event Action<UsbDeviceInfo, HidWheelData>? WheelDataReceived;
 
     public IReadOnlyList<UsbDeviceInfo> ConnectedHidDevices =>
         _channels.Values
@@ -69,16 +72,21 @@ public class HidService : IHidService
 
     private void DevicePollLoop(CancellationToken token)
     {
+        var knownDeviceKeys = new HashSet<string>();
+
         while (!token.IsCancellationRequested)
         {
             try
             {
                 var discoveredDevices = DiscoverHidDevices();
+                var currentKeys = new HashSet<string>();
 
                 // 连接新发现的设备
                 foreach (var (vid, pid, path) in discoveredDevices)
                 {
                     var key = $"HID_{vid:X4}:{pid:X4}";
+                    currentKeys.Add(key);
+
                     if (_channels.ContainsKey(key))
                         continue;
 
@@ -101,6 +109,9 @@ public class HidService : IHidService
                         _channels[key] = channel;
                         Debug.WriteLine($"[HID] 已连接: {descriptor.ModelName} ({key})");
 
+                        // 触发连接事件
+                        HDeviceConnected?.Invoke(deviceInfo);
+
                         // 为每个通道启动独立读取循环
                         _ = Task.Run(() => ReadLoop(channel, descriptor.DeviceType, token), token);
                     }
@@ -110,16 +121,36 @@ public class HidService : IHidService
                     }
                 }
 
-                // 清理已失效的通道
+                // 检测断开连接的设备
                 foreach (var kvp in _channels.ToList())
                 {
                     if (kvp.Value.State == DeviceConnectionState.Error ||
                         kvp.Value.State == DeviceConnectionState.Disconnected)
                     {
                         if (_channels.TryRemove(kvp.Key, out var ch))
+                        {
+                            HDeviceDisconnected?.Invoke(ch.DeviceInfo);
                             ch.Dispose();
+                        }
                     }
                 }
+
+                // 检测物理拔出的设备（设备列表中消失了）
+                var removedKeys = knownDeviceKeys.Where(k => !currentKeys.Contains(k)).ToList();
+                foreach (var key in removedKeys)
+                {
+                    knownDeviceKeys.Remove(key);
+                    if (_channels.TryRemove(key, out var ch))
+                    {
+                        Debug.WriteLine($"[HID] 设备已断开: {ch.DeviceInfo.Name} ({key})");
+                        HDeviceDisconnected?.Invoke(ch.DeviceInfo);
+                        ch.Dispose();
+                    }
+                }
+
+                // 更新已知设备集合
+                foreach (var k in currentKeys)
+                    knownDeviceKeys.Add(k);
             }
             catch (Exception ex)
             {
@@ -174,6 +205,12 @@ public class HidService : IHidService
                 var baseData = HidBaseData.Parse(data);
                 if (baseData != null)
                     BaseDataReceived?.Invoke(device, baseData);
+                break;
+
+            case DeviceType.Wheel when reportId == 0x01:
+                var wheelData = HidWheelData.Parse(data);
+                if (wheelData != null)
+                    WheelDataReceived?.Invoke(device, wheelData);
                 break;
         }
     }

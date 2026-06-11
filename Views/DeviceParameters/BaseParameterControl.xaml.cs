@@ -23,6 +23,7 @@ public partial class BaseParameterControl : UserControl
     private bool _isAppliedPresetPersonal;
     private string _currentPresetName = "Default";
     private string _devicePresetName = string.Empty;
+    private bool _isInitialized;
 
     public bool HasUnsavedChanges => _isPresetModified;
 
@@ -34,6 +35,12 @@ public partial class BaseParameterControl : UserControl
 
     private async void BaseParameterControl_Loaded(object sender, RoutedEventArgs e)
     {
+        if (!_isInitialized)
+        {
+            _isInitialized = true;
+            SubscribeUsbSerialEvents();
+        }
+
         await RefreshDeviceInfoAsync();
         UpdatePresetDisplay();
     }
@@ -68,7 +75,23 @@ public partial class BaseParameterControl : UserControl
             }
             else
             {
-                SetDisconnected();
+                // Check if a Base device is connected in update mode
+                var updateModeDevice = connectedDevices.FirstOrDefault(d =>
+                {
+                    var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+                    return descriptor != null && descriptor.DeviceType == DeviceType.Base
+                           && descriptor.IsUpdateMode(d.Vid, d.Pid);
+                });
+
+                if (updateModeDevice != null)
+                {
+                    SetDisconnected();
+                    ShowUpdateModeRedirectDialog(updateModeDevice);
+                }
+                else
+                {
+                    SetDisconnected();
+                }
             }
         }
         catch (Exception ex)
@@ -78,10 +101,54 @@ public partial class BaseParameterControl : UserControl
         }
 
         UpdateConnectionStatusDisplay();
-        await CheckFirmwareVersionAsync();
+        // 固件版本检查改为 fire-and-forget：API 服务器不可达时会阻塞 15s+，
+        // 不应延迟后续 USB 参数获取命令
+        _ = CheckFirmwareVersionAsync();
 
         // 获取设备预设名称
         await FetchPresetNameAsync();
+
+        // 尝试将设备预设匹配到本地预设
+        TryMatchLocalPreset();
+    }
+
+    /// <summary>
+    /// 对比设备上报的预设名称与本地预设，若匹配则视为本地预设。
+    /// TODO: 添加参数等价比较（需要 BasePresetSnapshot 模型）
+    /// </summary>
+    private void TryMatchLocalPreset()
+    {
+        if (string.IsNullOrEmpty(_devicePresetName) || App.PresetService == null)
+            return;
+
+        try
+        {
+            var officialPresets = App.PresetService.LoadOfficialPresets(DeviceType.Base);
+            var personalPresets = App.PresetService.LoadPersonalPresets(DeviceType.Base);
+
+            // 先查个人预设，再查官方预设
+            PresetItem? matched = personalPresets.FirstOrDefault(p => p.Name == _devicePresetName);
+            bool isPersonal = true;
+            if (matched == null)
+            {
+                matched = officialPresets.FirstOrDefault(p => p.Name == _devicePresetName);
+                isPersonal = false;
+            }
+
+            if (matched != null)
+            {
+                // TODO: 添加 ParametersEqual 调用 when BasePresetSnapshot is implemented
+                _currentPresetName = matched.Name;
+                _isAppliedPresetPersonal = isPersonal;
+                _devicePresetName = string.Empty;
+                Debug.WriteLine($"[BaseControl] 设备预设匹配到本地{(isPersonal ? "个人" : "官方")}预设: {matched.Name}");
+                UpdatePresetDisplay();
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[BaseControl] 匹配本地预设异常: {ex.Message}");
+        }
     }
 
     /// <summary>从设备获取预设名称</summary>
@@ -125,10 +192,17 @@ public partial class BaseParameterControl : UserControl
 
     private void SetDisconnected()
     {
+        _connectedBaseDevice = null;
         _deviceModelName = "基座";
         _connectionStatusText = "未连接";
         _connectionStatusColor = "#C60E0E";
         _firmwareVersion = "---";
+
+        // 重置预设状态
+        _currentPresetName = "Default";
+        _devicePresetName = string.Empty;
+        _isPresetModified = false;
+        _isAppliedPresetPersonal = false;
     }
 
     private void UpdateConnectionStatusDisplay()
@@ -219,6 +293,104 @@ public partial class BaseParameterControl : UserControl
         e.Handled = true;
     }
 
+    /// <summary>设备处于固件更新模式时弹窗，引导用户前往固件更新页面</summary>
+    private void ShowUpdateModeRedirectDialog(UsbDeviceInfo device)
+    {
+        var mainWindow = Window.GetWindow(this) as HITAPEX.MainWindow
+                         ?? Application.Current.MainWindow as HITAPEX.MainWindow;
+        if (mainWindow == null) return;
+
+        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+        var deviceName = descriptor?.ModelName ?? "设备";
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "设 备 更 新 模 式";
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = $"{deviceName}当前处于固件更新模式，参数设置功能不可用。\n请前往固件更新页面完成或恢复固件。",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        dialog.AddButton("前 往", (_, _) =>
+        {
+            dialog.Hide();
+            NavigateToFirmwareUpdate();
+        }, isPrimary: true);
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
+
+    /// <summary>订阅 USB 串口设备连接/断开事件，设备随时插拔时 UI 实时响应</summary>
+    private void SubscribeUsbSerialEvents()
+    {
+        if (App.UsbManager == null) return;
+        App.UsbManager.DeviceConnected += OnUsbDeviceConnected;
+        App.UsbManager.DeviceDisconnected += OnUsbDeviceDisconnected;
+    }
+
+    private async void OnUsbDeviceConnected(UsbDeviceInfo device)
+    {
+        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+        if (descriptor == null || descriptor.DeviceType != DeviceType.Base)
+            return;
+
+        Debug.WriteLine($"[BaseControl] 基座串口设备已连接: {device.DeviceKey}");
+        await Application.Current.Dispatcher.InvokeAsync(async () => await RefreshDeviceInfoAsync());
+    }
+
+    private void OnUsbDeviceDisconnected(UsbDeviceInfo device)
+    {
+        if (_connectedBaseDevice == null) return;
+
+        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+        if (descriptor == null || descriptor.DeviceType != DeviceType.Base)
+            return;
+
+        Debug.WriteLine($"[BaseControl] 基座串口设备已断开: {device.DeviceKey}");
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            SetDisconnected();
+            UpdateConnectionStatusDisplay();
+            UpdatePresetDisplay();
+            if (NewVersionAvailableBorder != null)
+                NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
+        });
+    }
+
+    /// <summary>导航到设置界面的固件更新选项卡</summary>
+    private void NavigateToFirmwareUpdate()
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
+            if (vm != null)
+            {
+                var settingsItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Settings");
+                if (settingsItem != null)
+                {
+                    vm.SelectedNavigationItem = settingsItem;
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+                    {
+                        var settingsView = vm.CurrentView as SettingsUserControl;
+                        settingsView?.SwitchToFirmwareUpdateTab();
+                    });
+                }
+            }
+        }
+    }
+
     /// <summary>放弃当前修改，恢复到已应用预设的状态</summary>
     public void DiscardChanges()
     {
@@ -237,7 +409,14 @@ public partial class BaseParameterControl : UserControl
             return;
         }
 
-        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+        var mainWindow = Window.GetWindow(this) as HITAPEX.MainWindow
+                          ?? Application.Current.MainWindow as HITAPEX.MainWindow;
+        if (mainWindow == null)
+        {
+            _isPresetModified = false;
+            onSaved?.Invoke();
+            return;
+        }
 
         var dialog = mainWindow.GlobalDialog;
         dialog.Title = "未 保 存";
@@ -299,6 +478,7 @@ public partial class BaseParameterControl : UserControl
     /// <summary>任意参数修改后的统一入口</summary>
     private void OnParameterModified()
     {
+        if (!IsLoaded) return;
         _isPresetModified = true;
         UpdatePresetDisplay();
     }
@@ -409,7 +589,21 @@ public partial class BaseParameterControl : UserControl
 
     private void PresetListButton_Click(object sender, MouseButtonEventArgs e)
     {
-        // TODO: 实现基座预设列表弹窗
-        Debug.WriteLine("[BaseControl] 预设列表功能待实现");
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            var popup = mainWindow.ShowPresetListPopup(Models.Usb.DeviceType.Base);
+            popup.PresetApplied -= OnPresetApplied;
+            popup.PresetApplied += OnPresetApplied;
+        }
+    }
+
+    private void OnPresetApplied(object? sender, PresetItem preset)
+    {
+        // TODO: 应用基座预设参数（需要 BasePresetSnapshot 模型）
+        _currentPresetName = preset.Name;
+        _isAppliedPresetPersonal = preset.IsPersonal;
+        _isPresetModified = false;
+        UpdatePresetDisplay();
+        Debug.WriteLine($"[BaseControl] 预设已应用: {preset.Name}");
     }
 }

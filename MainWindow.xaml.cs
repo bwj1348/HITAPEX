@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using HITAPEX.Helpers;
+using HITAPEX.Models.Usb;
 using HITAPEX.ViewModels;
 using HITAPEX.Controls;
 using HITAPEX.Views;
@@ -12,24 +13,29 @@ namespace HITAPEX;
 public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
-    private PresetListPopup? _presetListPopup;
+    private readonly Dictionary<DeviceType, PresetListPopup> _presetListPopups = new();
     private TrayIcon? _trayIcon;
     private bool _isCheckingUnsavedNavigation;
 
     public ModalDialog GlobalDialogControl => GlobalDialog;
 
-    public PresetListPopup? PresetListPopup => _presetListPopup;
-
-    public PresetListPopup ShowPresetListPopup()
+    public PresetListPopup? GetPresetListPopup(DeviceType deviceType)
     {
-        if (_presetListPopup == null)
+        _presetListPopups.TryGetValue(deviceType, out var popup);
+        return popup;
+    }
+
+    public PresetListPopup ShowPresetListPopup(DeviceType deviceType)
+    {
+        if (!_presetListPopups.TryGetValue(deviceType, out var popup))
         {
-            _presetListPopup = new PresetListPopup();
+            popup = new PresetListPopup { DeviceType = deviceType };
+            _presetListPopups[deviceType] = popup;
             if (Content is Panel rootPanel)
-                rootPanel.Children.Add(_presetListPopup);
+                rootPanel.Children.Add(popup);
         }
-        _presetListPopup.Show();
-        return _presetListPopup;
+        popup.Show();
+        return popup;
     }
 
     public MainWindow()
@@ -118,7 +124,9 @@ public partial class MainWindow : Window
             // 检查设备参数是否有未保存的更改
             if (_viewModel.CurrentView is DeviceUserControl deviceControl)
             {
-                if (deviceControl.PedalControl is { HasUnsavedChanges: true })
+                // IsLoaded 保证控件已渲染到可视化树中 — 未加载的控件因初始化事件
+                // 产生假修改，实则无用户操作，弹窗也无法正常显示（Window.GetWindow 返回 null）
+                if (deviceControl.PedalControl is { IsLoaded: true, HasUnsavedChanges: true })
                 {
                     _isCheckingUnsavedNavigation = true;
                     deviceControl.PedalControl.ShowUnsavedDialog(
@@ -135,7 +143,7 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                if (deviceControl.SteeringWheelControl is { HasUnsavedChanges: true })
+                if (deviceControl.SteeringWheelControl is { IsLoaded: true, HasUnsavedChanges: true })
                 {
                     _isCheckingUnsavedNavigation = true;
                     deviceControl.SteeringWheelControl.ShowUnsavedDialog(
@@ -152,7 +160,7 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                if (deviceControl.BaseControl is { HasUnsavedChanges: true })
+                if (deviceControl.BaseControl is { IsLoaded: true, HasUnsavedChanges: true })
                 {
                     _isCheckingUnsavedNavigation = true;
                     deviceControl.BaseControl.ShowUnsavedDialog(

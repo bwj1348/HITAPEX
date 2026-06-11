@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows.Controls;
 using HITAPEX.Views;
@@ -9,6 +10,9 @@ public class MainWindowViewModel : ViewModelBase
     private NavigationItem? _selectedNavigationItem;
     private UserControl? _currentView;
     private string _title = "HITAPEX Racing Simulator";
+
+    // 视图缓存，避免每次导航都重新创建（保持设备连接事件订阅有效）
+    private readonly Dictionary<string, UserControl> _viewCache = new();
 
     public ObservableCollection<NavigationItem> NavigationItems { get; }
 
@@ -45,11 +49,11 @@ public class MainWindowViewModel : ViewModelBase
     {
         NavigationItems = new ObservableCollection<NavigationItem>
         {
-            new("Home", "/Assets/HomeIcon.svg", "首\u200A页"),
-            new("Device", "/Assets/DeviceIcon.svg", "设\u200A备"),
-            new("Game", "/Assets/GameIcon.svg", "游\u200A戏"),
-            new("Help", "/Assets/HelpIcon.svg", "帮\u200A助"),
-            new("Settings", "/Assets/SettingsIcon.svg", "设\u200A置")
+            new("Home", "/Assets/HomeIcon.svg", "首 页"),
+            new("Device", "/Assets/DeviceIcon.svg", "设 备"),
+            new("Game", "/Assets/GameIcon.svg", "游 戏"),
+            new("Help", "/Assets/HelpIcon.svg", "帮 助"),
+            new("Settings", "/Assets/SettingsIcon.svg", "设 置")
         };
 
         SelectedNavigationItem = NavigationItems[0];
@@ -57,7 +61,14 @@ public class MainWindowViewModel : ViewModelBase
 
     private void UpdateCurrentView()
     {
-        CurrentView = SelectedNavigationItem?.Name switch
+        var name = SelectedNavigationItem?.Name ?? "Home";
+        if (_viewCache.TryGetValue(name, out var cached))
+        {
+            CurrentView = cached;
+            return;
+        }
+
+        UserControl view = name switch
         {
             "Home" => new HomeUserControl(),
             "Device" => new DeviceUserControl(),
@@ -66,5 +77,8 @@ public class MainWindowViewModel : ViewModelBase
             "Settings" => new SettingsUserControl(),
             _ => new HomeUserControl()
         };
+
+        _viewCache[name] = view;
+        CurrentView = view;
     }
 }

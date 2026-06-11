@@ -37,6 +37,9 @@ public partial class PresetListPopup : UserControl
     private List<Path>? _detailPolygonPaths;
     private List<Path>? _detailBorderSegments;
 
+    /// <summary>当前弹窗对应的设备类型</summary>
+    public Models.Usb.DeviceType DeviceType { get; set; } = Models.Usb.DeviceType.Pedal;
+
     public event EventHandler<PresetItem>? PresetApplied;
 
     //用于控制弹窗延迟任务的取消标志
@@ -64,6 +67,7 @@ public partial class PresetListPopup : UserControl
     {
         var editPopup = new EditPresetPopup();
         editPopup.Tag = preset.Name;
+        editPopup.DeviceType = DeviceType;
         editPopup.EditConfirmed += (_, edited) =>
         {
             var originalName = editPopup.Tag?.ToString();
@@ -112,10 +116,10 @@ public partial class PresetListPopup : UserControl
     {
         if (App.PresetService != null)
         {
-            var official = App.PresetService.LoadOfficialPresets();
+            var official = App.PresetService.LoadOfficialPresets(DeviceType);
             _officialPresets.AddRange(official);
 
-            var personal = App.PresetService.LoadPersonalPresets();
+            var personal = App.PresetService.LoadPersonalPresets(DeviceType);
             _personalPresets.AddRange(personal);
         }
         else
@@ -1020,6 +1024,7 @@ public partial class PresetListPopup : UserControl
             var imported = App.PresetService?.ImportPreset(dlg.FileName);
             if (imported != null)
             {
+                imported.DeviceType = DeviceType;
                 _personalPresets.Add(imported);
                 SavePersonalPresets();
                 RenderPresetList();
@@ -1071,7 +1076,7 @@ public partial class PresetListPopup : UserControl
 
     private void SavePersonalPresets()
     {
-        App.PresetService?.SavePersonalPresets(_personalPresets);
+        App.PresetService?.SavePersonalPresets(_personalPresets, DeviceType);
     }
 
     private PresetItem? GetSelectedPreset()
@@ -1338,6 +1343,11 @@ public class PresetItem
     public List<string> Games { get; set; } = new();
     public Models.Usb.PedalPresetSnapshot? Parameters { get; set; }
 
+    public Models.Usb.WheelPresetSnapshot? WheelParameters { get; set; }
+
     /// <summary>是否为个人预设（可编辑/删除），官方预设不可编辑</summary>
     public bool IsPersonal { get; set; }
+
+    /// <summary>设备类型（基座/踏板/面盘）</summary>
+    public Models.Usb.DeviceType DeviceType { get; set; } = Models.Usb.DeviceType.Pedal;
 }

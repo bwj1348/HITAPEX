@@ -451,9 +451,38 @@ public partial class SettingsUserControl : UserControl
             if (result.Success)
             {
                 device.CurrentVersion = $"v{result.NewVersion}";
-                device.Status = "已是最新版本";
+                device.Status = "更新完成，等待设备重启...";
                 device.ButtonBackground = disabledBrush;
                 Debug.WriteLine($"[FirmwareUI] {deviceName} 更新成功 -> v{result.NewVersion}");
+
+                // After successful update, wait for the device to reconnect
+                // in normal mode, then refresh the entire device list.
+                _ = Task.Run(async () =>
+                {
+                    // Wait for device reconnect (up to 15 seconds)
+                    for (int i = 0; i < 15; i++)
+                    {
+                        await Task.Delay(1000);
+                        var connected = App.UsbManager?.ConnectedDevices ?? new List<UsbDeviceInfo>().AsReadOnly();
+                        // Check if the device (or a normal-mode device of same type) has appeared
+                        if (connected.Any(d =>
+                        {
+                            var desc = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+                            return desc != null && desc.DeviceType == DeviceRegistry.GetDeviceType(usbDevice.Vid, usbDevice.Pid)
+                                   && desc.IsNormalMode(d.Vid, d.Pid);
+                        }))
+                        {
+                            Debug.WriteLine($"[FirmwareUI] 设备已以正常模式重新连接，刷新列表");
+                            break;
+                        }
+                    }
+
+                    // Refresh the device list on UI thread
+                    await Dispatcher.InvokeAsync(async () =>
+                    {
+                        await CheckFirmwareUpdatesAsync();
+                    });
+                });
             }
             else
             {
@@ -949,15 +978,12 @@ public partial class SettingsUserControl : UserControl
                 var usbDevice = connectedDevices[i];
                 var deviceIndex = i;
 
-                // Skip devices in update mode for the device list (they appear during update)
-                if (DeviceRegistry.IsUpdateMode(usbDevice.Vid, usbDevice.Pid))
-                {
-                    Debug.WriteLine($"[FirmwareUI] 跳过更新模式设备: {usbDevice.DeviceKey}");
-                    continue;
-                }
-
                 var deviceType = DeviceRegistry.GetDeviceType(usbDevice.Vid, usbDevice.Pid);
-                var displayName = DeviceRegistry.GetDisplayName(usbDevice.Vid, usbDevice.Pid);
+                var descriptor = DeviceRegistry.FindByVidPid(usbDevice.Vid, usbDevice.Pid);
+                var isUpdateMode = DeviceRegistry.IsUpdateMode(usbDevice.Vid, usbDevice.Pid);
+                var displayName = isUpdateMode
+                    ? $"{descriptor?.ModelName ?? "未知设备"} (更新模式)"
+                    : DeviceRegistry.GetDisplayName(usbDevice.Vid, usbDevice.Pid);
                 var deviceTypeName = deviceType switch
                 {
                     DeviceType.Base => "基座",
@@ -966,9 +992,10 @@ public partial class SettingsUserControl : UserControl
                     _ => "未知设备"
                 };
 
-                // Try to get device info (firmware version) from the device
-                string currentVersion = "未知";
-                if (App.FirmwareUpdater != null && App.ProtocolService != null)
+                // Try to get device info (firmware version) from the device.
+                // Skip for update-mode devices — they don't respond to normal commands.
+                string currentVersion = isUpdateMode ? "更新模式" : "未知";
+                if (!isUpdateMode && App.FirmwareUpdater != null && App.ProtocolService != null)
                 {
                     var deviceInfo = await App.FirmwareUpdater.GetDeviceInfoAsync(usbDevice, deviceType);
                     if (deviceInfo != null)
@@ -982,17 +1009,26 @@ public partial class SettingsUserControl : UserControl
                     }
                 }
 
-                // Find matching firmware from API by VID/PID
-                var matchedFirmware = App.FirmwareApi?.FindFirmwareForDevice(firmwareList, usbDevice.Vid, usbDevice.Pid);
+                // For update-mode devices, use normal-mode VID/PID to match firmware
+                // because API firmware entries are registered under normal-mode PIDs.
+                var lookupVid = isUpdateMode && descriptor != null ? descriptor.NormalMode.Vid : usbDevice.Vid;
+                var lookupPid = isUpdateMode && descriptor != null ? descriptor.NormalMode.Pid : usbDevice.Pid;
+                var matchedFirmware = App.FirmwareApi?.FindFirmwareForDevice(firmwareList, lookupVid, lookupPid);
+                Debug.WriteLine($"[FirmwareUI] 固件查找: VID={lookupVid:X4} PID={lookupPid:X4}, 匹配={(matchedFirmware != null ? matchedFirmware.Version : "无")}");
 
                 string status;
                 Brush buttonBg;
                 string updateDesc = "";
-                bool hasUpdate = false;
+                // Update-mode devices can always be flashed with available firmware
+                bool hasUpdate = isUpdateMode && matchedFirmware != null;
 
                 if (matchedFirmware != null)
                 {
-                    hasUpdate = FirmwareUpdateService.IsNewerVersion(currentVersion, matchedFirmware.Version);
+                    if (!isUpdateMode)
+                    {
+                        // Normal mode: compare versions
+                        hasUpdate = FirmwareUpdateService.IsNewerVersion(currentVersion, matchedFirmware.Version);
+                    }
                     if (hasUpdate)
                     {
                         status = $"v{matchedFirmware.Version} 新版本";
@@ -1007,16 +1043,16 @@ public partial class SettingsUserControl : UserControl
                 }
                 else
                 {
-                    status = "已是最新版本";
+                    status = isUpdateMode ? "无可用固件" : "已是最新版本";
                     buttonBg = disabledBrush;
                 }
 
-                Debug.WriteLine($"[FirmwareUI] 设备: {displayName}, 当前版本={currentVersion}, 状态={status}");
+                Debug.WriteLine($"[FirmwareUI] 设备: {displayName}, 当前版本={currentVersion}, 状态={status}, 可更新={hasUpdate}");
 
                 var deviceItem = new DeviceItem
                 {
                     DeviceType = deviceTypeName,
-                    Model = DeviceRegistry.FindByVidPid(usbDevice.Vid, usbDevice.Pid)?.ModelName ?? displayName,
+                    Model = descriptor?.ModelName ?? displayName,
                     SerialNumber = usbDevice.SerialNumber,
                     CurrentVersion = currentVersion,
                     Status = status,

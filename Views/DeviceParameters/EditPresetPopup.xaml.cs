@@ -47,6 +47,9 @@ public partial class EditPresetPopup : UserControl
     private Button? _highlightedLetter;
     private bool _suppressScrollSync;
 
+    /// <summary>当前编辑弹窗对应的设备类型</summary>
+    public Models.Usb.DeviceType DeviceType { get; set; } = Models.Usb.DeviceType.Pedal;
+
     public event EventHandler<PresetItem>? EditConfirmed;
     public event EventHandler? EditCancelled;
 
@@ -508,7 +511,8 @@ public partial class EditPresetPopup : UserControl
             Category = _originalPreset.Category,
             ItemCount = _originalPreset.ItemCount,
             Games = _selectedGames.OrderBy(g => g, StringComparer.OrdinalIgnoreCase).ToList(),
-            Parameters = _originalPreset.Parameters
+            Parameters = _originalPreset.Parameters,
+            DeviceType = DeviceType
         };
 
         EditConfirmed?.Invoke(this, edited);

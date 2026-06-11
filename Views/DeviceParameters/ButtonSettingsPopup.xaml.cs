@@ -15,6 +15,8 @@ public partial class ButtonSettingsPopup : UserControl
     public ButtonSettingsPopup()
     {
         InitializeComponent();
+        if (TelemetryLightEffectComboBox.SelectedIndex == 0)
+            PopupSpeedSlider.Value = 0;
         PopupSpeedSlider.Loaded += (_, _) => UpdateSpeedSliderFill(PopupSpeedSlider);
         Loaded += (_, _) =>
         {
@@ -44,6 +46,75 @@ public partial class ButtonSettingsPopup : UserControl
     {
         KeyNameText.Text = keyName;
     }
+
+    /// <summary>加载按键设置到弹窗</summary>
+    public void LoadSettings(int colorIndex, bool telemetryEnabled, int lightEffect, int func, int triggerColor, int speed)
+    {
+        if (TelemetryToggle != null)
+            TelemetryToggle.IsChecked = telemetryEnabled;
+
+        // 按键灯颜色（基础颜色）
+        var keyColorButtons = KeyColorPanel?.Children.OfType<RadioButton>().ToList();
+        if (keyColorButtons != null && colorIndex >= 0 && colorIndex < keyColorButtons.Count)
+            keyColorButtons[colorIndex].IsChecked = true;
+
+        // 遥测触发颜色
+        var triggerColorButtons = TeleColorPanel?.Children.OfType<RadioButton>().ToList();
+        if (triggerColorButtons != null && triggerColor >= 0 && triggerColor < triggerColorButtons.Count)
+            triggerColorButtons[triggerColor].IsChecked = true;
+
+        if (TeleFuncCombo != null)
+            TeleFuncCombo.SelectedIndex = func;
+
+        if (TelemetryLightEffectComboBox != null)
+            TelemetryLightEffectComboBox.SelectedIndex = lightEffect;
+
+        if (PopupSpeedSlider != null)
+            PopupSpeedSlider.Value = speed;
+    }
+
+    /// <summary>获取弹窗中选中的按键灯基础颜色索引 (0=红 ~ 8=无)</summary>
+    public int GetSelectedKeyColorIndex()
+    {
+        var colorButtons = KeyColorPanel?.Children.OfType<RadioButton>().ToList();
+        if (colorButtons != null)
+        {
+            var selected = colorButtons.FirstOrDefault(rb => rb.IsChecked == true);
+            if (selected != null) return colorButtons.IndexOf(selected);
+        }
+        return 0;
+    }
+
+    /// <summary>获取弹窗中选中的遥测触发颜色索引</summary>
+    public int GetSelectedColorIndex()
+    {
+        var colorButtons = TeleColorPanel?.Children.OfType<RadioButton>().ToList();
+        if (colorButtons != null)
+        {
+            var selected = colorButtons.FirstOrDefault(rb => rb.IsChecked == true);
+            if (selected != null) return colorButtons.IndexOf(selected);
+        }
+        return 0;
+    }
+
+    /// <summary>获取遥测是否启用</summary>
+    public bool GetTelemetryEnabled() => TelemetryToggle?.IsChecked == true;
+
+    /// <summary>获取遥测功能索引</summary>
+    public int GetTelemetryFunc() => TeleFuncCombo?.SelectedIndex ?? 0;
+
+    /// <summary>获取遥测灯效索引</summary>
+    public int GetTelemetryLightEffect() => TelemetryLightEffectComboBox?.SelectedIndex ?? 0;
+
+    /// <summary>获取遥测触发颜色索引</summary>
+    public int GetTelemetryTriggerColor()
+    {
+        if (TelemetryToggle?.IsChecked != true) return 0;
+        return GetSelectedColorIndex();
+    }
+
+    /// <summary>获取闪烁速度档位</summary>
+    public int GetSpeed() => (int)(PopupSpeedSlider?.Value ?? 0);
 
     public void Show()
     {
@@ -92,6 +163,20 @@ public partial class ButtonSettingsPopup : UserControl
             brush.GradientStops[1].Offset = fraction;
             brush.GradientStops[2].Offset = fraction;
             brush.GradientStops[3].Offset = 1.0;
+        }
+    }
+
+    private void TelemetryLightEffectComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (PopupSpeedSlider == null) return;
+
+        if (TelemetryLightEffectComboBox.SelectedIndex == 0)
+        {
+            PopupSpeedSlider.Value = 0;
+        }
+        else if (TelemetryToggle.IsChecked == true)
+        {
+            PopupSpeedSlider.Value = 3;
         }
     }
 

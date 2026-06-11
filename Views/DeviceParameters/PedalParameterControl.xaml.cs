@@ -113,42 +113,60 @@ public partial class PedalParameterControl : UserControl
     {
         InitializeComponent();
         Loaded += PedalParameterControl_Loaded;
-        Unloaded += (_, _) => UnsubscribeHidData();
     }
 
     private async void PedalParameterControl_Loaded(object sender, RoutedEventArgs e)
     {
-        if (_isInitialized) return;
-        _isInitialized = true;
+        if (!_isInitialized)
+        {
+            _isInitialized = true;
 
-        // 离合器初始化
-        UpdateCurveTypeSelection();
-        SetupClutchDraggablePoints();
-        SetupClutchDeadZoneThumbs();
-        UpdateClutchDeadZoneDisplay();
+            // 订阅 HID 踏板数据（保持常驻，不随 Unload 取消）
+            SubscribeHidData();
 
-        // 刹车初始化
-        UpdateBrakeCurveTypeSelection();
-        SetupBrakeDraggablePoints();
-        SetupBrakeDeadZoneThumbs();
-        UpdateBrakeDeadZoneDisplay();
+            // 订阅 USB 串口设备连接/断开事件 — 设备随时插拔时 UI 实时响应
+            SubscribeUsbSerialEvents();
 
-        // 油门初始化
-        UpdateThrottleCurveTypeSelection();
-        SetupThrottleDraggablePoints();
-        SetupThrottleDeadZoneThumbs();
-        UpdateThrottleDeadZoneDisplay();
+            // 离合器初始化
+            UpdateCurveTypeSelection();
+            SetupClutchDraggablePoints();
+            SetupClutchDeadZoneThumbs();
+            UpdateClutchDeadZoneDisplay();
 
-        // 初始化位置显示为 0，清除 XAML 设计时占位值
-        UpdatePedalPositionDisplay(0, 0, 0, 0, 0, 0);
+            // 刹车初始化
+            UpdateBrakeCurveTypeSelection();
+            SetupBrakeDraggablePoints();
+            SetupBrakeDeadZoneThumbs();
+            UpdateBrakeDeadZoneDisplay();
 
-        // 订阅 HID 数据（独立于串口连接状态）
-        SubscribeHidData();
+            // 油门初始化
+            UpdateThrottleCurveTypeSelection();
+            SetupThrottleDraggablePoints();
+            SetupThrottleDeadZoneThumbs();
+            UpdateThrottleDeadZoneDisplay();
 
-        // 刷新设备连接状态和固件信息
+            // 初始化位置显示为 0，清除 XAML 设计时占位值
+            UpdatePedalPositionDisplay(0, 0, 0, 0, 0, 0);
+
+            // 首次 Load 时订阅 HID 数据，之后一直保持（不随 Unload 取消）
+            // 这样 _latestRaw* 缓存值始终是最新的，切回界面时立即刷新
+            SubscribeHidData();
+        }
+
+        // 每次 Load 都刷新设备连接状态和固件信息
         await RefreshDeviceInfoAsync();
 
-        // 初始化撤销按钮状态
+        // 强制刷新 HID 位置显示（重置 _displayed* 使 HasDisplayChanged 返回 true，
+        // 将后台累积的最新缓存值立即更新到 UI）
+        _displayedRawClutch = -1;
+        _displayedRawBrake = -1;
+        _displayedRawGas = -1;
+        _displayedProcessedClutch = -1;
+        _displayedProcessedBrake = -1;
+        _displayedProcessedGas = -1;
+        ForceRefreshPedalDisplay();
+
+        // 刷新撤销按钮状态
         UpdatePresetDisplay();
     }
 
@@ -641,7 +659,14 @@ public partial class PedalParameterControl : UserControl
             return;
         }
 
-        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+        var mainWindow = Window.GetWindow(this) as HITAPEX.MainWindow
+                          ?? Application.Current.MainWindow as HITAPEX.MainWindow;
+        if (mainWindow == null)
+        {
+            _isPresetModified = false;
+            onSaved?.Invoke();
+            return;
+        }
 
         var dialog = mainWindow.GlobalDialog;
         dialog.Title = "未 保 存";
@@ -691,12 +716,12 @@ public partial class PedalParameterControl : UserControl
 
         try
         {
-            var personalPresets = App.PresetService.LoadPersonalPresets();
+            var personalPresets = App.PresetService.LoadPersonalPresets(Models.Usb.DeviceType.Pedal);
             var target = personalPresets.FirstOrDefault(p => p.Name == _currentPresetName);
             if (target == null) return false;
 
             target.Parameters = CaptureCurrentParameters();
-            App.PresetService.SavePersonalPresets(personalPresets);
+            App.PresetService.SavePersonalPresets(personalPresets, Models.Usb.DeviceType.Pedal);
             popup.RefreshPersonalPresets(personalPresets);
 
             _appliedPresetParameters = CaptureCurrentParameters();
@@ -904,13 +929,13 @@ public partial class PedalParameterControl : UserControl
         if (App.PresetService == null) return;
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
-        var personalPresets = App.PresetService.LoadPersonalPresets();
+        var personalPresets = App.PresetService.LoadPersonalPresets(Models.Usb.DeviceType.Pedal);
         var existingNames = personalPresets.Select(p => p.Name).ToList();
 
         var rootPanel = mainWindow.Content as Panel;
         if (rootPanel == null) return;
 
-        var editPopup = new EditPresetPopup();
+        var editPopup = new EditPresetPopup { DeviceType = Models.Usb.DeviceType.Pedal };
         rootPanel.Children.Add(editPopup);
 
         editPopup.EditConfirmed += (_, edited) =>
@@ -923,12 +948,13 @@ public partial class PedalParameterControl : UserControl
                 Category = edited.Category,
                 Games = edited.Games,
                 Parameters = CaptureCurrentParameters(),
-                IsPersonal = true
+                IsPersonal = true,
+                DeviceType = Models.Usb.DeviceType.Pedal
             };
 
-            var currentPersonal = App.PresetService.LoadPersonalPresets();
+            var currentPersonal = App.PresetService.LoadPersonalPresets(Models.Usb.DeviceType.Pedal);
             currentPersonal.Add(newPreset);
-            App.PresetService.SavePersonalPresets(currentPersonal);
+            App.PresetService.SavePersonalPresets(currentPersonal, Models.Usb.DeviceType.Pedal);
 
             var popup = GetPresetListPopup();
             popup?.RefreshPersonalPresets(currentPersonal);
@@ -993,7 +1019,8 @@ public partial class PedalParameterControl : UserControl
             {
                 Name = _currentPresetName,
                 Parameters = snapshot,
-                IsPersonal = true
+                IsPersonal = true,
+                DeviceType = Models.Usb.DeviceType.Pedal
             };
             App.PresetService!.ExportPreset(exportItem, fileName);
             return true;
@@ -1042,7 +1069,7 @@ public partial class PedalParameterControl : UserControl
     private PresetListPopup? GetPresetListPopup()
     {
         if (Window.GetWindow(this) is HITAPEX.MainWindow mainWindow)
-            return mainWindow.PresetListPopup;
+            return mainWindow.GetPresetListPopup(Models.Usb.DeviceType.Pedal);
         return null;
     }
 
@@ -1050,7 +1077,7 @@ public partial class PedalParameterControl : UserControl
     {
         if (Window.GetWindow(this) is HITAPEX.MainWindow mainWindow)
         {
-            var popup = mainWindow.ShowPresetListPopup();
+            var popup = mainWindow.ShowPresetListPopup(Models.Usb.DeviceType.Pedal);
             popup.PresetApplied -= OnPresetApplied;
             popup.PresetApplied += OnPresetApplied;
         }
@@ -1085,7 +1112,7 @@ public partial class PedalParameterControl : UserControl
     /// <summary>任意参数修改后的统一入口，标记已修改状态并刷新 UI</summary>
     private void OnParameterModified()
     {
-        if (_isApplyingParameters || _isApplyingPreset) return;
+        if (!IsLoaded || _isApplyingParameters || _isApplyingPreset) return;
         _isPresetModified = true;
         UpdatePresetDisplay();
     }
@@ -1519,7 +1546,22 @@ public partial class PedalParameterControl : UserControl
             }
             else
             {
-                // 2. 检查是否通过基座连接
+                // 1b. 检查是否有踏板设备处于更新模式
+                var updateModeDevice = connectedDevices.FirstOrDefault(d =>
+                {
+                    var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+                    return descriptor != null && descriptor.DeviceType == DeviceType.Pedal
+                           && descriptor.IsUpdateMode(d.Vid, d.Pid);
+                });
+
+                if (updateModeDevice != null)
+                {
+                    SetDisconnected();
+                    ShowUpdateModeRedirectDialog(updateModeDevice);
+                }
+                else
+                {
+                    // 2. 检查是否通过基座连接
                 var baseDevice = connectedDevices.FirstOrDefault(d =>
                 {
                     var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
@@ -1548,9 +1590,10 @@ public partial class PedalParameterControl : UserControl
                 else
                 {
                     SetDisconnected();
-                }
-            }
-        }
+                } // end base device check
+            } // end else { // 2. 检查是否通过基座连接
+            } // end else { // 1b. 检查更新模式
+        } // end original outer else
         catch (Exception ex)
         {
             Debug.WriteLine($"[PedalControl] 刷新设备信息异常: {ex.Message}");
@@ -1559,8 +1602,9 @@ public partial class PedalParameterControl : UserControl
 
         UpdateConnectionStatusDisplay();
 
-        // 检查固件新版本
-        await CheckFirmwareVersionAsync();
+        // 固件版本检查改为 fire-and-forget：API 服务器不可达时会阻塞 15s+，
+        // 不应延迟后续 USB 参数获取命令
+        _ = CheckFirmwareVersionAsync();
 
         // 获取踏板参数并同步 UI
         await FetchPedalParametersAsync();
@@ -1631,8 +1675,8 @@ public partial class PedalParameterControl : UserControl
 
         try
         {
-            var officialPresets = App.PresetService.LoadOfficialPresets();
-            var personalPresets = App.PresetService.LoadPersonalPresets();
+            var officialPresets = App.PresetService.LoadOfficialPresets(Models.Usb.DeviceType.Pedal);
+            var personalPresets = App.PresetService.LoadPersonalPresets(Models.Usb.DeviceType.Pedal);
 
             // 先查个人预设，再查官方预设
             PresetItem? matched = personalPresets.FirstOrDefault(p => p.Name == _devicePresetName);
@@ -1660,11 +1704,97 @@ public partial class PedalParameterControl : UserControl
 
     private void SetDisconnected()
     {
+        _connectedPedalDevice = null;
         _baseDevice = null;
+        _isPedalViaBase = false;
         _deviceModelName = "踏板";
         _connectionStatusText = "未连接";
         _connectionStatusColor = "#C60E0E";
         _firmwareVersion = "---";
+        _pedalCount = 1;
+
+        // 重置预设状态
+        _appliedPresetParameters = null;
+        _currentPresetName = "Default";
+        _devicePresetName = string.Empty;
+        _isPresetModified = false;
+        _isAppliedPresetPersonal = false;
+
+        // 踏板位置归零
+        _latestRawClutch = 0;
+        _latestRawBrake = 0;
+        _latestRawGas = 0;
+        _latestProcessedClutch = 0;
+        _latestProcessedBrake = 0;
+        _latestProcessedGas = 0;
+        _displayedRawClutch = -1;
+        _displayedRawBrake = -1;
+        _displayedRawGas = -1;
+        _displayedProcessedClutch = -1;
+        _displayedProcessedBrake = -1;
+        _displayedProcessedGas = -1;
+        UpdatePedalPositionDisplay(0, 0, 0, 0, 0, 0);
+    }
+
+    /// <summary>设备处于固件更新模式时弹窗，引导用户前往固件更新页面</summary>
+    private void ShowUpdateModeRedirectDialog(UsbDeviceInfo device)
+    {
+        var mainWindow = Window.GetWindow(this) as HITAPEX.MainWindow
+                         ?? Application.Current.MainWindow as HITAPEX.MainWindow;
+        if (mainWindow == null) return;
+
+        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+        var deviceName = descriptor?.ModelName ?? "设备";
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = "设 备 更 新 模 式";
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = $"{deviceName}当前处于固件更新模式，参数设置功能不可用。\n请前往固件更新页面完成或恢复固件。",
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        dialog.AddButton("前 往", (_, _) =>
+        {
+            dialog.Hide();
+            NavigateToFirmwareUpdate();
+        }, isPrimary: true);
+
+        dialog.AddButton("取 消", (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
+
+    /// <summary>导航到设置界面的固件更新选项卡</summary>
+    private void NavigateToFirmwareUpdate()
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+        {
+            var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
+            if (vm != null)
+            {
+                var settingsItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Settings");
+                if (settingsItem != null)
+                {
+                    vm.SelectedNavigationItem = settingsItem;
+                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+                    {
+                        var settingsView = vm.CurrentView as SettingsUserControl;
+                        settingsView?.SwitchToFirmwareUpdateTab();
+                    });
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -1986,6 +2116,49 @@ public partial class PedalParameterControl : UserControl
     //  HID 实时数据更新
     // ════════════════════════════════════════════════════════════════
 
+    /// <summary>
+    /// 订阅 USB 串口设备连接/断开事件，设备随时插拔时 UI 实时响应。
+    /// 始终保持订阅，不随 Unload 取消。
+    /// </summary>
+    private void SubscribeUsbSerialEvents()
+    {
+        if (App.UsbManager == null) return;
+
+        App.UsbManager.DeviceConnected += OnUsbDeviceConnected;
+        App.UsbManager.DeviceDisconnected += OnUsbDeviceDisconnected;
+    }
+
+    private async void OnUsbDeviceConnected(UsbDeviceInfo device)
+    {
+        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+        if (descriptor == null || descriptor.DeviceType != DeviceType.Pedal)
+            return;
+
+        Debug.WriteLine($"[PedalControl] 踏板串口设备已连接: {device.DeviceKey}");
+        await Application.Current.Dispatcher.InvokeAsync(async () => await RefreshDeviceInfoAsync());
+    }
+
+    private void OnUsbDeviceDisconnected(UsbDeviceInfo device)
+    {
+        if (_connectedPedalDevice == null)
+            return;
+
+        // 检查断开的是否为当前连接的踏板设备
+        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+        if (descriptor == null || descriptor.DeviceType != DeviceType.Pedal)
+            return;
+
+        Debug.WriteLine($"[PedalControl] 踏板串口设备已断开: {device.DeviceKey}");
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            SetDisconnected();
+            UpdateConnectionStatusDisplay();
+            UpdatePresetDisplay();
+            if (NewVersionAvailableBorder != null)
+                NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
+        });
+    }
+
     private void SubscribeHidData()
     {
         if (App.HidService == null) return;
@@ -1997,6 +2170,29 @@ public partial class PedalParameterControl : UserControl
     {
         if (App.HidService == null) return;
         App.HidService.PedalDataReceived -= OnPedalDataReceived;
+    }
+
+    /// <summary>
+    /// 将最新的 HID 缓存值强制刷新到 UI（绕过防抖/去重检查）。
+    /// 用于界面重新加载时立刻显示正确的踏板位置。
+    /// </summary>
+    private void ForceRefreshPedalDisplay()
+    {
+        var rawClutch = _latestRawClutch;
+        var rawBrake = _latestRawBrake;
+        var rawGas = _latestRawGas;
+        var pClutch = _latestProcessedClutch;
+        var pBrake = _latestProcessedBrake;
+        var pGas = _latestProcessedGas;
+
+        _displayedRawClutch = rawClutch;
+        _displayedRawBrake = rawBrake;
+        _displayedRawGas = rawGas;
+        _displayedProcessedClutch = pClutch;
+        _displayedProcessedBrake = pBrake;
+        _displayedProcessedGas = pGas;
+
+        UpdatePedalPositionDisplay(rawClutch, pClutch, rawBrake, pBrake, rawGas, pGas);
     }
 
     private void OnPedalDataReceived(UsbDeviceInfo device, HidPedalData data)

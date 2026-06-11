@@ -99,6 +99,12 @@ public partial class App : Application
             Debug.WriteLine($"[HID] 基座数据 [{device.DeviceKey}]: 转向={data.Steering}");
         };
 
+        HidService.WheelDataReceived += (device, data) =>
+        {
+            // 面盘 HID 数据由 SteeringWheelParameterControl 订阅处理
+            Debug.WriteLine($"[HID] 面盘数据 [{device.DeviceKey}]: 按键位图={BitConverter.ToString(data.ButtonBits)}");
+        };
+
         HidService.Start();
         UsbManager.Start();
     }
