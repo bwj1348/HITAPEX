@@ -1,16 +1,10 @@
 namespace HITAPEX.Models.Usb;
 
-/// <summary>设备上报的面盘按键灯属性参数（协议 0x2107 Get 响应）</summary>
+/// <summary>设备上报的面盘按键灯单独效果属性参数（协议 0x2107 Get 响应）</summary>
 public class WheelButtonLightResponse
 {
-    /// <summary>按键LED灯模式 (0=单独颜色常亮, 1=统一颜色常亮)</summary>
-    public byte LedMode { get; set; }
-
     /// <summary>按键LED灯索引 (0-25)</summary>
     public byte LedIndex { get; set; }
-
-    /// <summary>常亮时LED灯亮度 (0-100)</summary>
-    public byte Brightness { get; set; }
 
     /// <summary>常亮时LED灯颜色R分量</summary>
     public byte ColorR { get; set; }

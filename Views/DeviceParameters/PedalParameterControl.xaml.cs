@@ -1123,14 +1123,20 @@ public partial class PedalParameterControl : UserControl
         var isDeviceConnected = _connectedPedalDevice != null || _isPedalViaBase;
         var isOnboard = _currentPresetName == "Default" && isDeviceConnected;
 
+        Debug.WriteLine($"[PedalControl.UpdatePresetDisplay] isDeviceConnected={isDeviceConnected}, isOnboard={isOnboard}, _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _isPresetModified={_isPresetModified}");
+
         if (PresetNameText != null)
         {
+            var newText = PresetNameText.Text;
             if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
-                PresetNameText.Text = $"{_devicePresetName}_板载";
+                newText = $"{_devicePresetName}_板载";
             else if (isOnboard)
-                PresetNameText.Text = "板载";
+                newText = "板载";
             else
-                PresetNameText.Text = _currentPresetName;
+                newText = _currentPresetName;
+
+            Debug.WriteLine($"[PedalControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{newText}'");
+            PresetNameText.Text = newText;
             PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
         }
 
@@ -1546,22 +1552,7 @@ public partial class PedalParameterControl : UserControl
             }
             else
             {
-                // 1b. 检查是否有踏板设备处于更新模式
-                var updateModeDevice = connectedDevices.FirstOrDefault(d =>
-                {
-                    var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
-                    return descriptor != null && descriptor.DeviceType == DeviceType.Pedal
-                           && descriptor.IsUpdateMode(d.Vid, d.Pid);
-                });
-
-                if (updateModeDevice != null)
-                {
-                    SetDisconnected();
-                    ShowUpdateModeRedirectDialog(updateModeDevice);
-                }
-                else
-                {
-                    // 2. 检查是否通过基座连接
+                // 2. 检查是否通过基座连接
                 var baseDevice = connectedDevices.FirstOrDefault(d =>
                 {
                     var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
@@ -1591,8 +1582,7 @@ public partial class PedalParameterControl : UserControl
                 {
                     SetDisconnected();
                 } // end base device check
-            } // end else { // 2. 检查是否通过基座连接
-            } // end else { // 1b. 检查更新模式
+            } // end else { // 检查基座连接
         } // end original outer else
         catch (Exception ex)
         {
@@ -1631,9 +1621,11 @@ public partial class PedalParameterControl : UserControl
         try
         {
             var name = await App.ProtocolService.GetPresetNameAsync(targetDevice.DeviceKey, DeviceType.Pedal);
+            Debug.WriteLine($"[PedalControl.FetchPresetName] 设备返回名称='{name ?? "(null)"}', _currentPresetName='{_currentPresetName}', _isPresetModified={_isPresetModified}");
             if (name != null)
             {
                 _devicePresetName = name;
+                Debug.WriteLine($"[PedalControl.FetchPresetName] 设置 _devicePresetName='{_devicePresetName}'");
                 Debug.WriteLine($"[PedalControl] 设备预设名称: {name}");
                 UpdatePresetDisplay();
             }
@@ -1734,67 +1726,6 @@ public partial class PedalParameterControl : UserControl
         _displayedProcessedBrake = -1;
         _displayedProcessedGas = -1;
         UpdatePedalPositionDisplay(0, 0, 0, 0, 0, 0);
-    }
-
-    /// <summary>设备处于固件更新模式时弹窗，引导用户前往固件更新页面</summary>
-    private void ShowUpdateModeRedirectDialog(UsbDeviceInfo device)
-    {
-        var mainWindow = Window.GetWindow(this) as HITAPEX.MainWindow
-                         ?? Application.Current.MainWindow as HITAPEX.MainWindow;
-        if (mainWindow == null) return;
-
-        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
-        var deviceName = descriptor?.ModelName ?? "设备";
-
-        var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "设 备 更 新 模 式";
-        dialog.ClearButtons();
-
-        dialog.DialogContent = new TextBlock
-        {
-            Text = $"{deviceName}当前处于固件更新模式，参数设置功能不可用。\n请前往固件更新页面完成或恢复固件。",
-            FontSize = 22,
-            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
-            TextWrapping = TextWrapping.Wrap,
-            TextAlignment = TextAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
-        dialog.AddButton("前 往", (_, _) =>
-        {
-            dialog.Hide();
-            NavigateToFirmwareUpdate();
-        }, isPrimary: true);
-
-        dialog.AddButton("取 消", (_, _) =>
-        {
-            dialog.Hide();
-        }, isPrimary: false);
-
-        dialog.Show();
-    }
-
-    /// <summary>导航到设置界面的固件更新选项卡</summary>
-    private void NavigateToFirmwareUpdate()
-    {
-        if (Window.GetWindow(this) is MainWindow mainWindow)
-        {
-            var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
-            if (vm != null)
-            {
-                var settingsItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Settings");
-                if (settingsItem != null)
-                {
-                    vm.SelectedNavigationItem = settingsItem;
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-                    {
-                        var settingsView = vm.CurrentView as SettingsUserControl;
-                        settingsView?.SwitchToFirmwareUpdateTab();
-                    });
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -2132,6 +2063,9 @@ public partial class PedalParameterControl : UserControl
     {
         var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
         if (descriptor == null || descriptor.DeviceType != DeviceType.Pedal)
+            return;
+        // 更新模式由 MainWindow 统一处理，参数页面忽略
+        if (descriptor.IsUpdateMode(device.Vid, device.Pid))
             return;
 
         Debug.WriteLine($"[PedalControl] 踏板串口设备已连接: {device.DeviceKey}");

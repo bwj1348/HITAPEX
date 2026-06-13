@@ -53,6 +53,9 @@ public class FirmwareUpdateService
     private CancellationTokenSource? _currentUpdateCts;
     private readonly ConcurrentDictionary<string, TaskCompletionSource<UsbDeviceInfo>> _deviceWaiters = new();
 
+    /// <summary>是否正在执行固件更新</summary>
+    public bool IsUpdating => _currentUpdateCts != null && !_currentUpdateCts.IsCancellationRequested;
+
     public event Action<FirmwareUpdateProgress>? ProgressChanged;
     public event Action<string>? DebugLog;
 
@@ -367,6 +370,11 @@ public class FirmwareUpdateService
             ReportProgress(progress);
 
             return new FirmwareUpdateResult { Success = false, ErrorMessage = ex.Message };
+        }
+        finally
+        {
+            _currentUpdateCts?.Dispose();
+            _currentUpdateCts = null;
         }
     }
 

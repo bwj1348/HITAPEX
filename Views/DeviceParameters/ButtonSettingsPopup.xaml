@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:local="clr-namespace:HITAPEX.Views.DeviceParameters"
              mc:Ignorable="d"
              d:DesignHeight="639" d:DesignWidth="455">
 
@@ -544,6 +545,16 @@
 
                             <!-- 第三行：按键灯颜色 -->
                             <Grid Grid.Row="0" Margin="0,0,0,20">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGlobalColorMode, RelativeSource={RelativeSource AncestorType=local:ButtonSettingsPopup}}" Value="True">
+                                                <Setter Property="Opacity" Value="0.5"/>
+                                                <Setter Property="IsHitTestVisible" Value="False"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>

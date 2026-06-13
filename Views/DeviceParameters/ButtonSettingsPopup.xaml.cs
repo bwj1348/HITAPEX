@@ -47,6 +47,28 @@ public partial class ButtonSettingsPopup : UserControl
         KeyNameText.Text = keyName;
     }
 
+    /// <summary>全局颜色模式开启时，按键颜色行半透明且不可交互</summary>
+    public static readonly DependencyProperty IsGlobalColorModeProperty =
+        DependencyProperty.Register(nameof(IsGlobalColorMode), typeof(bool), typeof(ButtonSettingsPopup),
+            new PropertyMetadata(false, OnIsGlobalColorModeChanged));
+
+    public bool IsGlobalColorMode
+    {
+        get => (bool)GetValue(IsGlobalColorModeProperty);
+        set => SetValue(IsGlobalColorModeProperty, value);
+    }
+
+    private static void OnIsGlobalColorModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var popup = (ButtonSettingsPopup)d;
+        if ((bool)e.NewValue && popup.KeyColorPanel != null)
+        {
+            // 全局颜色模式开启时取消所有按键颜色选中
+            foreach (var rb in popup.KeyColorPanel.Children.OfType<RadioButton>())
+                rb.IsChecked = false;
+        }
+    }
+
     /// <summary>加载按键设置到弹窗</summary>
     public void LoadSettings(int colorIndex, bool telemetryEnabled, int lightEffect, int func, int triggerColor, int speed)
     {
@@ -57,6 +79,14 @@ public partial class ButtonSettingsPopup : UserControl
         var keyColorButtons = KeyColorPanel?.Children.OfType<RadioButton>().ToList();
         if (keyColorButtons != null && colorIndex >= 0 && colorIndex < keyColorButtons.Count)
             keyColorButtons[colorIndex].IsChecked = true;
+
+        // 全局颜色模式开启时立即取消选中，不依赖 XAML DataTrigger（异步），
+        // 确保 LoadSettings 调用期间无论 DataTrigger 处理进度如何，颜色始终未选中
+        if (IsGlobalColorMode && keyColorButtons != null)
+        {
+            foreach (var rb in keyColorButtons)
+                rb.IsChecked = false;
+        }
 
         // 遥测触发颜色
         var triggerColorButtons = TeleColorPanel?.Children.OfType<RadioButton>().ToList();

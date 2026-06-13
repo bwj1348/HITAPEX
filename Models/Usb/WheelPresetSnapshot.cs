@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json.Serialization;
 
@@ -96,36 +98,75 @@ public class WheelPresetSnapshot
     [JsonPropertyName("clutchPointValue")]//合成轴模式下离合点位置
     public double ClutchPointValue { get; set; } = 50;
 
-    /// <summary>逐字段比较面盘参数是否一致</summary>
+    /// <summary>
+    /// 逐字段比较面盘参数是否一致，同时输出差异日志。
+    /// 不参与比较的字段：
+    ///   - RpmCurveType: RPM 弹窗纯 UI 概念，设备不会存储/返回此值
+    ///   - ShowKeyNumber: 按键编号显隐开关，纯 UI 概念，设备不会存储
+    /// 注意：GlobalKeyColor 始终比较（0x2106协议始终返回设备存储的统一颜色，与当前模式无关）
+    /// </summary>
     public bool ParametersEqual(WheelPresetSnapshot other)
     {
-        return KeyColorEnabled == other.KeyColorEnabled
-            && GlobalKeyColor == other.GlobalKeyColor
-            && ShowKeyNumber == other.ShowKeyNumber
-            && KeyBrightness == other.KeyBrightness
-            && RpmBrightness == other.RpmBrightness
-            && SleepLightDuration == other.SleepLightDuration
-            && StandbyLightEffect == other.StandbyLightEffect
-            && GlobalFlashSpeed == other.GlobalFlashSpeed
-            && ButtonColors.SequenceEqual(other.ButtonColors)
-            && ButtonTelemetryEnabled.SequenceEqual(other.ButtonTelemetryEnabled)
-            && ButtonTelemetryLightEffect.SequenceEqual(other.ButtonTelemetryLightEffect)
-            && ButtonTelemetryFunc.SequenceEqual(other.ButtonTelemetryFunc)
-            && ButtonTelemetryTriggerColor.SequenceEqual(other.ButtonTelemetryTriggerColor)
-            && ButtonSpeeds.SequenceEqual(other.ButtonSpeeds)
-            && RpmColors.SequenceEqual(other.RpmColors)
-            && RpmValues.SequenceEqual(other.RpmValues)
-            && RpmCapValue == other.RpmCapValue
-            && RpmCurveType == other.RpmCurveType
-            && RpmDisplayMode == other.RpmDisplayMode
-            && RpmLightMode == other.RpmLightMode
-            && RpmStrobeMode == other.RpmStrobeMode
-            && RpmStrobeColor == other.RpmStrobeColor
-            && RpmSpeed == other.RpmSpeed
-            && RpmBaseLightMode == other.RpmBaseLightMode
-            && RpmBaseLightSpeed == other.RpmBaseLightSpeed
-            && RpmTelemetryEnabled == other.RpmTelemetryEnabled
-            && ClutchMode == other.ClutchMode
-            && ClutchPointValue == other.ClutchPointValue;
+        var diffs = new List<string>();
+
+        void Check(string name, object? a, object? b)
+        {
+            if (!Equals(a, b))
+                diffs.Add($"{name}: device={a}, preset={b}");
+        }
+        void CheckSeq<T>(string name, T[] a, T[] b)
+        {
+            if (!a.SequenceEqual(b))
+            {
+                var mismatchIdxs = new List<int>();
+                for (int i = 0; i < a.Length; i++)
+                    if (!Equals(a[i], b[i]))
+                        mismatchIdxs.Add(i);
+                diffs.Add($"{name}: mismatch at indices [{string.Join(",", mismatchIdxs)}] device={string.Join(",", a)}, preset={string.Join(",", b)}");
+            }
+        }
+
+        Check("KeyColorEnabled", KeyColorEnabled, other.KeyColorEnabled);
+        // GlobalKeyColor: 0x2106 协议始终存储统一颜色，无条件比较
+        Check("GlobalKeyColor", GlobalKeyColor, other.GlobalKeyColor);
+        // ShowKeyNumber: 纯 UI 概念，跳过
+        Check("KeyBrightness", KeyBrightness, other.KeyBrightness);
+        Check("RpmBrightness", RpmBrightness, other.RpmBrightness);
+        Check("SleepLightDuration", SleepLightDuration, other.SleepLightDuration);
+        Check("StandbyLightEffect", StandbyLightEffect, other.StandbyLightEffect);
+        Check("GlobalFlashSpeed", GlobalFlashSpeed, other.GlobalFlashSpeed);
+        CheckSeq("ButtonColors", ButtonColors, other.ButtonColors);
+        CheckSeq("ButtonTelemetryEnabled", ButtonTelemetryEnabled, other.ButtonTelemetryEnabled);
+        CheckSeq("ButtonTelemetryLightEffect", ButtonTelemetryLightEffect, other.ButtonTelemetryLightEffect);
+        CheckSeq("ButtonTelemetryFunc", ButtonTelemetryFunc, other.ButtonTelemetryFunc);
+        CheckSeq("ButtonTelemetryTriggerColor", ButtonTelemetryTriggerColor, other.ButtonTelemetryTriggerColor);
+        CheckSeq("ButtonSpeeds", ButtonSpeeds, other.ButtonSpeeds);
+        CheckSeq("RpmColors", RpmColors, other.RpmColors);
+        CheckSeq("RpmValues", RpmValues, other.RpmValues);
+        Check("RpmCapValue", RpmCapValue, other.RpmCapValue);
+        // RpmCurveType 不参与比较
+        Check("RpmDisplayMode", RpmDisplayMode, other.RpmDisplayMode);
+        Check("RpmLightMode", RpmLightMode, other.RpmLightMode);
+        Check("RpmStrobeMode", RpmStrobeMode, other.RpmStrobeMode);
+        Check("RpmStrobeColor", RpmStrobeColor, other.RpmStrobeColor);
+        Check("RpmSpeed", RpmSpeed, other.RpmSpeed);
+        Check("RpmBaseLightMode", RpmBaseLightMode, other.RpmBaseLightMode);
+        Check("RpmBaseLightSpeed", RpmBaseLightSpeed, other.RpmBaseLightSpeed);
+        Check("RpmTelemetryEnabled", RpmTelemetryEnabled, other.RpmTelemetryEnabled);
+        Check("ClutchMode", ClutchMode, other.ClutchMode);
+        Check("ClutchPointValue", ClutchPointValue, other.ClutchPointValue);
+
+        if (diffs.Count > 0)
+        {
+            Debug.WriteLine($"[WheelPresetSnapshot.ParametersEqual] 发现 {diffs.Count} 处不一致:");
+            foreach (var d in diffs)
+                Debug.WriteLine($"  {d}");
+            return false;
+        }
+        else
+        {
+            Debug.WriteLine("[WheelPresetSnapshot.ParametersEqual] 参数完全一致");
+            return true;
+        }
     }
 }

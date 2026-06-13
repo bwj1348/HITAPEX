@@ -106,7 +106,24 @@ public partial class DeviceUserControl : UserControl
 
     private void DeviceUserControl_Loaded(object sender, RoutedEventArgs e)
     {
-        ShowControl(_baseControl, false);
+        // 恢复上次选中的子选项卡，而非始终显示基座
+        UserControl? controlToShow;
+        if (PedalNavButton.IsChecked == true)
+        {
+            controlToShow = _pedalControl;
+            _currentIndex = 2;
+        }
+        else if (SteeringWheelNavButton.IsChecked == true)
+        {
+            controlToShow = _steeringWheelControl;
+            _currentIndex = 1;
+        }
+        else
+        {
+            controlToShow = _baseControl;
+            _currentIndex = 0;
+        }
+        ShowControl(controlToShow, false);
     }
 
     private void NavButton_Checked(object sender, RoutedEventArgs e)

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace HITAPEX.Models.Usb;
@@ -116,26 +118,62 @@ public class PedalPresetSnapshot
     [JsonPropertyName("throttleDeadZoneRear")]
     public byte ThrottleDeadZoneRear { get; set; }
 
-    /// <summary>逐字段比较踏板参数是否一致（不包含曲线类型，设备下发时曲线类型固定为自定义）</summary>
+    /// <summary>逐字段比较踏板参数是否一致（不包含曲线类型，设备下发时曲线类型固定为自定义），同时输出差异日志</summary>
     public bool ParametersEqual(PedalPresetSnapshot other)
     {
-        return ClutchDirection == other.ClutchDirection
-            && ClutchPoint1Y == other.ClutchPoint1Y && ClutchPoint1X == other.ClutchPoint1X
-            && ClutchPoint2Y == other.ClutchPoint2Y && ClutchPoint2X == other.ClutchPoint2X
-            && ClutchPoint3Y == other.ClutchPoint3Y && ClutchPoint3X == other.ClutchPoint3X
-            && ClutchPoint4Y == other.ClutchPoint4Y && ClutchPoint4X == other.ClutchPoint4X
-            && ClutchDeadZoneFront == other.ClutchDeadZoneFront && ClutchDeadZoneRear == other.ClutchDeadZoneRear
-            && BrakeDirection == other.BrakeDirection
-            && BrakePoint1Y == other.BrakePoint1Y && BrakePoint1X == other.BrakePoint1X
-            && BrakePoint2Y == other.BrakePoint2Y && BrakePoint2X == other.BrakePoint2X
-            && BrakePoint3Y == other.BrakePoint3Y && BrakePoint3X == other.BrakePoint3X
-            && BrakePoint4Y == other.BrakePoint4Y && BrakePoint4X == other.BrakePoint4X
-            && BrakeDeadZoneFront == other.BrakeDeadZoneFront && BrakeDeadZoneRear == other.BrakeDeadZoneRear
-            && ThrottleDirection == other.ThrottleDirection
-            && ThrottlePoint1Y == other.ThrottlePoint1Y && ThrottlePoint1X == other.ThrottlePoint1X
-            && ThrottlePoint2Y == other.ThrottlePoint2Y && ThrottlePoint2X == other.ThrottlePoint2X
-            && ThrottlePoint3Y == other.ThrottlePoint3Y && ThrottlePoint3X == other.ThrottlePoint3X
-            && ThrottlePoint4Y == other.ThrottlePoint4Y && ThrottlePoint4X == other.ThrottlePoint4X
-            && ThrottleDeadZoneFront == other.ThrottleDeadZoneFront && ThrottleDeadZoneRear == other.ThrottleDeadZoneRear;
+        var diffs = new System.Collections.Generic.List<string>();
+
+        void Check(string name, object? a, object? b)
+        {
+            if (!Equals(a, b))
+                diffs.Add($"{name}: device={a}, preset={b}");
+        }
+
+        Check("ClutchDirection", ClutchDirection, other.ClutchDirection);
+        Check("ClutchPoint1Y", ClutchPoint1Y, other.ClutchPoint1Y);
+        Check("ClutchPoint1X", ClutchPoint1X, other.ClutchPoint1X);
+        Check("ClutchPoint2Y", ClutchPoint2Y, other.ClutchPoint2Y);
+        Check("ClutchPoint2X", ClutchPoint2X, other.ClutchPoint2X);
+        Check("ClutchPoint3Y", ClutchPoint3Y, other.ClutchPoint3Y);
+        Check("ClutchPoint3X", ClutchPoint3X, other.ClutchPoint3X);
+        Check("ClutchPoint4Y", ClutchPoint4Y, other.ClutchPoint4Y);
+        Check("ClutchPoint4X", ClutchPoint4X, other.ClutchPoint4X);
+        Check("ClutchDeadZoneFront", ClutchDeadZoneFront, other.ClutchDeadZoneFront);
+        Check("ClutchDeadZoneRear", ClutchDeadZoneRear, other.ClutchDeadZoneRear);
+        Check("BrakeDirection", BrakeDirection, other.BrakeDirection);
+        Check("BrakePoint1Y", BrakePoint1Y, other.BrakePoint1Y);
+        Check("BrakePoint1X", BrakePoint1X, other.BrakePoint1X);
+        Check("BrakePoint2Y", BrakePoint2Y, other.BrakePoint2Y);
+        Check("BrakePoint2X", BrakePoint2X, other.BrakePoint2X);
+        Check("BrakePoint3Y", BrakePoint3Y, other.BrakePoint3Y);
+        Check("BrakePoint3X", BrakePoint3X, other.BrakePoint3X);
+        Check("BrakePoint4Y", BrakePoint4Y, other.BrakePoint4Y);
+        Check("BrakePoint4X", BrakePoint4X, other.BrakePoint4X);
+        Check("BrakeDeadZoneFront", BrakeDeadZoneFront, other.BrakeDeadZoneFront);
+        Check("BrakeDeadZoneRear", BrakeDeadZoneRear, other.BrakeDeadZoneRear);
+        Check("ThrottleDirection", ThrottleDirection, other.ThrottleDirection);
+        Check("ThrottlePoint1Y", ThrottlePoint1Y, other.ThrottlePoint1Y);
+        Check("ThrottlePoint1X", ThrottlePoint1X, other.ThrottlePoint1X);
+        Check("ThrottlePoint2Y", ThrottlePoint2Y, other.ThrottlePoint2Y);
+        Check("ThrottlePoint2X", ThrottlePoint2X, other.ThrottlePoint2X);
+        Check("ThrottlePoint3Y", ThrottlePoint3Y, other.ThrottlePoint3Y);
+        Check("ThrottlePoint3X", ThrottlePoint3X, other.ThrottlePoint3X);
+        Check("ThrottlePoint4Y", ThrottlePoint4Y, other.ThrottlePoint4Y);
+        Check("ThrottlePoint4X", ThrottlePoint4X, other.ThrottlePoint4X);
+        Check("ThrottleDeadZoneFront", ThrottleDeadZoneFront, other.ThrottleDeadZoneFront);
+        Check("ThrottleDeadZoneRear", ThrottleDeadZoneRear, other.ThrottleDeadZoneRear);
+
+        if (diffs.Count > 0)
+        {
+            Debug.WriteLine($"[PedalPresetSnapshot.ParametersEqual] 发现 {diffs.Count} 处不一致:");
+            foreach (var d in diffs)
+                Debug.WriteLine($"  {d}");
+            return false;
+        }
+        else
+        {
+            Debug.WriteLine("[PedalPresetSnapshot.ParametersEqual] 参数完全一致");
+            return true;
+        }
     }
 }

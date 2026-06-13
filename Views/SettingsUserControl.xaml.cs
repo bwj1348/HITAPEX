@@ -117,17 +117,23 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
-    private async Task StartDeviceUpdateAsync(DeviceItem device)
+    private async Task StartDeviceUpdateAsync(DeviceItem device) =>
+        await StartDeviceUpdateInternalAsync(device, fromBatch: false);
+
+    private async Task StartDeviceUpdateInternalAsync(DeviceItem device, bool fromBatch)
     {
         if (device?.UsbDevice == null || device.FirmwareInfo == null) return;
-        if (_isFirmwareUpdating) return;
+        if (!fromBatch && _isFirmwareUpdating) return;
 
-        _isFirmwareUpdating = true;
-        _updateCts = new CancellationTokenSource();
+        if (!fromBatch)
+        {
+            _isFirmwareUpdating = true;
+            _updateCts = new CancellationTokenSource();
+        }
 
         var usbDevice = device.UsbDevice;
         var firmwareInfo = device.FirmwareInfo;
-        var deviceName = firmwareInfo.DeviceName ?? device.Model;
+        var deviceName = device.Model ?? firmwareInfo.DeviceName ?? "设备";
 
         device.Status = "更新中...";
 
@@ -504,9 +510,12 @@ public partial class SettingsUserControl : UserControl
         }
         finally
         {
-            _isFirmwareUpdating = false;
-            _updateCts?.Dispose();
-            _updateCts = null;
+            if (!fromBatch)
+            {
+                _isFirmwareUpdating = false;
+                _updateCts?.Dispose();
+                _updateCts = null;
+            }
         }
     }
 
@@ -1102,10 +1111,217 @@ public partial class SettingsUserControl : UserControl
     }
 
     /// <summary>供外部调用，切换到固件更新选项卡</summary>
-    public void SwitchToFirmwareUpdateTab()
+    public void SwitchToFirmwareUpdateTab(List<UsbDeviceInfo>? updateModeDevices = null)
     {
         if (FirmwareUpdateTab != null)
             FirmwareUpdateTab.IsChecked = true;
+
+        if (updateModeDevices != null && updateModeDevices.Count > 0)
+        {
+            // 延迟确保 tab 切换和 UI 加载完成后再启动批量更新
+            Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded,
+                async () => await StartBatchUpdateAsync(updateModeDevices));
+        }
+    }
+
+    /// <summary>
+    /// 批量更新流程：从异常弹窗跳转而来，依次对每台设备执行下载→刷写。
+    /// 复用现有 StartDeviceUpdateAsync 的下载和刷写逻辑，按顺序执行。
+    /// </summary>
+    private async Task StartBatchUpdateAsync(List<UsbDeviceInfo> updateModeDevices)
+    {
+        if (_isFirmwareUpdating) return;
+        _isFirmwareUpdating = true;
+        _updateCts = new CancellationTokenSource();
+        var ct = _updateCts.Token;
+
+        try
+        {
+            // Step 1: 获取云端固件列表
+            var firmwareList = _cachedFirmwareList;
+            if (firmwareList.Count == 0 && App.FirmwareApi != null)
+            {
+                firmwareList = await App.FirmwareApi.GetFirmwareVersionsAsync(ct);
+                _cachedFirmwareList = firmwareList;
+            }
+
+            // Step 2: 为每台设备匹配固件并构建设备列表
+            var updateList = new List<DeviceItem>();
+            var missingFirmwareNames = new List<string>();
+            foreach (var device in updateModeDevices)
+            {
+                var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+                var deviceName = descriptor?.ModelName ?? $"设备 (VID={device.Vid:X4})";
+                var lookupVid = descriptor?.NormalMode.Vid ?? device.Vid;
+                var lookupPid = descriptor?.NormalMode.Pid ?? device.Pid;
+                var matched = App.FirmwareApi?.FindFirmwareForDevice(firmwareList, lookupVid, lookupPid);
+                if (matched != null)
+                {
+                    // 确保进度标题使用设备型号名称而非设备类别
+                    if (!string.IsNullOrEmpty(descriptor?.ModelName))
+                        matched.DeviceName = descriptor.ModelName;
+
+                    updateList.Add(new DeviceItem
+                    {
+                        Model = descriptor?.ModelName ?? deviceName,
+                        SerialNumber = device.SerialNumber,
+                        CurrentVersion = "更新模式",
+                        Status = $"v{matched.Version} 新版本",
+                        UsbDevice = device,
+                        FirmwareInfo = matched,
+                        ButtonBackground = new SolidColorBrush(Color.FromArgb(77, 238, 238, 238))
+                    });
+                }
+                else
+                {
+                    missingFirmwareNames.Add(deviceName);
+                    Debug.WriteLine($"[FirmwareUI] 批量更新: {deviceName} 无可用固件，跳过");
+                }
+            }
+
+            if (updateList.Count == 0)
+            {
+                var names = string.Join("、", missingFirmwareNames);
+                ShowBatchResultDialog($"没有找到{names}的可用固件，请稍后重试。");
+                return;
+            }
+
+            // Step 3: 依次更新每台设备，记录更新成功与失败的设备名
+            var succeededNames = new List<string>();
+            var failedNames = new List<string>();
+            for (int i = 0; i < updateList.Count; i++)
+            {
+                if (ct.IsCancellationRequested) break;
+
+                var item = updateList[i];
+                var modelName = item.Model ?? "未知设备";
+                if (updateList.Count > 1)
+                    item.Model = $"{modelName} ({i + 1}/{updateList.Count})";
+
+                try
+                {
+                    await StartDeviceUpdateInternalAsync(item, fromBatch: true);
+                    succeededNames.Add(modelName);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[FirmwareUI] 批量更新: {modelName} 异常: {ex.Message}");
+                    failedNames.Add(modelName);
+                }
+            }
+
+            if (!ct.IsCancellationRequested)
+            {
+                var allNames = string.Join("、", updateList.Select(d => d.FirmwareInfo?.DeviceName ?? d.Model ?? ""));
+                if (failedNames.Count == 0)
+                    ShowBatchResultDialog($"{allNames}设备固件更新完成，设备可正常使用。");
+                else
+                    ShowBatchResultDialog($"{allNames}设备固件更新完成，设备可正常使用。\n{string.Join("、", failedNames)} 更新失败。");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[FirmwareUI] 批量更新异常: {ex.Message}");
+            ShowBatchResultDialog($"更新过程发生异常: {ex.Message}");
+        }
+        finally
+        {
+            _isFirmwareUpdating = false;
+            _updateCts?.Dispose();
+            _updateCts = null;
+        }
+    }
+
+    /// <summary>
+    /// 显示批量更新的结果提示弹窗，按钮居中显示在底部。
+    /// </summary>
+    private void ShowBatchResultDialog(string message)
+    {
+        var parentWindow = Window.GetWindow(this);
+        if (parentWindow is not MainWindow mainWindow) return;
+
+        Dispatcher.Invoke(() =>
+        {
+            var dialog = mainWindow.GlobalDialog;
+            dialog.Title = "固 件 更 新";
+            dialog.ClearButtons();
+
+            var messageBlock = new TextBlock
+            {
+                Text = message,
+                FontSize = 22,
+                Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var button = new Button
+            {
+                Content = "确 定",
+                Width = 172,
+                Height = 32,
+                Cursor = Cursors.Hand,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            var template = new ControlTemplate(typeof(Button));
+            var gridFactory = new FrameworkElementFactory(typeof(Grid));
+            var pathFactory = new FrameworkElementFactory(typeof(System.Windows.Shapes.Path));
+            pathFactory.SetValue(System.Windows.Shapes.Path.DataProperty, Geometry.Parse("M0 6V32H166L172 26V0H6L0 6Z"));
+            pathFactory.SetValue(System.Windows.Shapes.Path.StretchProperty, Stretch.Fill);
+            pathFactory.SetValue(System.Windows.Shapes.Path.WidthProperty, 172.0);
+            pathFactory.SetValue(System.Windows.Shapes.Path.HeightProperty, 32.0);
+
+            var gradient = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0), EndPoint = new Point(0, 1), Opacity = 0.8
+            };
+            gradient.GradientStops.Add(new GradientStop(Color.FromRgb(198, 14, 14), 0));
+            gradient.GradientStops.Add(new GradientStop(Color.FromRgb(96, 7, 7), 1));
+            pathFactory.SetValue(System.Windows.Shapes.Path.FillProperty, gradient);
+
+            var contentFactory = new FrameworkElementFactory(typeof(ContentPresenter));
+            contentFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            contentFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            contentFactory.SetValue(TextBlock.ForegroundProperty, new SolidColorBrush(Color.FromRgb(238, 238, 238)));
+            contentFactory.SetValue(TextBlock.FontSizeProperty, 18.0);
+            contentFactory.SetValue(TextBlock.FontWeightProperty, FontWeights.Bold);
+
+            gridFactory.AppendChild(pathFactory);
+            gridFactory.AppendChild(contentFactory);
+            template.VisualTree = gridFactory;
+            button.Template = template;
+
+            button.Click += (_, _) =>
+            {
+                dialog.Hide();
+                _ = Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background,
+                    async () => await CheckFirmwareUpdatesAsync());
+            };
+
+            var contentPanel = new Grid
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+            contentPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            contentPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            messageBlock.VerticalAlignment = VerticalAlignment.Center;
+            contentPanel.Children.Add(messageBlock);
+
+            Grid.SetRow(button, 1);
+            contentPanel.Children.Add(button);
+
+            dialog.DialogContent = contentPanel;
+            dialog.Show();
+        });
     }
 
     protected override void OnKeyDown(KeyEventArgs e)

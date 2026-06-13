@@ -75,23 +75,7 @@ public partial class BaseParameterControl : UserControl
             }
             else
             {
-                // Check if a Base device is connected in update mode
-                var updateModeDevice = connectedDevices.FirstOrDefault(d =>
-                {
-                    var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
-                    return descriptor != null && descriptor.DeviceType == DeviceType.Base
-                           && descriptor.IsUpdateMode(d.Vid, d.Pid);
-                });
-
-                if (updateModeDevice != null)
-                {
-                    SetDisconnected();
-                    ShowUpdateModeRedirectDialog(updateModeDevice);
-                }
-                else
-                {
-                    SetDisconnected();
-                }
+                SetDisconnected();
             }
         }
         catch (Exception ex)
@@ -293,45 +277,6 @@ public partial class BaseParameterControl : UserControl
         e.Handled = true;
     }
 
-    /// <summary>设备处于固件更新模式时弹窗，引导用户前往固件更新页面</summary>
-    private void ShowUpdateModeRedirectDialog(UsbDeviceInfo device)
-    {
-        var mainWindow = Window.GetWindow(this) as HITAPEX.MainWindow
-                         ?? Application.Current.MainWindow as HITAPEX.MainWindow;
-        if (mainWindow == null) return;
-
-        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
-        var deviceName = descriptor?.ModelName ?? "设备";
-
-        var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "设 备 更 新 模 式";
-        dialog.ClearButtons();
-
-        dialog.DialogContent = new TextBlock
-        {
-            Text = $"{deviceName}当前处于固件更新模式，参数设置功能不可用。\n请前往固件更新页面完成或恢复固件。",
-            FontSize = 22,
-            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
-            TextWrapping = TextWrapping.Wrap,
-            TextAlignment = TextAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
-        dialog.AddButton("前 往", (_, _) =>
-        {
-            dialog.Hide();
-            NavigateToFirmwareUpdate();
-        }, isPrimary: true);
-
-        dialog.AddButton("取 消", (_, _) =>
-        {
-            dialog.Hide();
-        }, isPrimary: false);
-
-        dialog.Show();
-    }
-
     /// <summary>订阅 USB 串口设备连接/断开事件，设备随时插拔时 UI 实时响应</summary>
     private void SubscribeUsbSerialEvents()
     {
@@ -344,6 +289,9 @@ public partial class BaseParameterControl : UserControl
     {
         var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
         if (descriptor == null || descriptor.DeviceType != DeviceType.Base)
+            return;
+        // 更新模式由 MainWindow 统一处理，参数页面忽略
+        if (descriptor.IsUpdateMode(device.Vid, device.Pid))
             return;
 
         Debug.WriteLine($"[BaseControl] 基座串口设备已连接: {device.DeviceKey}");
@@ -367,28 +315,6 @@ public partial class BaseParameterControl : UserControl
             if (NewVersionAvailableBorder != null)
                 NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
         });
-    }
-
-    /// <summary>导航到设置界面的固件更新选项卡</summary>
-    private void NavigateToFirmwareUpdate()
-    {
-        if (Window.GetWindow(this) is MainWindow mainWindow)
-        {
-            var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
-            if (vm != null)
-            {
-                var settingsItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Settings");
-                if (settingsItem != null)
-                {
-                    vm.SelectedNavigationItem = settingsItem;
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-                    {
-                        var settingsView = vm.CurrentView as SettingsUserControl;
-                        settingsView?.SwitchToFirmwareUpdateTab();
-                    });
-                }
-            }
-        }
     }
 
     /// <summary>放弃当前修改，恢复到已应用预设的状态</summary>

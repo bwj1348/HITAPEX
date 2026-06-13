@@ -71,6 +71,8 @@ public partial class SteeringWheelParameterControl : UserControl
     private int _standbyLightEffect;
     private int _standbyLightSpeed;
     private int _singleButtonAdjIndex = -1; // -1=全发, >=0=只发该可调索引的按键灯
+    /// <summary>设备保存的统一颜色索引（从0x2106读取），打开全局颜色时复用此值</summary>
+    private int _deviceUnifiedColorIndex;
 
     // ── HID 按键响应 ──
     /// <summary>上次 HID 按键位图（防抖）</summary>
@@ -129,7 +131,10 @@ public partial class SteeringWheelParameterControl : UserControl
             CacheCircularButtons();
         }
 
+        Debug.WriteLine($"[SteeringWheelControl.Loaded] 界面加载: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _isPresetModified={_isPresetModified}");
+
         await RefreshDeviceInfoAsync();
+        Debug.WriteLine($"[SteeringWheelControl.Loaded] RefreshDeviceInfoAsync 完成: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}");
         UpdatePresetDisplay();
 
         // 切回界面时重置按键掩码，强制下一帧 HID 数据刷新所有按键视觉效果
@@ -181,22 +186,7 @@ public partial class SteeringWheelParameterControl : UserControl
             }
             else
             {
-                // 1b. 检查是否有面盘设备处于更新模式
-                var updateModeDevice = connectedDevices.FirstOrDefault(d =>
-                {
-                    var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
-                    return descriptor != null && descriptor.DeviceType == DeviceType.Wheel
-                           && descriptor.IsUpdateMode(d.Vid, d.Pid);
-                });
-
-                if (updateModeDevice != null)
-                {
-                    SetDisconnected();
-                    ShowUpdateModeRedirectDialog(updateModeDevice);
-                }
-                else
-                {
-                    // 2. 检查是否通过基座连接
+                // 2. 检查是否通过基座连接
                 var baseDevice = connectedDevices.FirstOrDefault(d =>
                 {
                     var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
@@ -225,8 +215,7 @@ public partial class SteeringWheelParameterControl : UserControl
                 {
                     SetDisconnected();
                 } // end base device check
-            } // end else { // 2. 检查是否通过基座连接
-            } // end else { // 1b. 更新模式检查
+            } // end else { // 检查基座连接
         } // end original else
         catch (Exception ex)
         {
@@ -252,13 +241,20 @@ public partial class SteeringWheelParameterControl : UserControl
     /// <summary>对比设备上报的预设名称和参数与本地预设，若完全匹配则视为本地预设</summary>
     private void TryMatchLocalPreset()
     {
+        Debug.WriteLine($"[SteeringWheelControl.TryMatchLocalPreset] 入参: _devicePresetName='{_devicePresetName}', _appliedPresetParameters={(object?)_appliedPresetParameters != null}, PresetService={(object?)App.PresetService != null}");
+
         if (string.IsNullOrEmpty(_devicePresetName) || _appliedPresetParameters == null || App.PresetService == null)
+        {
+            Debug.WriteLine($"[SteeringWheelControl.TryMatchLocalPreset] 跳过: name空={string.IsNullOrEmpty(_devicePresetName)}, params空={_appliedPresetParameters == null}, service空={App.PresetService == null}");
             return;
+        }
 
         try
         {
             var officialPresets = App.PresetService.LoadOfficialPresets(DeviceType.Wheel);
             var personalPresets = App.PresetService.LoadPersonalPresets(DeviceType.Wheel);
+
+            Debug.WriteLine($"[SteeringWheelControl.TryMatchLocalPreset] 查询名称='{_devicePresetName}', 个人预设数={personalPresets.Count}, 官方预设数={officialPresets.Count}");
 
             // 先查个人预设，再查官方预设
             PresetItem? matched = personalPresets.FirstOrDefault(p => p.Name == _devicePresetName);
@@ -269,13 +265,19 @@ public partial class SteeringWheelParameterControl : UserControl
                 isPersonal = false;
             }
 
+            Debug.WriteLine($"[SteeringWheelControl.TryMatchLocalPreset] 匹配结果: found={(matched != null ? matched.Name : "无")}, isPersonal={isPersonal}");
+
             if (matched?.WheelParameters != null && _appliedPresetParameters.ParametersEqual(matched.WheelParameters))
             {
                 _currentPresetName = matched.Name;
                 _isAppliedPresetPersonal = isPersonal;
                 _devicePresetName = string.Empty;
-                Debug.WriteLine($"[SteeringWheelControl] 设备预设匹配到本地{(isPersonal ? "个人" : "官方")}预设: {matched.Name}");
+                Debug.WriteLine($"[SteeringWheelControl.TryMatchLocalPreset] 匹配成功! _currentPresetName='{_currentPresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}");
                 UpdatePresetDisplay();
+            }
+            else
+            {
+                Debug.WriteLine($"[SteeringWheelControl.TryMatchLocalPreset] 参数不匹配: matchedWheelParams={(object?)matched?.WheelParameters != null}, paramsEqual={(matched?.WheelParameters != null && _appliedPresetParameters != null ? _appliedPresetParameters.ParametersEqual(matched.WheelParameters) : false)}");
             }
         }
         catch (Exception ex)
@@ -299,9 +301,11 @@ public partial class SteeringWheelParameterControl : UserControl
         try
         {
             var name = await App.ProtocolService.GetPresetNameAsync(targetDevice.DeviceKey, DeviceType.Wheel);
+            Debug.WriteLine($"[SteeringWheelControl.FetchPresetName] 设备返回名称='{name ?? "(null)"}', _currentPresetName='{_currentPresetName}', _isPresetModified={_isPresetModified}");
             if (name != null)
             {
                 _devicePresetName = name;
+                Debug.WriteLine($"[SteeringWheelControl.FetchPresetName] 设置 _devicePresetName='{_devicePresetName}'");
                 if (_currentPresetName == "Default" && !_isPresetModified)
                     UpdatePresetDisplay();
             }
@@ -337,6 +341,7 @@ public partial class SteeringWheelParameterControl : UserControl
 
     private void SetDisconnected()
     {
+        Debug.WriteLine($"[SteeringWheelControl.SetDisconnected] 调用前: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _isPresetModified={_isPresetModified}");
         _connectedWheelDevice = null;
         _baseDevice = null;
         _isWheelViaBase = false;
@@ -351,6 +356,8 @@ public partial class SteeringWheelParameterControl : UserControl
         _devicePresetName = string.Empty;
         _isPresetModified = false;
         _isAppliedPresetPersonal = false;
+        _deviceUnifiedColorIndex = 0;
+        Debug.WriteLine($"[SteeringWheelControl.SetDisconnected] 调用后: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _deviceUnifiedColorIndex={_deviceUnifiedColorIndex}");
 
         // 清除 HID 按键视觉效果
         _lastHidButtonMask = 0;
@@ -361,67 +368,6 @@ public partial class SteeringWheelParameterControl : UserControl
         }
         if (KeyResponseName != null)
             KeyResponseName.Text = "---";
-    }
-
-    /// <summary>设备处于固件更新模式时弹窗，引导用户前往固件更新页面</summary>
-    private void ShowUpdateModeRedirectDialog(UsbDeviceInfo device)
-    {
-        var mainWindow = Window.GetWindow(this) as HITAPEX.MainWindow
-                         ?? Application.Current.MainWindow as HITAPEX.MainWindow;
-        if (mainWindow == null) return;
-
-        var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
-        var deviceName = descriptor?.ModelName ?? "设备";
-
-        var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "设 备 更 新 模 式";
-        dialog.ClearButtons();
-
-        dialog.DialogContent = new TextBlock
-        {
-            Text = $"{deviceName}当前处于固件更新模式，参数设置功能不可用。\n请前往固件更新页面完成或恢复固件。",
-            FontSize = 22,
-            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
-            TextWrapping = TextWrapping.Wrap,
-            TextAlignment = TextAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
-        dialog.AddButton("前 往", (_, _) =>
-        {
-            dialog.Hide();
-            NavigateToFirmwareUpdate();
-        }, isPrimary: true);
-
-        dialog.AddButton("取 消", (_, _) =>
-        {
-            dialog.Hide();
-        }, isPrimary: false);
-
-        dialog.Show();
-    }
-
-    /// <summary>导航到设置界面的固件更新选项卡</summary>
-    private void NavigateToFirmwareUpdate()
-    {
-        if (Window.GetWindow(this) is MainWindow mainWindow)
-        {
-            var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
-            if (vm != null)
-            {
-                var settingsItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Settings");
-                if (settingsItem != null)
-                {
-                    vm.SelectedNavigationItem = settingsItem;
-                    Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-                    {
-                        var settingsView = vm.CurrentView as SettingsUserControl;
-                        settingsView?.SwitchToFirmwareUpdateTab();
-                    });
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -536,6 +482,7 @@ public partial class SteeringWheelParameterControl : UserControl
     /// <summary>放弃当前修改，恢复到已应用预设的状态</summary>
     public void DiscardChanges()
     {
+        Debug.WriteLine($"[SteeringWheelControl.DiscardChanges] 调用: _isPresetModified={_isPresetModified}, _appliedPresetParameters=null?={_appliedPresetParameters == null}");
         if (!_isPresetModified || _appliedPresetParameters == null)
             return;
 
@@ -543,6 +490,7 @@ public partial class SteeringWheelParameterControl : UserControl
         ApplyPresetSnapshot(_appliedPresetParameters);
         _isApplyingPreset = false;
         _isPresetModified = false;
+        _deviceUnifiedColorIndex = _appliedPresetParameters.GlobalKeyColor;
         UpdatePresetDisplay();
     }
 
@@ -837,12 +785,13 @@ public partial class SteeringWheelParameterControl : UserControl
     private enum WheelSendMask
     {
         None = 0,
-        RpmBaseMode = 1 << 0,   // 0x2103 转速灯基础模式
-        RpmIndicator = 1 << 1,  // 0x2104 转速灯转速指示
-        RpmMode = 1 << 2,       // 0x2105 转速灯模式等属性
-        ButtonLight = 1 << 3,   // 0x2107 按键灯
-        SleepAndPaddle = 1 << 4,// 0x2108 睡眠和拨片
-        All = RpmBaseMode | RpmIndicator | RpmMode | ButtonLight | SleepAndPaddle,
+        RpmBaseMode = 1 << 0,       // 0x2103 转速灯基础模式
+        RpmIndicator = 1 << 1,      // 0x2104 转速灯转速指示
+        RpmMode = 1 << 2,           // 0x2105 转速灯模式等属性
+        ButtonLightGlobal = 1 << 3, // 0x2106 按键灯全局属性（切换模式时只用此包）
+        ButtonLight = 1 << 4,       // 0x2107 按键灯单独效果
+        SleepAndPaddle = 1 << 5,    // 0x2108 睡眠和拨片
+        All = RpmBaseMode | RpmIndicator | RpmMode | ButtonLightGlobal | ButtonLight | SleepAndPaddle,
     }
 
     /// <summary>任意参数修改后的统一入口，仅更新 UI 状态，不触发数据下发</summary>
@@ -863,7 +812,10 @@ public partial class SteeringWheelParameterControl : UserControl
         return new WheelPresetSnapshot
         {
             KeyColorEnabled = KeyColorToggle?.IsChecked ?? true,
-            GlobalKeyColor = GetSelectedGlobalKeyColor(),
+            // 全局颜色关闭时色块 UI 已取消选中，使用缓存的设备统一颜色确保 0x2106 数据包正确
+            GlobalKeyColor = (KeyColorToggle?.IsChecked == true)
+                ? GetSelectedGlobalKeyColor()
+                : _deviceUnifiedColorIndex,
             ShowKeyNumber = ShowKeyNumberToggle?.IsChecked ?? true,
             KeyBrightness = (int)(KeyBrightnessSlider?.Value ?? 80),
             RpmBrightness = (int)(RpmBrightnessSlider?.Value ?? 80),
@@ -1058,14 +1010,20 @@ public partial class SteeringWheelParameterControl : UserControl
         var isDeviceConnected = _connectedWheelDevice != null || _isWheelViaBase;
         var isOnboard = _currentPresetName == "Default" && isDeviceConnected;
 
+        Debug.WriteLine($"[SteeringWheelControl.UpdatePresetDisplay] isDeviceConnected={isDeviceConnected}, isOnboard={isOnboard}, _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _isPresetModified={_isPresetModified}");
+
         if (PresetNameText != null)
         {
+            var newText = PresetNameText.Text;
             if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
-                PresetNameText.Text = $"{_devicePresetName}_板载";
+                newText = $"{_devicePresetName}_板载";
             else if (isOnboard)
-                PresetNameText.Text = "板载";
+                newText = "板载";
             else
-                PresetNameText.Text = _currentPresetName;
+                newText = _currentPresetName;
+
+            Debug.WriteLine($"[SteeringWheelControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{newText}'");
+            PresetNameText.Text = newText;
             PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
         }
 
@@ -1296,6 +1254,7 @@ public partial class SteeringWheelParameterControl : UserControl
 
     private void ApplyPreset(PresetItem preset)
     {
+        Debug.WriteLine($"[SteeringWheelControl.ApplyPreset] preset.Name='{preset.Name}', preset.IsPersonal={preset.IsPersonal}, 当前: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}'");
         _isApplyingPreset = true;
         ApplyPresetSnapshot(preset.WheelParameters!);
         _isApplyingPreset = false;
@@ -1304,6 +1263,9 @@ public partial class SteeringWheelParameterControl : UserControl
         _currentPresetName = preset.Name;
         _isAppliedPresetPersonal = preset.IsPersonal;
         _isPresetModified = false;
+        // 同步缓存：应用预设后，设备上的统一颜色即为预设中的值
+        _deviceUnifiedColorIndex = preset.WheelParameters!.GlobalKeyColor;
+        Debug.WriteLine($"[SteeringWheelControl.ApplyPreset] 更新后: _currentPresetName='{_currentPresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _deviceUnifiedColorIndex={_deviceUnifiedColorIndex}");
         UpdatePresetDisplay();
 
         SendPresetName(preset.Name);
@@ -1339,7 +1301,8 @@ public partial class SteeringWheelParameterControl : UserControl
             await FetchRpmBaseModeAsync(targetDevice);
             await FetchRpmIndicatorAsync(targetDevice);
             await FetchRpmModeAsync(targetDevice);
-            await FetchButtonLightAsync(targetDevice);
+            await FetchButtonLightGlobalAsync(targetDevice); // 0x2106 — 全局属性（先获取，决定模式）
+            await FetchButtonLightAsync(targetDevice);        // 0x2107 — 单独效果
             await FetchSleepAndPaddleAsync(targetDevice);
         }
         catch (Exception ex)
@@ -1356,6 +1319,8 @@ public partial class SteeringWheelParameterControl : UserControl
         _currentPresetName = "Default";
         _isAppliedPresetPersonal = false;
         _isPresetModified = false;
+        // 同步缓存：首次从设备读回的统一颜色
+        _deviceUnifiedColorIndex = _appliedPresetParameters.GlobalKeyColor;
         UpdatePresetDisplay();
     }
 
@@ -1451,77 +1416,70 @@ public partial class SteeringWheelParameterControl : UserControl
         }
     }
 
+    /// <summary>获取按键灯全局属性 (0x2106) — LED模式、亮度、统一颜色</summary>
+    private async Task FetchButtonLightGlobalAsync(UsbDeviceInfo device)
+    {
+        if (App.ProtocolService == null) return;
+
+        try
+        {
+            var cmd = DeviceProtocolService.BuildGetWheelButtonLightGlobalCommand();
+            var response = await App.ProtocolService.SendCommandAsync(device.DeviceKey, cmd);
+            if (response == null) return;
+
+            var parsed = DeviceProtocolService.ParseWheelButtonLightGlobalResponse(response);
+            if (parsed == null) return;
+
+            var ledMode = parsed.LedMode; // 0=单独颜色常亮, 1=统一颜色常亮
+            _keyBrightness = parsed.Brightness;
+            if (KeyBrightnessSlider != null)
+                KeyBrightnessSlider.Value = _keyBrightness;
+
+            // 同步 LED 模式到 KeyColorToggle 开关
+            if (KeyColorToggle != null)
+                KeyColorToggle.IsChecked = ledMode == 1;
+
+            // 缓存设备中保存的统一颜色索引，后续打开全局颜色开关时复用此值
+            _deviceUnifiedColorIndex = DeviceProtocolService.RgbToColorIndex(parsed.ColorR, parsed.ColorG, parsed.ColorB);
+
+            // 同步 LED 模式到 KeyColorToggle 开关
+            if (ledMode == 1)
+            {
+                SetGlobalKeyColor(_deviceUnifiedColorIndex);
+            }
+
+            Debug.WriteLine($"[SteeringWheelControl] 按键灯全局属性已同步: ledMode={ledMode}, brightness={_keyBrightness}, unifiedColor={_deviceUnifiedColorIndex}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SteeringWheelControl] 获取按键灯全局属性异常: {ex.Message}");
+        }
+    }
+
+    /// <summary>获取按键灯单独效果属性 (0x2107) — 每个LED的颜色、遥测功能等</summary>
     private async Task FetchButtonLightAsync(UsbDeviceInfo device)
     {
         if (App.ProtocolService == null) return;
 
         try
         {
-            // 先获取物理索引 0 (B1)，确定 LED 模式
-            var cmd0 = DeviceProtocolService.BuildGetWheelButtonLightCommand(0);
-            var resp0 = await App.ProtocolService.SendCommandAsync(device.DeviceKey, cmd0);
-            if (resp0 == null) return;
-
-            var p0 = DeviceProtocolService.ParseWheelButtonLightResponse(resp0);
-            if (p0 == null) return;
-
-            var ledMode = p0.LedMode; // 0=单独颜色常亮, 1=统一颜色常亮
-            _keyBrightness = p0.Brightness;
-            if (KeyBrightnessSlider != null)
-                KeyBrightnessSlider.Value = _keyBrightness;
-
-            // 同步 LED 模式到 KeyColorToggle 开关（触发 Checked/Unchecked 后会正确启用/禁用色块、设置颜色）
-            if (KeyColorToggle != null)
-                KeyColorToggle.IsChecked = ledMode == 1;
-
-            // 统一颜色模式时，设置全局颜色（需在 KeyColorToggle.IsChecked 设置之后，
-            // 因为 IsChecked 的 Checked 事件处理器会将 ColorRed 选中，这里再覆盖为设备实际的统一颜色）
-            if (ledMode == 1)
+            // 逐个顺序获取14个可调按键的参数，设备始终存储每个LED的单独设置
+            for (int i = 0; i < 14; i++)
             {
-                var gColor = DeviceProtocolService.RgbToColorIndex(p0.ColorR, p0.ColorG, p0.ColorB);
-                SetGlobalKeyColor(gColor);
+                var cmd = DeviceProtocolService.BuildGetWheelButtonLightCommand((byte)i);
+                var resp = await App.ProtocolService.SendCommandAsync(device.DeviceKey, cmd);
+                if (resp == null) continue;
+                var parsed = DeviceProtocolService.ParseWheelButtonLightResponse(resp);
+                if (parsed != null)
+                    ApplyButtonLightFromResponse(parsed, i, _buttonColors, _buttonTelemetryEnabled,
+                        _buttonTelemetryFunc, _buttonTelemetryLightEffect, _buttonSpeeds, _buttonTelemetryTriggerColor);
             }
 
-            // 可调索引0 = LED索引0（对应B1），直接应用
-            ApplyButtonLightFromResponse(p0, 0, _buttonColors, _buttonTelemetryEnabled,
-                _buttonTelemetryFunc, _buttonTelemetryLightEffect, _buttonSpeeds, _buttonTelemetryTriggerColor);
-
-            // 单独颜色常亮模式：逐个顺序获取剩余13个可调按键的参数（LED索引 1-13）
-            // SendCommandAsync 使用每设备键单例 TCS，必须顺序发送，不能并发
-            if (ledMode == 0)
-            {
-                for (int i = 1; i < 14; i++)
-                {
-                    var cmd = DeviceProtocolService.BuildGetWheelButtonLightCommand((byte)i);
-                    var resp = await App.ProtocolService.SendCommandAsync(device.DeviceKey, cmd);
-                    if (resp == null) continue;
-                    var parsed = DeviceProtocolService.ParseWheelButtonLightResponse(resp);
-                    if (parsed != null)
-                        ApplyButtonLightFromResponse(parsed, i, _buttonColors, _buttonTelemetryEnabled,
-                            _buttonTelemetryFunc, _buttonTelemetryLightEffect, _buttonSpeeds, _buttonTelemetryTriggerColor);
-                }
-            }
-            else // 统一颜色常亮模式：14个可调按键复用索引 0 的设置
-            {
-                var colorIdx = DeviceProtocolService.RgbToColorIndex(p0.ColorR, p0.ColorG, p0.ColorB);
-                for (int i = 1; i < 14; i++)
-                {
-                    _buttonColors[i] = colorIdx;
-                    _buttonTelemetryEnabled[i] = p0.TelemetryFunc != 0;
-                    if (p0.TelemetryFunc != 0)
-                        _buttonTelemetryFunc[i] = p0.TelemetryFunc - 1;
-                    _buttonTelemetryLightEffect[i] = p0.FlashSpeed == 0xFF ? 0 : 1;
-                    _buttonSpeeds[i] = p0.FlashSpeed == 0xFF ? 0 : Math.Min((int)p0.FlashSpeed, 5);
-                    var tc = DeviceProtocolService.RgbToColorIndex(p0.TelemetryColorR, p0.TelemetryColorG, p0.TelemetryColorB);
-                    _buttonTelemetryTriggerColor[i] = tc;
-                }
-            }
-
-            Debug.WriteLine($"[SteeringWheelControl] 按键灯参数已同步(14可调按键): ledMode={ledMode}, brightness={_keyBrightness}");
+            Debug.WriteLine($"[SteeringWheelControl] 按键灯单独效果已同步(14可调按键)");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[SteeringWheelControl] 获取按键灯参数异常: {ex.Message}");
+            Debug.WriteLine($"[SteeringWheelControl] 获取按键灯单独效果异常: {ex.Message}");
         }
     }
 
@@ -1636,6 +1594,8 @@ public partial class SteeringWheelParameterControl : UserControl
                 SendWheelRpmIndicator(targetDevice, snapshot);
             if ((sendMask & WheelSendMask.RpmMode) != 0)
                 SendWheelRpmMode(targetDevice, snapshot);
+            if ((sendMask & WheelSendMask.ButtonLightGlobal) != 0)
+                SendWheelButtonLightGlobal(targetDevice, snapshot);
             if ((sendMask & WheelSendMask.ButtonLight) != 0)
                 SendWheelButtonLight(targetDevice, snapshot);
             if ((sendMask & WheelSendMask.SleepAndPaddle) != 0)
@@ -1732,58 +1692,62 @@ public partial class SteeringWheelParameterControl : UserControl
         }
     }
 
+    /// <summary>发送按键灯全局属性 (0x2106) — 仅改变模式/亮度/统一颜色时调用</summary>
+    private void SendWheelButtonLightGlobal(UsbDeviceInfo device, WheelPresetSnapshot s)
+    {
+        if (App.UsbManager == null) return;
+
+        try
+        {
+            var ledMode = (byte)(s.KeyColorEnabled ? 1 : 0);
+            var unifiedColorIdx = Math.Clamp(s.GlobalKeyColor, 0, 8);
+            var unifiedColor = DeviceProtocolService.ColorIndexToRgb[unifiedColorIdx];
+            var cmd = DeviceProtocolService.BuildSetWheelButtonLightGlobalCommand(
+                ledMode, (byte)s.KeyBrightness, unifiedColor[0], unifiedColor[1], unifiedColor[2]);
+            App.UsbManager.SendToDevice(device.DeviceKey, cmd);
+            Debug.WriteLine($"[SteeringWheelControl] 按键灯全局(0x2106)已发送: ledMode={ledMode}, brightness={s.KeyBrightness}, color={unifiedColorIdx}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SteeringWheelControl] 发送按键灯全局属性异常: {ex.Message}");
+        }
+    }
+
+    /// <summary>发送按键灯单独效果 (0x2107) — 各LED的颜色、遥测功能</summary>
     private void SendWheelButtonLight(UsbDeviceInfo device, WheelPresetSnapshot s)
     {
         if (App.UsbManager == null) return;
 
         try
         {
-            var ledMode = (byte)(s.KeyColorEnabled ? 1 : 0); // 1=统一颜色常亮, 0=单独颜色常亮
+            int singleAdjIdx = _singleButtonAdjIndex;
+            _singleButtonAdjIndex = -1;
 
-            if (ledMode == 1)
+            int start = singleAdjIdx >= 0 ? singleAdjIdx : 0;
+            int end = singleAdjIdx >= 0 ? singleAdjIdx + 1 : 14;
+
+            for (int adjIdx = start; adjIdx < end; adjIdx++)
             {
-                // 统一颜色常亮模式：只发一条，索引 0
-                var globalColorIdx = Math.Clamp(s.GlobalKeyColor, 0, 8);
-                var color = DeviceProtocolService.ColorIndexToRgb[globalColorIdx];
+                var btnColorIdx = Math.Clamp(s.ButtonColors[adjIdx], 0, 8);
+                var btnColor = DeviceProtocolService.ColorIndexToRgb[btnColorIdx];
+                var telemetryFunc = s.ButtonTelemetryEnabled[adjIdx]
+                    ? (byte)(s.ButtonTelemetryFunc[adjIdx] + 1) : (byte)0;
+                var flashSpeed = s.ButtonTelemetryLightEffect[adjIdx] == 0 ? (byte)0xFF : (byte)s.ButtonSpeeds[adjIdx];
+                var tcIdx = Math.Clamp(s.ButtonTelemetryTriggerColor[adjIdx], 0, 8);
+                var tcColor = DeviceProtocolService.ColorIndexToRgb[tcIdx];
+
                 var cmd = DeviceProtocolService.BuildSetWheelButtonLightCommand(
-                    ledMode, 0, (byte)s.KeyBrightness, color[0], color[1], color[2],
-                    0, 0xFF, 0, 0, 0);
+                    (byte)adjIdx, btnColor[0], btnColor[1], btnColor[2],
+                    telemetryFunc, flashSpeed,
+                    tcColor[0], tcColor[1], tcColor[2]);
+
                 App.UsbManager.SendToDevice(device.DeviceKey, cmd);
-                Debug.WriteLine($"[SteeringWheelControl] 按键灯(统一)已发送: brightness={s.KeyBrightness}, color={globalColorIdx}");
             }
-            else
-            {
-                // 单独颜色常亮模式：14个可调按键，LED索引=0-13按顺序对应B1,B2,B3,B6,B7,B8,B9,B11,B12,B13,B16,B17,B18,B19
-                int singleAdjIdx = _singleButtonAdjIndex;
-                _singleButtonAdjIndex = -1; // 立即复位，避免影响后续操作
-
-                int start = singleAdjIdx >= 0 ? singleAdjIdx : 0;
-                int end = singleAdjIdx >= 0 ? singleAdjIdx + 1 : 14;
-
-                for (int adjIdx = start; adjIdx < end; adjIdx++)
-                {
-                    var btnColorIdx = Math.Clamp(s.ButtonColors[adjIdx], 0, 8);
-                    var btnColor = DeviceProtocolService.ColorIndexToRgb[btnColorIdx];
-                    var telemetryFunc = s.ButtonTelemetryEnabled[adjIdx]
-                        ? (byte)(s.ButtonTelemetryFunc[adjIdx] + 1) : (byte)0;
-                    var flashSpeed = s.ButtonTelemetryLightEffect[adjIdx] == 0 ? (byte)0xFF : (byte)s.ButtonSpeeds[adjIdx];
-                    var tcIdx = Math.Clamp(s.ButtonTelemetryTriggerColor[adjIdx], 0, 8);
-                    var tcColor = DeviceProtocolService.ColorIndexToRgb[tcIdx];
-
-                    var cmd = DeviceProtocolService.BuildSetWheelButtonLightCommand(
-                        ledMode, (byte)adjIdx, (byte)s.KeyBrightness,
-                        btnColor[0], btnColor[1], btnColor[2],
-                        telemetryFunc, flashSpeed,
-                        tcColor[0], tcColor[1], tcColor[2]);
-
-                    App.UsbManager.SendToDevice(device.DeviceKey, cmd);
-                }
-                Debug.WriteLine($"[SteeringWheelControl] 按键灯(单独{(singleAdjIdx >= 0 ? $"adj#{singleAdjIdx}" : "×14")})已发送: brightness={s.KeyBrightness}");
-            }
+            Debug.WriteLine($"[SteeringWheelControl] 按键灯单独(0x2107)已发送: led{(singleAdjIdx >= 0 ? $"#{singleAdjIdx}" : "×14")}");
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[SteeringWheelControl] 发送按键灯参数异常: {ex.Message}");
+            Debug.WriteLine($"[SteeringWheelControl] 发送按键灯单独效果异常: {ex.Message}");
         }
     }
 
@@ -1919,6 +1883,10 @@ public partial class SteeringWheelParameterControl : UserControl
         }
 
         _buttonSettingsPopup.SetKeyName(keyName);
+
+        // 必须在 LoadSettings 之前设置，确保 LoadSettings 中的 IsGlobalColorMode 判断使用当前最新值
+        _buttonSettingsPopup.IsGlobalColorMode = KeyColorToggle?.IsChecked == true;
+
         _buttonSettingsPopup.LoadSettings(
             _buttonColors[adjIdx],
             _buttonTelemetryEnabled[adjIdx],
@@ -1947,7 +1915,10 @@ public partial class SteeringWheelParameterControl : UserControl
     {
         if (_buttonSettingsPopup == null) return;
 
-        _buttonColors[adjIndex] = _buttonSettingsPopup.GetSelectedKeyColorIndex();
+        // 全局颜色模式下不更新按键颜色：弹窗中颜色行已被清除选中，GetSelectedKeyColorIndex 返回 0 会错误覆盖设备颜色
+        if (!_buttonSettingsPopup.IsGlobalColorMode)
+            _buttonColors[adjIndex] = _buttonSettingsPopup.GetSelectedKeyColorIndex();
+
         _buttonTelemetryEnabled[adjIndex] = _buttonSettingsPopup.GetTelemetryEnabled();
         _buttonTelemetryLightEffect[adjIndex] = _buttonSettingsPopup.GetTelemetryLightEffect();
         _buttonTelemetryFunc[adjIndex] = _buttonSettingsPopup.GetTelemetryFunc();
@@ -2061,29 +2032,46 @@ public partial class SteeringWheelParameterControl : UserControl
 
     private bool _suppressColorChecked;
 
-    // 色块选中 → 影响按键灯统一颜色模式下的常亮颜色
+    // 色块选中 → 更新全局颜色并同步缓存，只发 0x2106
     private void KeyColor_Checked(object sender, RoutedEventArgs e)
     {
         if (_suppressColorChecked) return;
-        OnParameterModified(WheelSendMask.ButtonLight);
+        _deviceUnifiedColorIndex = GetSelectedGlobalKeyColor();
+        OnParameterModified(WheelSendMask.ButtonLightGlobal);
     }
 
-    // 按键颜色开关
+    // 按键颜色开关：打开全局颜色 → 恢复设备保存的统一颜色，取消各按键选中，只发 0x2106
     private void KeyColorToggle_Checked(object sender, RoutedEventArgs e)
     {
         SetKeyColorBlocksEnabled(true);
         _suppressColorChecked = true;
-        if (ColorRed != null)
-            ColorRed.IsChecked = true;
+        SetGlobalKeyColor(_deviceUnifiedColorIndex);
         _suppressColorChecked = false;
-        OnParameterModified(WheelSendMask.ButtonLight);
+
+        // 全局颜色模式下各自按键灯颜色无意义，取消所有按键的选中状态
+        DeselectAllWheelKeyButtons();
+
+        OnParameterModified(WheelSendMask.ButtonLightGlobal);
+    }
+
+    /// <summary>取消所有面盘圆形按键的选中状态（全局颜色模式时使用）</summary>
+    private void DeselectAllWheelKeyButtons()
+    {
+        var allButtons = new RadioButton?[] { Btn1, Btn2, Btn3, Btn4, Btn5, Btn6, Btn7, Btn8, Btn9,
+                                              Btn10, Btn11, Btn12, Btn13, Btn14, Btn15, Btn16, Btn17, Btn18, Btn19 };
+        foreach (var btn in allButtons)
+        {
+            if (btn != null && btn.IsChecked == true)
+                btn.IsChecked = false;
+        }
     }
 
     private void KeyColorToggle_Unchecked(object sender, RoutedEventArgs e)
     {
         SetKeyColorBlocksEnabled(false);
         _suppressColorChecked = true;
-        // 取消所有色块的选中状态
+        // 取消所有色块的选中状态：全局颜色关闭时无需在 UI 上显示选中
+        // _deviceUnifiedColorIndex 仍缓存设备统一颜色，CaptureCurrentParameters 在非全局模式下会用它
         if (ColorRed != null) ColorRed.IsChecked = false;
         if (ColorOrange != null) ColorOrange.IsChecked = false;
         if (ColorYellow != null) ColorYellow.IsChecked = false;
@@ -2093,7 +2081,7 @@ public partial class SteeringWheelParameterControl : UserControl
         if (ColorPurple != null) ColorPurple.IsChecked = false;
         if (ColorWhite != null) ColorWhite.IsChecked = false;
         _suppressColorChecked = false;
-        OnParameterModified(WheelSendMask.ButtonLight);
+        OnParameterModified(WheelSendMask.ButtonLightGlobal);
     }
 
     private void SetKeyColorBlocksEnabled(bool enabled)
@@ -2201,8 +2189,8 @@ public partial class SteeringWheelParameterControl : UserControl
     private void BrightnessSlider_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
     {
         var mask = _lastBrightnessSliderSender == RpmBrightnessSlider
-            ? WheelSendMask.RpmMode   // 转速灯亮度在 0x2105 中
-            : WheelSendMask.ButtonLight; // 按键灯亮度在 0x2107 中
+            ? WheelSendMask.RpmMode             // 转速灯亮度在 0x2105 中
+            : WheelSendMask.ButtonLightGlobal;   // 按键灯亮度在 0x2106 中（全局属性）
         OnParameterModified(mask);
     }
 
@@ -2420,9 +2408,14 @@ public partial class SteeringWheelParameterControl : UserControl
         var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
         if (descriptor == null || descriptor.DeviceType != DeviceType.Wheel)
             return;
+        // 更新模式由 MainWindow 统一处理，参数页面忽略
+        if (descriptor.IsUpdateMode(device.Vid, device.Pid))
+            return;
 
-        Debug.WriteLine($"[SteeringWheelControl] 面盘串口设备已连接: {device.DeviceKey}");
+        Debug.WriteLine($"[SteeringWheelControl.OnUsbDeviceConnected] 面盘串口设备已连接: {device.DeviceKey}");
+        Debug.WriteLine($"[SteeringWheelControl.OnUsbDeviceConnected] 调用前: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}");
         await Application.Current.Dispatcher.InvokeAsync(async () => await RefreshDeviceInfoAsync());
+        Debug.WriteLine($"[SteeringWheelControl.OnUsbDeviceConnected] 调用后: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}");
     }
 
     private void OnUsbDeviceDisconnected(UsbDeviceInfo device)

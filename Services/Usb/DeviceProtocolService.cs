@@ -651,14 +651,65 @@ public class DeviceProtocolService
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  面盘按键灯协议 (0x2107)
+    //  面盘按键灯全局属性协议 (0x2106)
     // ════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Build Set Wheel Button Light command (0x2107).
-    /// Protocol: [0x21, 0x07, 0x21, ledMode, ledIndex, brightness, colorRGB(3B), telemetryFunc, flashSpeed, telemetryColorRGB(3B), reserved...]
+    /// Build Set Wheel Button Light Global command (0x2106).
+    /// Protocol: [0x21, 0x06, 0x21, ledMode, brightness, colorRGB(3B), reserved...]
     /// </summary>
-    public static byte[] BuildSetWheelButtonLightCommand(byte ledMode, byte ledIndex, byte brightness,
+    public static byte[] BuildSetWheelButtonLightGlobalCommand(byte ledMode, byte brightness,
+        byte colorR, byte colorG, byte colorB)
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x21;
+        frame[1] = 0x06;
+        frame[2] = 0x21;
+        frame[3] = ledMode;
+        frame[4] = brightness;
+        frame[5] = colorR;
+        frame[6] = colorG;
+        frame[7] = colorB;
+        return frame;
+    }
+
+    /// <summary>Build Get Wheel Button Light Global command (0x2106).</summary>
+    public static byte[] BuildGetWheelButtonLightGlobalCommand()
+    {
+        var frame = new byte[FrameSize];
+        frame[0] = 0x81;
+        frame[1] = 0x06;
+        frame[2] = 0x21;
+        return frame;
+    }
+
+    /// <summary>Parse Wheel Button Light Global response (0x2106).</summary>
+    public static WheelButtonLightGlobalResponse? ParseWheelButtonLightGlobalResponse(byte[] data)
+    {
+        if (data == null || data.Length < 8)
+            return null;
+        if (data[0] != 0xC1 || data[1] != 0x06 || data[2] != 0x21)
+            return null;
+
+        return new WheelButtonLightGlobalResponse
+        {
+            LedMode = data[3],
+            Brightness = data[4],
+            ColorR = data[5],
+            ColorG = data[6],
+            ColorB = data[7]
+        };
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  面盘按键灯单独效果协议 (0x2107)
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Build Set Wheel Button Light command (0x2107) — per-LED individual effect.
+    /// Protocol: [0x21, 0x07, 0x21, ledIndex, colorRGB(3B), telemetryFunc, flashSpeed, telemetryColorRGB(3B), reserved...]
+    /// </summary>
+    public static byte[] BuildSetWheelButtonLightCommand(byte ledIndex,
         byte colorR, byte colorG, byte colorB, byte telemetryFunc, byte flashSpeed,
         byte telemetryColorR, byte telemetryColorG, byte telemetryColorB)
     {
@@ -666,17 +717,15 @@ public class DeviceProtocolService
         frame[0] = 0x21;
         frame[1] = 0x07;
         frame[2] = 0x21;
-        frame[3] = ledMode;
-        frame[4] = ledIndex;
-        frame[5] = brightness;
-        frame[6] = colorR;
-        frame[7] = colorG;
-        frame[8] = colorB;
-        frame[9] = telemetryFunc;
-        frame[10] = flashSpeed;
-        frame[11] = telemetryColorR;
-        frame[12] = telemetryColorG;
-        frame[13] = telemetryColorB;
+        frame[3] = ledIndex;
+        frame[4] = colorR;
+        frame[5] = colorG;
+        frame[6] = colorB;
+        frame[7] = telemetryFunc;
+        frame[8] = flashSpeed;
+        frame[9] = telemetryColorR;
+        frame[10] = telemetryColorG;
+        frame[11] = telemetryColorB;
         return frame;
     }
 
@@ -691,27 +740,25 @@ public class DeviceProtocolService
         return frame;
     }
 
-    /// <summary>Parse Wheel Button Light response (0x2107).</summary>
+    /// <summary>Parse Wheel Button Light response (0x2107) — per-LED individual effect.</summary>
     public static WheelButtonLightResponse? ParseWheelButtonLightResponse(byte[] data)
     {
-        if (data == null || data.Length < 14)
+        if (data == null || data.Length < 12)
             return null;
         if (data[0] != 0xC1 || data[1] != 0x07 || data[2] != 0x21)
             return null;
 
         return new WheelButtonLightResponse
         {
-            LedMode = data[3],
-            LedIndex = data[4],
-            Brightness = data[5],
-            ColorR = data[6],
-            ColorG = data[7],
-            ColorB = data[8],
-            TelemetryFunc = data[9],
-            FlashSpeed = data[10],
-            TelemetryColorR = data[11],
-            TelemetryColorG = data[12],
-            TelemetryColorB = data[13]
+            LedIndex = data[3],
+            ColorR = data[4],
+            ColorG = data[5],
+            ColorB = data[6],
+            TelemetryFunc = data[7],
+            FlashSpeed = data[8],
+            TelemetryColorR = data[9],
+            TelemetryColorG = data[10],
+            TelemetryColorB = data[11]
         };
     }
 
