@@ -7,11 +7,16 @@ namespace HITAPEX.Services;
 
 public class PresetService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
+    };
 
     private readonly string _personalDir;
     private readonly string _personalFilePath;
     private readonly string _officialFilePath;
+    private readonly SemaphoreSlim _fileLock = new(1, 1);
 
     public PresetService()
     {
@@ -89,9 +94,10 @@ public class PresetService
     /// <summary>保存指定设备类型的个人预设（合并其他类型预设后写入文件）</summary>
     public void SavePersonalPresets(List<PresetItem> presets, DeviceType deviceType)
     {
+        _fileLock.Wait();
         try
         {
-            var allPresets = LoadPersonalPresets();
+            var allPresets = LoadPersonalPresetsUnlocked();
             allPresets.RemoveAll(p => p.DeviceType == deviceType);
             allPresets.AddRange(presets);
             var json = JsonSerializer.Serialize(allPresets, JsonOptions);
@@ -101,11 +107,16 @@ public class PresetService
         {
             System.Diagnostics.Debug.WriteLine($"[PresetService] 保存个人预设失败: {ex.Message}");
         }
+        finally
+        {
+            _fileLock.Release();
+        }
     }
 
     /// <summary>保存全部个人预设（覆盖写入，用于兼容旧调用）</summary>
     public void SavePersonalPresets(List<PresetItem> presets)
     {
+        _fileLock.Wait();
         try
         {
             var json = JsonSerializer.Serialize(presets, JsonOptions);
@@ -115,6 +126,34 @@ public class PresetService
         {
             System.Diagnostics.Debug.WriteLine($"[PresetService] 保存个人预设失败: {ex.Message}");
         }
+        finally
+        {
+            _fileLock.Release();
+        }
+    }
+
+    /// <summary>加载个人预设（不加锁的内部版本，仅供 SavePersonalPresets 持有锁时调用）</summary>
+    private List<PresetItem> LoadPersonalPresetsUnlocked()
+    {
+        try
+        {
+            if (!File.Exists(_personalFilePath))
+                return new List<PresetItem>();
+
+            var json = File.ReadAllText(_personalFilePath);
+            var presets = JsonSerializer.Deserialize<List<PresetItem>>(json, JsonOptions);
+            if (presets != null)
+            {
+                foreach (var p in presets)
+                    p.IsPersonal = true;
+                return presets;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[PresetService] 加载个人预设失败: {ex.Message}");
+        }
+        return new List<PresetItem>();
     }
 
     /// <summary>导出单个预设到指定文件路径</summary>

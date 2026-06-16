@@ -147,10 +147,6 @@ public partial class PedalParameterControl : UserControl
 
             // 初始化位置显示为 0，清除 XAML 设计时占位值
             UpdatePedalPositionDisplay(0, 0, 0, 0, 0, 0);
-
-            // 首次 Load 时订阅 HID 数据，之后一直保持（不随 Unload 取消）
-            // 这样 _latestRaw* 缓存值始终是最新的，切回界面时立即刷新
-            SubscribeHidData();
         }
 
         // 每次 Load 都刷新设备连接状态和固件信息
@@ -712,7 +708,7 @@ public partial class PedalParameterControl : UserControl
     private bool PerformSave()
     {
         var popup = GetPresetListPopup();
-        if (popup == null || App.PresetService == null) return false;
+        if (App.PresetService == null) return false;
 
         try
         {
@@ -722,7 +718,7 @@ public partial class PedalParameterControl : UserControl
 
             target.Parameters = CaptureCurrentParameters();
             App.PresetService.SavePersonalPresets(personalPresets, Models.Usb.DeviceType.Pedal);
-            popup.RefreshPersonalPresets(personalPresets);
+            popup?.RefreshPersonalPresets(personalPresets);
 
             _appliedPresetParameters = CaptureCurrentParameters();
             _isPresetModified = false;
@@ -2001,7 +1997,9 @@ public partial class PedalParameterControl : UserControl
     /// <summary>构建并发送踏板参数命令到已连接的踏板设备</summary>
     private void SendPedalParameters()
     {
-        if (_connectedPedalDevice == null || _isSendingParameters || _isApplyingParameters)
+        // 通过基座连接的踏板使用基座设备作为通信目标
+        var targetDevice = _connectedPedalDevice ?? (_isPedalViaBase ? _baseDevice : null);
+        if (targetDevice == null || _isSendingParameters || _isApplyingParameters)
             return;
 
         // 用户主动修改参数时标记已更改
@@ -2024,8 +2022,8 @@ public partial class PedalParameterControl : UserControl
                 brakeDir, brakePoints, (byte)Math.Round(_brakeDeadZoneLeft), (byte)Math.Round(_brakeDeadZoneRight),
                 throttleDir, throttlePoints, (byte)Math.Round(_throttleDeadZoneLeft), (byte)Math.Round(_throttleDeadZoneRight));
 
-            App.UsbManager?.SendToDevice(_connectedPedalDevice.DeviceKey, cmd);
-            Debug.WriteLine($"[PedalControl] 踏板参数已发送到 {_connectedPedalDevice.DeviceKey}");
+            App.UsbManager?.SendToDevice(targetDevice.DeviceKey, cmd);
+            Debug.WriteLine($"[PedalControl] 踏板参数已发送到 {targetDevice.DeviceKey}");
         }
         catch (Exception ex)
         {

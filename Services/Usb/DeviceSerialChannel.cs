@@ -122,9 +122,17 @@ public class DeviceSerialChannel : IDisposable
 
     private void StopReading()
     {
-        _readCts?.Cancel();
-        _readCts?.Dispose();
-        _readCts = null;
+        var cts = Interlocked.Exchange(ref _readCts, null);
+        if (cts == null)
+            return;
+
+        cts.Cancel();
+        // 延迟销毁 CancellationTokenSource，避免 ReadLoop 中仍有未完成的 Task.Delay 引用已释放的 Token
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1000);
+            cts.Dispose();
+        });
     }
 
     private async Task ReadLoop(CancellationToken token)
@@ -161,6 +169,10 @@ public class DeviceSerialChannel : IDisposable
                 }
             }
             catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (ObjectDisposedException)
             {
                 break;
             }

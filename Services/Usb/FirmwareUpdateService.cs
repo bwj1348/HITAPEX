@@ -51,10 +51,18 @@ public class FirmwareUpdateService
     private const int DeviceReconnectTimeoutMs = 10000;
 
     private CancellationTokenSource? _currentUpdateCts;
+    private readonly object _updateLock = new();
     private readonly ConcurrentDictionary<string, TaskCompletionSource<UsbDeviceInfo>> _deviceWaiters = new();
 
     /// <summary>是否正在执行固件更新</summary>
-    public bool IsUpdating => _currentUpdateCts != null && !_currentUpdateCts.IsCancellationRequested;
+    public bool IsUpdating
+    {
+        get
+        {
+            var cts = _currentUpdateCts;
+            return cts != null && !cts.IsCancellationRequested;
+        }
+    }
 
     public event Action<FirmwareUpdateProgress>? ProgressChanged;
     public event Action<string>? DebugLog;

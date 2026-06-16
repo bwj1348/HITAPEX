@@ -313,6 +313,7 @@ public partial class MainWindow : Window
                 if (deviceControl.PedalControl is { IsLoaded: true, HasUnsavedChanges: true })
                 {
                     _isCheckingUnsavedNavigation = true;
+                    var currentNav = _viewModel.SelectedNavigationItem;
                     deviceControl.PedalControl.ShowUnsavedDialog(
                         onSaved: () =>
                         {
@@ -321,8 +322,9 @@ public partial class MainWindow : Window
                         },
                         onCancelled: () =>
                         {
+                            // 取消导航：留在当前页面，恢复 RadioButton 选中状态
                             _isCheckingUnsavedNavigation = false;
-                            _viewModel.SelectedNavigationItem = navItem;
+                            currentNav?.RaisePropertyChanged(nameof(NavigationItem.IsSelected));
                         });
                     return;
                 }
@@ -330,6 +332,7 @@ public partial class MainWindow : Window
                 if (deviceControl.SteeringWheelControl is { IsLoaded: true, HasUnsavedChanges: true })
                 {
                     _isCheckingUnsavedNavigation = true;
+                    var currentNav = _viewModel.SelectedNavigationItem;
                     deviceControl.SteeringWheelControl.ShowUnsavedDialog(
                         onSaved: () =>
                         {
@@ -339,7 +342,7 @@ public partial class MainWindow : Window
                         onCancelled: () =>
                         {
                             _isCheckingUnsavedNavigation = false;
-                            _viewModel.SelectedNavigationItem = navItem;
+                            currentNav?.RaisePropertyChanged(nameof(NavigationItem.IsSelected));
                         });
                     return;
                 }
@@ -347,6 +350,7 @@ public partial class MainWindow : Window
                 if (deviceControl.BaseControl is { IsLoaded: true, HasUnsavedChanges: true })
                 {
                     _isCheckingUnsavedNavigation = true;
+                    var currentNav = _viewModel.SelectedNavigationItem;
                     deviceControl.BaseControl.ShowUnsavedDialog(
                         onSaved: () =>
                         {
@@ -356,7 +360,7 @@ public partial class MainWindow : Window
                         onCancelled: () =>
                         {
                             _isCheckingUnsavedNavigation = false;
-                            _viewModel.SelectedNavigationItem = navItem;
+                            currentNav?.RaisePropertyChanged(nameof(NavigationItem.IsSelected));
                         });
                     return;
                 }

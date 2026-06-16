@@ -155,6 +155,8 @@ public partial class DeviceUserControl : UserControl
                 if (_currentControl == _pedalControl && _pedalControl is { HasUnsavedChanges: true })
                 {
                     _isCheckingUnsaved = true;
+                    var savedIdx = _currentIndex;
+                    var savedBtn = GetCurrentNavButton();
                     _pedalControl.ShowUnsavedDialog(
                         onSaved: () =>
                         {
@@ -163,13 +165,19 @@ public partial class DeviceUserControl : UserControl
                         },
                         onCancelled: () =>
                         {
+                            // 取消子导航：恢复原 RadioButton 选中状态
                             _isCheckingUnsaved = false;
-                            ShowControl(targetControl, true);
+                            _currentIndex = savedIdx;
+                            RadioButton? btn = savedBtn;
+                            if (btn != null)
+                                btn.IsChecked = true;
                         });
                 }
                 else if (_currentControl == _steeringWheelControl && _steeringWheelControl is { HasUnsavedChanges: true })
                 {
                     _isCheckingUnsaved = true;
+                    var savedIdx = _currentIndex;
+                    var savedBtn = GetCurrentNavButton();
                     _steeringWheelControl.ShowUnsavedDialog(
                         onSaved: () =>
                         {
@@ -179,12 +187,17 @@ public partial class DeviceUserControl : UserControl
                         onCancelled: () =>
                         {
                             _isCheckingUnsaved = false;
-                            ShowControl(targetControl, true);
+                            _currentIndex = savedIdx;
+                            RadioButton? btn = savedBtn;
+                            if (btn != null)
+                                btn.IsChecked = true;
                         });
                 }
                 else if (_currentControl == _baseControl && _baseControl is { HasUnsavedChanges: true })
                 {
                     _isCheckingUnsaved = true;
+                    var savedIdx = _currentIndex;
+                    var savedBtn = GetCurrentNavButton();
                     _baseControl.ShowUnsavedDialog(
                         onSaved: () =>
                         {
@@ -194,7 +207,10 @@ public partial class DeviceUserControl : UserControl
                         onCancelled: () =>
                         {
                             _isCheckingUnsaved = false;
-                            ShowControl(targetControl, true);
+                            _currentIndex = savedIdx;
+                            RadioButton? btn = savedBtn;
+                            if (btn != null)
+                                btn.IsChecked = true;
                         });
                 }
                 else
@@ -204,6 +220,14 @@ public partial class DeviceUserControl : UserControl
             }
         }
     }
+
+    private RadioButton? GetCurrentNavButton() => _currentIndex switch
+    {
+        0 => BaseNavButton,
+        1 => SteeringWheelNavButton,
+        2 => PedalNavButton,
+        _ => null
+    };
 
     private void ShowControl(UserControl? control, bool animate)
     {

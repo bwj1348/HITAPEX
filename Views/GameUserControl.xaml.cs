@@ -341,7 +341,8 @@ public partial class GameUserControl : UserControl
             dialog.AddButton("重 新 启 动", (s, args) =>
             {
                 dialog.Hide();
-                LaunchGameButton_Click(null, null);
+                if (_selectedGame != null)
+                    GameLauncher.Launch(_selectedGame);
             }, isPrimary: true);
 
             dialog.AddButton("取 消", (s, args) =>

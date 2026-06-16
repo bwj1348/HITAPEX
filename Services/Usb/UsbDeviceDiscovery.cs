@@ -202,8 +202,8 @@ public class UsbDeviceDiscovery : IDisposable
             if (string.IsNullOrEmpty(portName))
                 return;
 
-            // 延迟等待驱动完全加载
-            Thread.Sleep(500);
+            // 延迟等待驱动完全加载（异步延迟，不阻塞 WMI 事件线程）
+            Task.Delay(500).Wait();
 
             var deviceInfo = new UsbDeviceInfo
             {

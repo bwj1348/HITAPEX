@@ -816,11 +816,17 @@ public partial class HomeUserControl : UserControl
             {
                 try
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    var url = _banners[index].LinkUrl;
+                    // 仅允许 http/https 协议，防止 file:// 或命令注入
+                    if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                        url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     {
-                        FileName = _banners[index].LinkUrl,
-                        UseShellExecute = true
-                    });
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = url,
+                            UseShellExecute = true
+                        });
+                    }
                 }
                 catch
                 {

@@ -39,6 +39,8 @@ public class DeviceProtocolService
             var namePacket = ParsePresetNameResponse(data);
             if (namePacket != null)
             {
+                bool isComplete;
+                List<PresetNameResponse> capturedPackets;
                 lock (collection.Packets)
                 {
                     // 首个包直接加入，后续包需校验 DeviceType 一致
@@ -46,16 +48,19 @@ public class DeviceProtocolService
                         return;
 
                     collection.Packets.Add(namePacket);
+
+                    // 在锁内完成完整性检查，避免 TOCTOU 竞态
+                    var totalLen = collection.Packets[0].TotalLength;
+                    var expectedPackets = Math.Max(1, (totalLen + PresetNameChunkSize - 1) / PresetNameChunkSize);
+                    isComplete = collection.Packets.Count >= expectedPackets;
+                    capturedPackets = isComplete ? new List<PresetNameResponse>(collection.Packets) : null!;
                 }
 
-                // 检查是否已收齐所有包
-                var totalLen = collection.Packets[0].TotalLength;
-                var expectedPackets = Math.Max(1, (totalLen + PresetNameChunkSize - 1) / PresetNameChunkSize);
-                if (collection.Packets.Count >= expectedPackets)
+                if (isComplete)
                 {
                     if (_presetNameCollections.TryRemove(device.DeviceKey, out _))
                     {
-                        var name = PresetNameResponse.DecodeNameFromPackets(collection.Packets);
+                        var name = PresetNameResponse.DecodeNameFromPackets(capturedPackets);
                         collection.Tcs.TrySetResult(name);
                         collection.Cts.Cancel();
                     }

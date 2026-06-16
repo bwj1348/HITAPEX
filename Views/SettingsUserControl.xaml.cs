@@ -429,7 +429,8 @@ public partial class SettingsUserControl : UserControl
             SetProgress(20);
 
             // Step 2: Start firmware update via FirmwareUpdateService
-            if (App.FirmwareUpdater == null)
+            var firmwareUpdater = App.FirmwareUpdater;
+            if (firmwareUpdater == null)
             {
                 progressDialog.Hide();
                 device.Status = "服务不可用";
@@ -442,13 +443,19 @@ public partial class SettingsUserControl : UserControl
                 Dispatcher.Invoke(() => SetProgress(20 + progress.ProgressPercent * 80 / 100));
             }
 
-            App.FirmwareUpdater.ProgressChanged += OnUpdateProgress;
+            firmwareUpdater.ProgressChanged += OnUpdateProgress;
 
-            var result = await App.FirmwareUpdater.UpdateFirmwareAsync(
-                usbDevice, firmwareInfo, firmwareData, _updateCts.Token);
-
-            // Clean up progress event
-            App.FirmwareUpdater.ProgressChanged -= OnUpdateProgress;
+            FirmwareUpdateResult result;
+            try
+            {
+                result = await firmwareUpdater.UpdateFirmwareAsync(
+                    usbDevice, firmwareInfo, firmwareData, _updateCts.Token);
+            }
+            finally
+            {
+                // 确保即使异常也会清理事件 handler
+                firmwareUpdater.ProgressChanged -= OnUpdateProgress;
+            }
 
             progressDialog.Hide();
 
@@ -875,9 +882,9 @@ public partial class SettingsUserControl : UserControl
 
     private void UpdateButtonText(string text)
     {
-        if (CheckUpdateButton.Template.FindName("ButtonText", CheckUpdateButton) is TextBlock buttonText)
+        if (CheckUpdateButton.Template?.FindName("ButtonText", CheckUpdateButton) is TextBlock buttonText)
         {
-            CheckUpdateButton.Content = text;
+            buttonText.Text = text;
         }
     }
 
@@ -1335,29 +1342,31 @@ public partial class SettingsUserControl : UserControl
     }
 }
 
+// NOTE: This is a local RelayCommand copy used within SettingsUserControl.
+// Consider using the shared ViewModels.RelayCommand instead when refactoring.
 public class RelayCommand : ICommand
 {
-    private readonly Action<object> _execute;
-    private readonly Func<object, bool> _canExecute;
+    private readonly Action<object?> _execute;
+    private readonly Func<object?, bool>? _canExecute;
 
-    public RelayCommand(Action<object> execute, Func<object, bool> canExecute = null)
+    public RelayCommand(Action<object?> execute, Func<object?, bool>? canExecute = null)
     {
         _execute = execute ?? throw new ArgumentNullException(nameof(execute));
         _canExecute = canExecute;
     }
 
-    public event EventHandler CanExecuteChanged
+    public event EventHandler? CanExecuteChanged
     {
         add { CommandManager.RequerySuggested += value; }
         remove { CommandManager.RequerySuggested -= value; }
     }
 
-    public bool CanExecute(object parameter)
+    public bool CanExecute(object? parameter)
     {
         return _canExecute == null || _canExecute(parameter);
     }
 
-    public void Execute(object parameter)
+    public void Execute(object? parameter)
     {
         _execute(parameter);
     }

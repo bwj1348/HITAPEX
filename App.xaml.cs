@@ -23,6 +23,19 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // 注册全局未处理异常处理，防止 fire-and-forget 任务异常静默丢失
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            Debug.WriteLine($"[App] 未观测任务异常: {args.Exception?.Message}");
+            args.SetObserved();
+        };
+
+        DispatcherUnhandledException += (_, args) =>
+        {
+            Debug.WriteLine($"[App] 未处理UI异常: {args.Exception?.Message}");
+            args.Handled = true;
+        };
+
         InitializeUsbManager();
 
         var mainWindow = new MainWindow();

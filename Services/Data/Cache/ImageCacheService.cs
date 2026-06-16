@@ -20,7 +20,8 @@ public static class ImageCacheService
         var tasks = new List<Task>();
         foreach (var game in games)
         {
-            if (game.CoverImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(game.CoverImageUrl) &&
+                game.CoverImageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 tasks.Add(CacheImageAsync(game.Id, "cover", game.CoverImageUrl, localPath => game.CoverImageUrl = localPath));
             if (!string.IsNullOrEmpty(game.BgImageUrl))
                 tasks.Add(CacheImageAsync(game.Id, "bg", game.BgImageUrl, localPath => game.BgImageUrl = localPath));

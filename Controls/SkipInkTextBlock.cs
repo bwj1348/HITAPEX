@@ -7,9 +7,9 @@ namespace HITAPEX.Controls
     public class SkipInkTextBlock : FrameworkElement
     {
         // ==========================================
-        // 1. 基础文本与颜色属性
+        // 1. Basic text and color properties
         // ==========================================
-        
+
         public static readonly DependencyProperty TextProperty =
             DependencyProperty.Register("Text", typeof(string), typeof(SkipInkTextBlock),
                 new FrameworkPropertyMetadata(string.Empty, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.AffectsMeasure));
@@ -35,7 +35,7 @@ namespace HITAPEX.Controls
         public Brush Background { get => (Brush)GetValue(BackgroundProperty); set => SetValue(BackgroundProperty, value); }
 
         // ==========================================
-        // 2. 排版与字体属性 (方法二的核心增加部分)
+        // 2. Typography and font properties
         // ==========================================
 
         public static readonly DependencyProperty FontSizeProperty =
@@ -69,14 +69,23 @@ namespace HITAPEX.Controls
         public TextTrimming TextTrimming { get => (TextTrimming)GetValue(TextTrimmingProperty); set => SetValue(TextTrimmingProperty, value); }
 
         // ==========================================
-        // 3. 核心布局与渲染逻辑
+        // 3. Cache fields - avoid rebuilding FormattedText / Geometry every frame
+        // ==========================================
+
+        private FormattedText? _cachedFormattedText;
+        private Geometry? _cachedTextGeometry;
+        private Geometry? _cachedUnderlineGeometry;
+        private double _cachedMaxWidth;
+
+        // ==========================================
+        // 4. Core layout and rendering logic
         // ==========================================
 
         protected override Size MeasureOverride(Size availableSize)
         {
             if (string.IsNullOrEmpty(Text)) return new Size(0, 0);
 
-            var formattedText = CreateFormattedText(availableSize.Width);
+            var formattedText = GetOrCreateFormattedText(availableSize.Width);
             return new Size(formattedText.Width, formattedText.Height);
         }
 
@@ -84,25 +93,51 @@ namespace HITAPEX.Controls
         {
             if (string.IsNullOrEmpty(Text)) return;
 
-            // 1. 绘制背景膜，确保整个控件区域可以响应鼠标点击 (Cursor="Hand")
+            // 1. Draw background rect so the whole control area can respond to mouse clicks
             dc.DrawRectangle(Background, null, new Rect(0, 0, ActualWidth, ActualHeight));
 
-            var formattedText = CreateFormattedText(ActualWidth);
+            // Use cached geometry objects
+            EnsureGeometryCache(ActualWidth);
 
-            // 2. 获取文字的几何轮廓，并向外扩张2像素作为“保护罩”
-            Geometry textGeometry = formattedText.BuildGeometry(new Point(0, 0));
-            Geometry widenedTextGeometry = textGeometry.GetWidenedPathGeometry(new Pen(Brushes.Black, 2));
+            if (_cachedUnderlineGeometry != null)
+                dc.DrawGeometry(UnderlineBrush, null, _cachedUnderlineGeometry);
+            if (_cachedTextGeometry != null)
+                dc.DrawGeometry(Foreground, null, _cachedTextGeometry);
+        }
 
-            // 3. 创建下划线 (向下偏移2像素)
+        private FormattedText GetOrCreateFormattedText(double maxWidth)
+        {
+            if (_cachedFormattedText != null && _cachedMaxWidth == maxWidth)
+                return _cachedFormattedText;
+
+            _cachedFormattedText = CreateFormattedText(maxWidth);
+            _cachedMaxWidth = maxWidth;
+            InvalidateGeometryCache();
+            return _cachedFormattedText;
+        }
+
+        private void EnsureGeometryCache(double maxWidth)
+        {
+            // Ensure FormattedText is up to date
+            GetOrCreateFormattedText(maxWidth);
+
+            if (_cachedTextGeometry != null && _cachedUnderlineGeometry != null)
+                return;
+
+            var formattedText = _cachedFormattedText!;
+            _cachedTextGeometry = formattedText.BuildGeometry(new Point(0, 0));
+            var widenedTextGeometry = _cachedTextGeometry.GetWidenedPathGeometry(new Pen(Brushes.Black, 2));
+
             double lineY = formattedText.Baseline + 2;
-            Geometry underlineGeometry = new RectangleGeometry(new Rect(0, lineY, formattedText.Width, 1));
+            var underlineGeometry = new RectangleGeometry(new Rect(0, lineY, formattedText.Width, 1));
 
-            // 4. 布尔运算：用“保护罩”裁剪下划线，实现 Skip-Ink 效果
-            Geometry skipInkUnderline = Geometry.Combine(underlineGeometry, widenedTextGeometry, GeometryCombineMode.Exclude, null);
+            _cachedUnderlineGeometry = Geometry.Combine(underlineGeometry, widenedTextGeometry, GeometryCombineMode.Exclude, null);
+        }
 
-            // 5. 绘制断开的下划线和纯净的文字
-            dc.DrawGeometry(UnderlineBrush, null, skipInkUnderline);
-            dc.DrawGeometry(Foreground, null, textGeometry);
+        private void InvalidateGeometryCache()
+        {
+            _cachedTextGeometry = null;
+            _cachedUnderlineGeometry = null;
         }
 
         private FormattedText CreateFormattedText(double maxWidth)
@@ -111,17 +146,15 @@ namespace HITAPEX.Controls
                 Text ?? string.Empty,
                 System.Globalization.CultureInfo.CurrentCulture,
                 FlowDirection.LeftToRight,
-                // 直接使用我们注册的 FontFamily, FontStyle, FontWeight 依赖属性
                 new Typeface(FontFamily, FontStyle, FontWeight, FontStretches.Normal),
                 FontSize,
                 Foreground,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-            // 裁剪逻辑：限制最大宽度和高度，迫使系统使用省略号而不是换行
             if (TextTrimming != TextTrimming.None && !double.IsInfinity(maxWidth) && maxWidth > 0)
             {
                 formattedText.MaxTextWidth = maxWidth;
-                formattedText.MaxTextHeight = FontSize * 2; 
+                formattedText.MaxTextHeight = FontSize * 2;
                 formattedText.Trimming = TextTrimming;
             }
 

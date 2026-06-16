@@ -488,6 +488,8 @@ public partial class SteeringWheelParameterControl : UserControl
 
         _isApplyingPreset = true;
         ApplyPresetSnapshot(_appliedPresetParameters);
+        // 下发还原后的参数到设备，确保硬件与 UI 同步
+        SendWheelParameters();
         _isApplyingPreset = false;
         _isPresetModified = false;
         _deviceUnifiedColorIndex = _appliedPresetParameters.GlobalKeyColor;
@@ -558,7 +560,7 @@ public partial class SteeringWheelParameterControl : UserControl
     private bool PerformSave()
     {
         var popup = GetPresetListPopup();
-        if (popup == null || App.PresetService == null) return false;
+        if (App.PresetService == null) return false;
 
         try
         {
@@ -568,7 +570,7 @@ public partial class SteeringWheelParameterControl : UserControl
 
             target.WheelParameters = CaptureCurrentParameters();
             App.PresetService.SavePersonalPresets(personalPresets, DeviceType.Wheel);
-            popup.RefreshPersonalPresets(personalPresets);
+            popup?.RefreshPersonalPresets(personalPresets);
 
             _appliedPresetParameters = CaptureCurrentParameters();
             _isPresetModified = false;
@@ -975,11 +977,15 @@ public partial class SteeringWheelParameterControl : UserControl
         if (ClutchPointIndicator == null) return;
 
         var parentCanvas = ClutchPointIndicator.Parent as Canvas;
-        if (parentCanvas == null || parentCanvas.ActualWidth <= 0)
+        if (parentCanvas == null)
         {
-            // Canvas 尚未布局完成，记录当前值等布局完成后定位
             _deferredClutchPoint = _clutchPointValue;
-            parentCanvas!.SizeChanged += OnClutchCanvasSizeChanged;
+            return;
+        }
+        if (parentCanvas.ActualWidth <= 0)
+        {
+            _deferredClutchPoint = _clutchPointValue;
+            parentCanvas.SizeChanged += OnClutchCanvasSizeChanged;
             return;
         }
 

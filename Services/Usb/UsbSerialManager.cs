@@ -24,8 +24,16 @@ public class UsbSerialManager : IUsbSerialManager
     public event Action<DeviceLogEntry>? LogEntryAdded;
     public event Action<UsbDeviceInfo, string>? DeviceError;
 
-    public IReadOnlyList<UsbDeviceInfo> ConnectedDevices =>
-        _devices.Values.Where(d => d.State == DeviceConnectionState.Connected).ToList().AsReadOnly();
+    public IReadOnlyList<UsbDeviceInfo> ConnectedDevices
+    {
+        get
+        {
+            var connected = _devices.Values
+                .Where(d => d.State == DeviceConnectionState.Connected)
+                .ToList();
+            return connected;
+        }
+    }
 
     public bool IsRunning => _isRunning;
 

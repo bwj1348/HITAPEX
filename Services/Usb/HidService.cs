@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -46,10 +47,11 @@ public class HidService : IHidService
 
     public void Stop()
     {
-        if (_cts == null)
+        var cts = Interlocked.Exchange(ref _cts, null);
+        if (cts == null)
             return;
 
-        _cts.Cancel();
+        cts.Cancel();
 
         foreach (var kvp in _channels.ToList())
         {
@@ -59,8 +61,8 @@ public class HidService : IHidService
             }
         }
 
-        _cts.Dispose();
-        _cts = null;
+        // 延迟销毁 CancellationTokenSource，避免后台任务访问已释放的 Token
+        Task.Delay(1000).ContinueWith(_ => cts.Dispose(), TaskScheduler.Default);
     }
 
     public void Dispose()
@@ -112,8 +114,8 @@ public class HidService : IHidService
                         // 触发连接事件
                         HDeviceConnected?.Invoke(deviceInfo);
 
-                        // 为每个通道启动独立读取循环
-                        _ = Task.Run(() => ReadLoop(channel, descriptor.DeviceType, token), token);
+                        // 为每个通道启动独立异步读取循环
+                        _ = ReadLoop(channel, descriptor.DeviceType, token);
                     }
                     else
                     {
@@ -159,10 +161,11 @@ public class HidService : IHidService
 
             try { Task.Delay(2000, token).Wait(token); }
             catch (OperationCanceledException) { break; }
+            catch (ObjectDisposedException) { break; }
         }
     }
 
-    private void ReadLoop(HidChannel channel, DeviceType deviceType, CancellationToken token)
+    private async Task ReadLoop(HidChannel channel, DeviceType deviceType, CancellationToken token)
     {
         while (!token.IsCancellationRequested &&
                channel.State == DeviceConnectionState.Connected)
@@ -182,8 +185,9 @@ public class HidService : IHidService
                 break;
             }
 
-            try { Task.Delay(5, token).Wait(token); }
+            try { await Task.Delay(5, token); }
             catch (OperationCanceledException) { break; }
+            catch (ObjectDisposedException) { break; }
         }
     }
 
@@ -349,10 +353,10 @@ internal class HidChannel : IDisposable
         if (_handle == null || State != DeviceConnectionState.Connected)
             return null;
 
-        var buffer = new byte[Math.Max(_reportSize, 64)];
+        var buffer = ArrayPool<byte>.Shared.Rent(Math.Max(_reportSize, 64));
         try
         {
-            if (HidNative.ReadFile(_handle, buffer, (uint)buffer.Length,
+            if (HidNative.ReadFile(_handle, buffer, (uint)Math.Max(_reportSize, 64),
                     out uint bytesRead, IntPtr.Zero))
             {
                 if (bytesRead > 0)
@@ -366,6 +370,10 @@ internal class HidChannel : IDisposable
         catch
         {
             State = DeviceConnectionState.Error;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
         }
 
         return null;
