@@ -6,11 +6,13 @@ public class GameItem : INotifyPropertyChanged
 {
     public int Id { get; set; }
     public string Name { get; set; } = "";
-    public string CoverImageUrl { get; set; } = "";
+    public string? CoverImageUrl { get; set; }
     public string? BgImageUrl { get; set; }
     public string SteamId { get; set; } = "";
     public bool IsInstalled { get; set; }
+    public bool NeedsTelemetryConfig { get; set; }
     public string LaunchPath { get; set; } = "";
+    public LaunchModeUdf LaunchMode { get; set; } = LaunchModeUdf.Steam;
     public string Description { get; set; } = "";
     public string Version { get; set; } = "";
     public string LastPlayed { get; set; } = "";

@@ -85,20 +85,23 @@ public class SteamInstallService
         var paths = new List<string>();
         try
         {
-            var lines = File.ReadAllLines(filePath);
-            foreach (var line in lines)
+            foreach (var line in File.ReadLines(filePath))
             {
                 var trimmed = line.Trim();
-                if (trimmed.StartsWith("\"path\""))
-                {
-                    var parts = trimmed.Split('\t');
-                    if (parts.Length >= 2)
-                    {
-                        var path = parts[1].Trim('"').Replace("\\\\", "\\");
-                        if (Directory.Exists(path))
-                            paths.Add(path);
-                    }
-                }
+                if (!trimmed.StartsWith("\"path\"")) continue;
+
+                // 提取引号内的路径值：\"path\" 后紧跟的制表符/空格后第一个带引号的值
+                // 格式示例："path"\t\t"D:\\SteamLibrary"
+                var valueStart = trimmed.IndexOf('"', 6); // 跳过 "path" (6 个字符)
+                if (valueStart < 0) continue;
+
+                var valueEnd = trimmed.IndexOf('"', valueStart + 1);
+                if (valueEnd < 0) continue;
+
+                var path = trimmed.Substring(valueStart + 1, valueEnd - valueStart - 1)
+                                  .Replace("\\\\", "\\");
+                if (Directory.Exists(path))
+                    paths.Add(path);
             }
         }
         catch
@@ -112,16 +115,16 @@ public class SteamInstallService
     {
         try
         {
-            var lines = File.ReadAllLines(manifestPath);
-            foreach (var line in lines)
+            foreach (var line in File.ReadLines(manifestPath))
             {
                 var trimmed = line.Trim();
-                if (trimmed.StartsWith("\"installdir\""))
-                {
-                    var parts = trimmed.Split('\t');
-                    if (parts.Length >= 2)
-                        return parts[^1].Trim('"');
-                }
+                if (!trimmed.StartsWith("\"installdir\"")) continue;
+
+                var valueStart = trimmed.IndexOf('"', 13); // 跳过 "installdir"
+                if (valueStart < 0) continue;
+                var valueEnd = trimmed.IndexOf('"', valueStart + 1);
+                if (valueEnd < 0) continue;
+                return trimmed.Substring(valueStart + 1, valueEnd - valueStart - 1);
             }
         }
         catch
@@ -135,16 +138,18 @@ public class SteamInstallService
     {
         try
         {
-            var lines = File.ReadAllLines(manifestPath);
-            foreach (var line in lines)
+            foreach (var line in File.ReadLines(manifestPath))
             {
                 var trimmed = line.Trim();
-                if (trimmed.StartsWith("\"LastPlayed\""))
-                {
-                    var parts = trimmed.Split('\t');
-                    if (parts.Length >= 2 && long.TryParse(parts[^1].Trim('"'), out var unixTime))
-                        return DateTimeOffset.FromUnixTimeSeconds(unixTime).LocalDateTime;
-                }
+                if (!trimmed.StartsWith("\"LastPlayed\"")) continue;
+
+                var valueStart = trimmed.IndexOf('"', 13); // 跳过 "LastPlayed"
+                if (valueStart < 0) continue;
+                var valueEnd = trimmed.IndexOf('"', valueStart + 1);
+                if (valueEnd < 0) continue;
+                var valueStr = trimmed.Substring(valueStart + 1, valueEnd - valueStart - 1);
+                if (long.TryParse(valueStr, out var unixTime))
+                    return DateTimeOffset.FromUnixTimeSeconds(unixTime).LocalDateTime;
             }
         }
         catch

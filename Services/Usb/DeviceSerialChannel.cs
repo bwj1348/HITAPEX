@@ -162,9 +162,10 @@ public class DeviceSerialChannel : IDisposable
 
                     var rawData = new byte[bytesRead];
                     Array.Copy(readBuffer, 0, rawData, 0, bytesRead);
-                    _logger.Log(DeviceEventType.RawDataReceived, _deviceInfo.DeviceKey,
-                        $"接收原始数据: {bytesRead} 字节",
-                        $"Hex={BitConverter.ToString(rawData)}");
+                    // 原始数据日志量极大，调试时取消注释
+                    // _logger.Log(DeviceEventType.RawDataReceived, _deviceInfo.DeviceKey,
+                    //     $"接收原始数据: {bytesRead} 字节",
+                    //     $"Hex={BitConverter.ToString(rawData)}");
                     RawDataReceived?.Invoke(this, rawData);
                 }
             }

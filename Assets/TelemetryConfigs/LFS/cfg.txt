@@ -1,0 +1,222 @@
+Version 0.8C11
+Start Windowed 1
+Welcome A 0
+Borderless Window 4 4
+Edition 0
+Window 80 80 1680 980
+Adapter Select 0
+Output Select 0
+Speaker GUID 00000000-0000-0000-0000-000000000000
+Control GUID 00000000-0000-0000-0000-000000000000
+Show FPS 1
+Mirror Internal 1
+Mirror External 1
+Clocks Internal 1
+Clocks External 0
+Control Mode 0 1
+Steer KB 0
+Debug Level 1
+Next Shot 1
+SS Type 1
+Thr Brk Rate 6.00
+KB Steer Rate 0.40
+KB Return Rate 0.20
+KB Fast Mul 2.00
+KB Slow Mul 0.50
+KB Limit Mul 0.80
+Replay Skins 1
+FF Steps 1
+FF Skip 4
+FF Strength 25.00
+Fuel Start 50
+Fuel Pit 30
+Tyre Limit 30
+Strategy 1
+Tonemapper 1
+MP Speedup Opt 1
+Auto Get Skins 1
+Helmet Skins 1
+Instant Look 0
+Look Function 0
+PP Linearity 0.50
+Steer Look Amount 1.00
+Steer Look Reduce 0.00
+View Filter Rate 0.20
+View Horizon Prop 100.00
+Tilt DPG 1.00
+LSPG 0.000
+FSPG 0.000
+VSPG 0.000
+Camera Delay 1.00
+MP Draw Dist 300.00
+Dynamic Lod 0.50
+CPU Percent 80
+Shadow Cascades 4
+Shadow Size 1 0
+Dynamic Reflect 8 4
+Headlight Effects 12 6
+G3D_OPTIONS 0 0 0 0 2 1 1
+G3D_VR_MONITOR_VIEW 1
+G3D_VR_FLAGS 2
+G3D_VR_MENU_FOV 70
+G3D_VR_MENU_DIST 0.500
+G3D_VR_VERTICAL_FOV 115
+G3D_VR_REPLAY_3D 50
+G3D_VR_RES_ADJUST 100
+G3D_VR_POSITION 0
+G3D_HMD_HUD_SEP 0.050
+G3D_HMD_IPD 50.0
+G3D_SCREEN_HUD_SEP 0.000
+G3D_SCREEN_WIDTH 1440
+G3D_SCREEN_IPD 50.0
+Vertical Sync 0
+MIP_BIAS_2D -0.5 -1.0 -1.5 -2.0
+MIP_BIAS_VR 0.0 0.0 -0.5 -1.0
+Main LOD 1.00
+Dust LOD 1.00
+Screen Info 0 100 2560 1440
+Time Options 0 0 540 213 0 0
+TrackEd Speed 65536
+ModelEd Speed 65536
+Editor Options 0
+Screen Flags 14733827
+Audio Options 8
+Extra Displays 7
+Render Mode 2 2
+OSet Flags 0 0
+Sun Colour 255 255 255
+Sky High 150 160 200
+Ground 40 40 40
+Back Texture 100 100 100
+FOX Dash2 120 160 200
+BF1 Dash2 48 48 255
+FO8 Dash2 200 40 40
+FBM Dash2 140 160 140
+Road Gear LED2 48 48 255
+Clock Text2 200 200 200
+Clock Needle2 200 40 40
+Split Text 200 200 200
+Editor FOV 60.0
+View Smooth 0.2
+Transition 2.0
+Button Look 45
+Fol Lag 0.3
+Fol Height 0.3
+Fol Pitch 12.0
+Fol Dist 5.0
+Fol Dir 0
+View Lock 0
+Eye Height 1.60
+Map Name Blackwood
+Ply Name unnamed
+Master Port 29339
+Auto Kick 3
+Location 0
+Server Name 
+Find User 
+Selected Car XF GTI
+Setup Name 
+Colours Name 
+Game Name 
+Game IP auto
+Game Port 63392
+Game Pass 
+Game Admin 
+Language Simplified_Chinese
+S1 Mode 0
+Upload Bandwidth 128
+Setup Index 0
+Colours Index 0
+Lighting 0
+Flip 0
+Config 1
+Race Start 1
+SCREEN_CX 0.00
+SCREEN_CY 0.00
+SCREEN_XMUL 1.00
+SCREEN_YMUL 1.00
+SHIFT_F9 0 100 1024 768
+Combined Non Linear 0.00
+Turn Compensation 1.00
+Mouse Non Linear 0.80
+Steer Smooth 0.00
+Speed Steer Reduction WM 0.00
+Half Reduce Speed m/s WM 50.00
+Speed Steer Reduction KB 1.00
+Half Reduce Speed m/s KB 50.00
+Mods Screen 0 2
+Driver Pos View 0
+Show Names 0
+Show Mouse 0
+Internal Show 0
+Show Map 2
+Pos List Cars 7
+Start Lights 2
+Skill Level 4
+Windowed Link 0
+ALL SPR MPR 0
+Music Dir data\ogg
+MUSIC 10.0
+BEEPS 10.0
+CAR_V 15.0
+ECHO_C 0.5
+SKID_B 0.5
+WIND_B 0.5
+Sound Delay 0.08
+Text Size 0.050
+Bloom Effect 0.90 0.0010
+Music Channel 3
+Antialiasing 2 2
+Mirror AA 2 2
+Filter AF 3 3
+Local Skins DDS 1
+Shadow Mode 2
+Max FPS 100
+Game Limit FPS 1
+Min Sleep 1
+Buffered Frames 1
+Shift Debounce 20
+Mod Filters 00003fff 0f 00 1 0
+Dedicated Host 0
+AI Use Ply Setup 0
+AI Use Ply Colours 0
+SPR Auto Save 1
+MPR Auto Save 1
+MPR Message Block 0
+Options 3
+Max Conns 8
+Modem Type 3
+Packs Per Sec 6
+Cars In Race 4
+Cars Per Guest 1
+Cars Per Host 1
+Admin Slots 1
+MP Rules 1048575
+MP Flags 15523
+MP Filter 256
+Rules_Y 0
+Rules_N 0
+Flags_Y 0
+Flags_N 0
+Conn To Master 1
+OutSim Mode 0
+OutSim Delay 1
+OutSim IP 127.0.0.1
+OutSim Port 0
+OutSim ID 0
+OutSim Opts 0
+OutGauge Mode 1
+OutGauge Delay 1
+OutGauge IP 127.0.0.1
+OutGauge Port 30000
+OutGauge ID 0
+TEST_SAT 0
+TEST_AI_STEER 0
+FN_J MS PGothic
+FN_H Microsoft JhengHei
+FN_S Gadugi
+FN_K Gadugi
+FW_J 600
+FW_H 600
+FW_S 600
+FW_K 600

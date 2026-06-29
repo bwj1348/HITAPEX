@@ -5,16 +5,31 @@ using HITAPEX.Models;
 
 namespace HITAPEX.Services;
 
+public enum LaunchMode
+{
+    Steam,
+    CustomPath
+}
+
 public static class GameLauncher
 {
-    public static bool Launch(GameItem? game)
+    /// <summary>
+    /// 启动游戏，并在 5 秒延迟后启动对应遥测采集。
+    /// </summary>
+    public static bool Launch(GameItem? game, LaunchMode mode = LaunchMode.Steam)
     {
         if (game == null)
             return false;
 
-        // 优先使用自定义启动路径
-        if (!string.IsNullOrWhiteSpace(game.LaunchPath))
+        // 自定义路径模式
+        if (mode == LaunchMode.CustomPath)
         {
+            if (string.IsNullOrWhiteSpace(game.LaunchPath))
+            {
+                Debug.WriteLine("[GameLauncher] 自定义路径模式下 LaunchPath 为空");
+                return false;
+            }
+
             try
             {
                 if (!File.Exists(game.LaunchPath))
@@ -31,6 +46,7 @@ public static class GameLauncher
                     UseShellExecute = true
                 });
                 game.LastLaunchTime = DateTime.Now;
+                _ = StartTelemetryAsync(game);
                 return true;
             }
             catch (Exception ex)
@@ -57,6 +73,7 @@ public static class GameLauncher
                     UseShellExecute = true
                 });
                 game.LastLaunchTime = DateTime.Now;
+                _ = StartTelemetryAsync(game);
                 return true;
             }
             catch (Exception ex)
@@ -66,5 +83,44 @@ public static class GameLauncher
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// 延迟 5 秒后尝试启动遥测数据采集（给游戏加载时间）。
+    /// </summary>
+    private static async Task StartTelemetryAsync(GameItem game)
+    {
+        var telemetryService = App.TelemetryService;
+        if (telemetryService == null) return;
+
+        if (!int.TryParse(game.SteamId, out var steamAppId))
+        {
+            Debug.WriteLine($"[GameLauncher] 无法解析 SteamId: {game.SteamId}");
+            return;
+        }
+
+        if (!Enum.IsDefined(typeof(TelemetryAPI.GameId), steamAppId) && steamAppId != 0)
+        {
+            Debug.WriteLine($"[GameLauncher] GameId={steamAppId} 不在 TelemetrySDK 支持列表中");
+            return;
+        }
+
+        await Task.Delay(5000);
+
+        try
+        {
+            if (telemetryService.Start(steamAppId))
+            {
+                Debug.WriteLine($"[GameLauncher] 遥测启动成功: {game.Name} (GameId={steamAppId})");
+            }
+            else
+            {
+                Debug.WriteLine($"[GameLauncher] 遥测启动失败: {game.Name} (GameId={steamAppId})");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[GameLauncher] 遥测启动异常: {ex.Message}");
+        }
     }
 }

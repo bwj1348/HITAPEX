@@ -11,7 +11,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\**\*" Exclude="Assets\*.ico;Assets\Presets\**\*" />
+    <Resource Include="Assets\**\*" Exclude="Assets\*.ico;Assets\Presets\**\*;Assets\TelemetryConfigs\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\TelemetryConfigs\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="TelemetrySDK.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<hardware_settings_config version="16" deviceId="0x56A5">
+	<cpu>
+		<threadStrategy workerMapFile="system/workerMap8Core.xml" forceFeedbackProcessor="6" dvdStorageProcessor="7" dataSetMonitorProcessor="4" renderProcessor="0" updateProcessor="2" fileStreamProcessor="5" />
+	</cpu>
+	<audio_card>
+		<dynamic_range value="high" />
+		<eq value="flat" />
+		<voice_chat enabled="true" />
+		<push_to_talk enabled="true" />
+		<music level="0" />
+		<replay_music level="47" />
+		<effects level="50" />
+		<engines level="50" />
+		<speech level="51" />
+		<surfaces level="51" />
+		<voip level="50" />
+	</audio_card>
+	<graphics_card rating="0">
+		<directx forcedx10="false" />
+		<eyefinity force="" osd="" />
+		<stereo enabled="false" separation="0.015" convergence="0.5" />
+		<resolution width="2560" height="1369" aspect="normal" fullscreen="0" vsync="0" multisampling="off">
+			<refreshRate rate="99" />
+		</resolution>
+		<gamma level="1.200000" />
+	</graphics_card>
+	<shadows enabled="false" size="512" maskQuality="0" particles="false" />
+	<advanced_fog enabled="false" />
+	<particles enabled="true" wind="false" dynamicRes="true" lowResScalar="8" nearFadeBias="1" />
+	<weather quality="0" />
+	<crowd enabled="false" detail="0" />
+	<cloth enabled="true" tessellation="false" />
+	<groundcover mode="off" clutter="false" />
+	<objects lod="0.1" maxlod="1" stones="false" />
+	<trees lod="1.0" maxlod="0" meshes="false" meshes_in_all_passes="false" />
+	<vehicles characterQuality="1" lodQuality="0" />
+	<track lod="0.8" />
+	<motion_blur enabled="false" />
+	<envmap size="128" drawallobjects="false" scaleminsize="2.0" mindistance="0.0" faces="0" />
+	<ibl probeSize="128" diffuseSize="16" diffuseSamples="64" specularSize="128" specularSamples="64" />
+	<water update="false" detail="0" scale="8" drawallobjects="false" tessellation="false" />
+	<mirrors enabled="false" width="192" height="64" car_maxlod="4" car_culldist="0.0" />
+	<skidmarks enabled="false" />
+	<dynamic_ambient_occ enabled="true" quality="0" />
+	<dynamic_ambient_occ_soft enabled="false" />
+	<night_lighting volumes="false" lights="25" shadows="false" onlyHeadlights="false" shadowSize="1024" />
+	<textures resolution="0" />
+	<shaders quality="0" low_quality="false" />
+	<motion_blur enabled="true" />
+	<anisotropic target="0" />
+	<physics environmentalDamage="true" vehicleDamage="true" />
+	<input device_type="auto" />
+	<screenshotMode enabled="false" />
+	<aoit enabled="false" />
+	<avsm enabled="false" />
+	<mouse_support enabled="false" />
+	<oculus enabled="true" headMovement="true" chromatic="true" timeWarp="true" vignette="true" overdrive="true" convergence="1.0" verticalOrientation="0.66" orientationLock="false" />
+	<motion_platform>
+		<dbox enabled="true" />
+		<udp enabled="true" extradata="3" ip="127.0.0.1" port="20777" delay="1" />
+		<custom_udp enabled="false" filename="packet_data.xml" ip="127.0.0.1" port="20777" delay="1" />
+		<fanatec enabled="true" pedalVibrationScale="1.0" wheelVibrationScale="1.0" ledTrueForGearsFalseForSpeed="true" />
+	</motion_platform>
+	<controls neutralTimeToShift="0.25" />
+	<supersampling level="1" />
+</hardware_settings_config>

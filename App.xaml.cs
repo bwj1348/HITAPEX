@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using HITAPEX.Models.Usb;
+using HITAPEX.Services;
+using HITAPEX.Services.Data;
 using HITAPEX.Services.Data.Api;
 using HITAPEX.Services.Usb;
 
@@ -18,10 +20,30 @@ public partial class App : Application
     public static FirmwareUpdateService? FirmwareUpdater { get; private set; }
     public static FirmwareApiService? FirmwareApi { get; private set; }
     public static Services.PresetService? PresetService { get; private set; }
+    public static TelemetryService? TelemetryService { get; private set; }
+    public static GameDataService? GameDataService { get; private set; }
+
+    private SplashWindow? _splash;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // 在独立 STA 线程上显示 splash，避免主线程初始化阻塞导致动画卡顿
+        var splashReady = new ManualResetEventSlim();
+        var splashThread = new Thread(() =>
+        {
+            _splash = new SplashWindow();
+            _splash.Loaded += (_, _) => splashReady.Set();
+            _splash.Show();
+            System.Windows.Threading.Dispatcher.Run();
+        })
+        {
+            IsBackground = true
+        };
+        splashThread.TrySetApartmentState(ApartmentState.STA);
+        splashThread.Start();
+        splashReady.Wait();
 
         // 注册全局未处理异常处理，防止 fire-and-forget 任务异常静默丢失
         TaskScheduler.UnobservedTaskException += (_, args) =>
@@ -39,21 +61,49 @@ public partial class App : Application
         InitializeUsbManager();
 
         var mainWindow = new MainWindow();
-
         SessionEnding += (_, _) => { IsSessionEnding = true; };
 
         if (HITAPEX.Properties.Settings.Default.StartMinimizedToTray)
         {
+            CloseSplash();
             mainWindow.MinimizeToTray();
         }
         else
         {
+            // 先关 splash 再显示主窗口，避免 Topmost splash 关闭时导致主窗口闪烁
+            CloseSplash();
             mainWindow.Show();
+            // 确保主窗口出现在最上层，不被其他应用遮挡
+            mainWindow.Activate();
+        }
+    }
+
+    /// <summary>
+    /// 安全关闭独立线程上的 splash 窗口，并释放线程和 Dispatcher 资源
+    /// </summary>
+    private void CloseSplash()
+    {
+        var splash = _splash;
+        _splash = null;
+        if (splash == null) return;
+
+        if (!splash.Dispatcher.HasShutdownStarted)
+        {
+            splash.Dispatcher.Invoke(() =>
+            {
+                splash.Close();
+                // 关闭 Dispatcher 消息循环，释放 STA 线程及所有 WPF 资源
+                splash.Dispatcher.BeginInvokeShutdown(System.Windows.Threading.DispatcherPriority.Normal);
+            });
         }
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        TelemetryService?.Dispose();
+        TelemetryService = null;
+        GameDataService?.Dispose();
+        GameDataService = null;
         HidService?.Dispose();
         HidService = null;
         UsbManager?.Dispose();
@@ -92,7 +142,9 @@ public partial class App : Application
         ProtocolService = new DeviceProtocolService(UsbManager);
         FirmwareUpdater = new FirmwareUpdateService(UsbManager, ProtocolService);
         FirmwareApi = new FirmwareApiService();
-        PresetService = new Services.PresetService();
+        PresetService = new PresetService();
+        TelemetryService = new TelemetryService();
+        GameDataService = new GameDataService();
 
         FirmwareUpdater.DebugLog += msg =>
             Debug.WriteLine($"[FirmwareUpdate] {msg}");

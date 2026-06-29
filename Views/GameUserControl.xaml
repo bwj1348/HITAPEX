@@ -151,6 +151,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Height="82" Margin="0,0,0,20">
@@ -201,7 +202,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Orientation="Horizontal" Grid.Column="0">
-                            <RadioButton x:Name="SteamLaunchRadio" Content="从Steam启动" Foreground="#EEEEEE" FontSize="16" VerticalAlignment="Center" Margin="0,0,20,0" IsChecked="True" Checked="LaunchModeRadio_Changed" Cursor="Hand">
+                            <RadioButton x:Name="SteamLaunchRadio" Content="从Steam启动" Foreground="#EEEEEE" FontSize="16" VerticalAlignment="Center" Margin="0,0,20,0" Checked="LaunchModeRadio_Changed" Cursor="Hand">
                                 <RadioButton.Style>
                                     <Style TargetType="RadioButton">
                                         <Setter Property="Template">
@@ -256,6 +257,27 @@
                             <!-- <TextBlock x:Name="CustomPathText" Text="点击选择游戏路径..." FontSize="13" Foreground="#B3EEEEEE" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextDecorations="Underline" Cursor="Hand" MouseLeftButtonDown="BrowseCustomPath_Click" MaxWidth="300"/> -->
                             <controls:SkipInkTextBlock x:Name="CustomPathText" Text="点击选择游戏路径..." FontSize="16" FontWeight="Regular" Foreground="#B3EEEEEE" UnderlineBrush="#B3EEEEEE" TextTrimming="CharacterEllipsis" Cursor="Hand" MouseLeftButtonDown="BrowseCustomPath_Click" MaxWidth="250"/>
                         </StackPanel>
+                    </Grid>
+
+                    <!-- 遥测配置按钮 -->
+                    <Grid x:Name="TelemetryConfigButton" Grid.Row="4" Margin="0,20,0,0" Cursor="Hand" MouseLeftButtonDown="TelemetryConfigButton_Click" Width="130" Height="27" HorizontalAlignment="Left" Visibility="Collapsed">
+                        <Path Data="M0 5.0625V27H123.81L130 21.9375V0H6.19048L0 5.0625Z" Stretch="Fill">
+                            <Path.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#C60E0E" Offset="0"/>
+                                    <GradientStop Color="#600707" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Path.Fill>
+                        </Path>
+                        <TextBlock Text="遥 测 配 置" FontSize="16" FontWeight="Bold"
+                                   Foreground="#EEEEEE" HorizontalAlignment="Left"
+                                   VerticalAlignment="Center" Margin="15,0,0,0"/>
+                        <Path Data="M15.75,5.72996C15.75,8.10163 13.8274,10.0243 11.4557,10.0243C10.7304,10.0243 10.0471,9.84444 9.44797,9.52698L3.22495,15.75L0.75,13.2751L6.97302,7.05203C6.65556,6.45287 6.47574,5.76958 6.47574,5.0443C6.47574,2.67262 8.39837,0.75 10.77,0.75C11.4953,0.75 12.1786,0.929806 12.7778,1.24728L10.0543,3.97073L12.5293,6.44568L15.2527,3.72223C15.5702,4.32139 15.75,5.00469 15.75,5.72996Z"
+                              Stroke="#EEEEEE" StrokeThickness="1.5"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              StrokeLineJoin="Round" Stretch="Uniform"
+                              HorizontalAlignment="Right" VerticalAlignment="Center"
+                              Margin="0,0,15,0" Width="15" Height="15"/>
                     </Grid>
                 </Grid>
             </Border>
@@ -703,22 +725,22 @@
 
                         <TabItem Header="遥 测 支 持">
                             <Grid Margin="0,20,0,0">
-                                <Grid Width="678" Height="263" HorizontalAlignment="Right">
+                                <Grid Width="678" Height="378" HorizontalAlignment="Right">
                                     <Grid.Clip>
-                                        <PathGeometry Figures="M0 15V263H663L678 248V0H15L0 15Z"/>
+                                        <PathGeometry Figures="M0 15V378H663L678 363V0H15L0 15Z"/>
                                     </Grid.Clip>
 
                                     <Border Background="{fw:AcrylicBrush BackgroundGrid, TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
                                         <Border.OpacityMask>
                                             <VisualBrush Stretch="Fill">
                                                 <VisualBrush.Visual>
-                                                    <Path Data="M0 15V263H663L678 248V0H15L0 15Z" Fill="White" />
+                                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Fill="White" />
                                                 </VisualBrush.Visual>
                                             </VisualBrush>
                                         </Border.OpacityMask>
                                     </Border>
 
-                                    <Path Data="M0 15V263H663L678 248V0H15L0 15Z" Opacity="0.2">
+                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Opacity="0.2">
                                         <Path.Fill>
                                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.5,0.5">
                                                 <GradientStop Color="#607079" Offset="0"/>
@@ -728,14 +750,14 @@
                                         </Path.Fill>
                                     </Path>
 
-                                    <Path Data="M0 15V263H663L678 248V0H15L0 15Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
                                         <Path.Effect>
                                             <BlurEffect Radius="45" RenderingBias="Performance"/>
                                         </Path.Effect>
                                     </Path>
 
                                     <Grid IsHitTestVisible="False">
-                                        <Path Data="M0 15 L0 263" StrokeThickness="1.5">
+                                        <Path Data="M0 15 L0 378" StrokeThickness="1.5">
                                             <Path.Stroke>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                                     <GradientStop Color="#4DEEEEEE" Offset="0"/>
@@ -744,7 +766,7 @@
                                                 </LinearGradientBrush>
                                             </Path.Stroke>
                                         </Path>
-                                        <Path Data="M0 263 L663 263" StrokeThickness="1.5">
+                                        <Path Data="M0 378 L663 378" StrokeThickness="1.5">
                                             <Path.Stroke>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                                     <GradientStop Color="#00EEEEEE" Offset="0"/>
@@ -753,7 +775,7 @@
                                                 </LinearGradientBrush>
                                             </Path.Stroke>
                                         </Path>
-                                        <Path Data="M678 0 L678 248" StrokeThickness="1.5">
+                                        <Path Data="M678 0 L678 363" StrokeThickness="1.5">
                                             <Path.Stroke>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                                     <GradientStop Color="#00EEEEEE" Offset="0"/>
@@ -772,11 +794,11 @@
                                             </Path.Stroke>
                                         </Path>
                                         <Path Data="M0 15 L15 0" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                                        <Path Data="M663 263 L678 248" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
+                                        <Path Data="M663 378 L678 363" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
                                     </Grid>
                                 </Grid>
 
-                                <Grid Width="678" Height="263" HorizontalAlignment="Right">
+                                <Grid Width="678" Height="378" HorizontalAlignment="Right">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>

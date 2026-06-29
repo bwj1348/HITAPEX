@@ -31,7 +31,8 @@ public class DeviceProtocolService
 
     private void OnRawDataReceived(UsbDeviceInfo device, byte[] data)
     {
-        Debug.WriteLine($"[Protocol] 收到数据 [{device.DeviceKey}]: {BitConverter.ToString(data)}");
+        // 原始数据日志量极大，调试时取消注释
+        // Debug.WriteLine($"[Protocol] 收到数据 [{device.DeviceKey}]: {BitConverter.ToString(data)}");
 
         // 优先处理多包预设名称收集
         if (_presetNameCollections.TryGetValue(device.DeviceKey, out var collection))

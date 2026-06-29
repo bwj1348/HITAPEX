@@ -113,8 +113,8 @@ public partial class HomeUserControl : UserControl
 
     private async void InitializeGameList()
     {
-        _gameDataService = new GameDataService();
-        _gameDataService.StateChanged += OnGameDataStateChanged;
+        _gameDataService = App.GameDataService;
+        _gameDataService!.StateChanged += OnGameDataStateChanged;
 
         _gameList = new ObservableCollection<GameItem>();
         GameListItemsControl.ItemsSource = _gameList;
@@ -211,6 +211,7 @@ public partial class HomeUserControl : UserControl
             if (gameItem.IsPinned)
             {
                 gameItem.IsPinned = false;
+                _gameDataService?.SaveUserData(gameItem);
                 var pinnedCount = _gameList.Count(g => g.IsPinned);
                 var newIndex = pinnedCount;
                 if (currentIndex != newIndex)
@@ -228,9 +229,11 @@ public partial class HomeUserControl : UserControl
                 if (currentPinned != null && currentPinned != gameItem)
                 {
                     currentPinned.IsPinned = false;
+                    _gameDataService?.SaveUserData(currentPinned);
                 }
-                
+
                 gameItem.IsPinned = true;
+                _gameDataService?.SaveUserData(gameItem);
                 
                 if (currentIndex != 0)
                 {
@@ -1015,8 +1018,12 @@ public partial class HomeUserControl : UserControl
 
         if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
         {
-            if (GameLauncher.Launch(gameItem))
+            var mode = gameItem.LaunchMode == LaunchModeUdf.CustomPath ? LaunchMode.CustomPath : LaunchMode.Steam;
+            if (GameLauncher.Launch(gameItem, mode))
+            {
+                _gameDataService?.SaveUserData(gameItem);
                 return;
+            }
         }
 
         ShowLaunchErrorDialog();
