@@ -10,6 +10,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using HITAPEX.Models.Usb;
+using HITAPEX.Services;
 using SharpVectors.Converters;
 
 namespace HITAPEX.Views.DeviceParameters;
@@ -21,7 +22,7 @@ public partial class PresetListPopup : UserControl
     private readonly List<PresetItem> _personalPresets = new();
     private readonly List<string> _allGameItems = new();
     private bool _isOfficialTab = true;
-    private string _currentCategory = "全部";
+    private string _currentCategory = LocalizationService.Instance["Preset.All"];
     private PresetItem? _selectedPreset;
     private ContentControl? _selectedControl;
     private TextBox? _filterTextBox;
@@ -466,7 +467,7 @@ public partial class PresetListPopup : UserControl
         PresetItemsControl.Items.Clear();
 
         var source = _isOfficialTab ? _officialPresets : _personalPresets;
-        var filtered = _currentCategory == "全部"
+        var filtered = _currentCategory == LocalizationService.Instance["Preset.All"]
             ? source
             : source.Where(p => p.Games.Contains(_currentCategory)).ToList();
 
@@ -982,7 +983,7 @@ public partial class PresetListPopup : UserControl
         var selected = CategoryComboBox.SelectedItem?.ToString();
         if (string.IsNullOrEmpty(selected))
         {
-            _currentCategory = "全部";
+            _currentCategory = LocalizationService.Instance["Preset.All"];
             return;
         }
         var match = System.Text.RegularExpressions.Regex.Match(selected, @"\(([^)]+)\)");
@@ -996,7 +997,7 @@ public partial class PresetListPopup : UserControl
 
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
-        _currentCategory = "全部";
+        _currentCategory = LocalizationService.Instance["Preset.All"];
         CategoryComboBox.SelectedIndex = -1;
         ShowContentSiteOrWatermark();
         RenderPresetList();
@@ -1014,7 +1015,7 @@ public partial class PresetListPopup : UserControl
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
-            Title = "导入预设",
+            Title = LocalizationService.Instance["Preset.ImportPreset"],
             Filter = "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
             DefaultExt = ".json"
         };
@@ -1031,7 +1032,7 @@ public partial class PresetListPopup : UserControl
             }
             else
             {
-                MessageBox.Show("导入预设失败，文件格式不正确。", "导入失败",
+                MessageBox.Show(LocalizationService.Instance["Preset.ImportFailedMessage"], LocalizationService.Instance["Preset.ImportFailed"],
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -1139,12 +1140,12 @@ public partial class PresetListPopup : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "删 除 预 设";
+        dialog.Title = LocalizationService.Instance["Preset.DeletePreset"];
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "该预设将被永久删除，且无法恢复。",
+            Text = LocalizationService.Instance["Preset.DeleteConfirmMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -1153,7 +1154,7 @@ public partial class PresetListPopup : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("删 除", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Delete"], (_, _) =>
         {
             dialog.Hide();
             _personalPresets.Remove(preset);
@@ -1161,7 +1162,7 @@ public partial class PresetListPopup : UserControl
             RenderPresetList();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
@@ -1173,7 +1174,7 @@ public partial class PresetListPopup : UserControl
     {
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "导出预设",
+            Title = LocalizationService.Instance["Preset.ExportPreset"],
             Filter = "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
             DefaultExt = ".json",
             FileName = preset.Name
@@ -1189,7 +1190,7 @@ public partial class PresetListPopup : UserControl
     {
         if (PerformExportPreset(preset, fileName))
         {
-            ShowExportSuccessToast("导 出 成 功");
+            ShowExportSuccessToast(LocalizationService.Instance["Preset.ExportSuccess"]);
             return;
         }
 
@@ -1304,13 +1305,13 @@ public partial class PresetListPopup : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "导 出 失 败";
+        dialog.Title = LocalizationService.Instance["Preset.ExportFailed"];
         dialog.ShowIcon = true;
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设导出失败，请检查后重试。",
+            Text = LocalizationService.Instance["Preset.ExportFailedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -1319,19 +1320,55 @@ public partial class PresetListPopup : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("重 试", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Retry"], (_, _) =>
         {
             dialog.Hide();
             onRetry?.Invoke();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
 
         dialog.Show();
     }
+
+    private void AccentButton_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        var h = grid.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+        if (grid.FindName("BtnPath") is not Path path) return;
+        path.Width = w;
+        path.Data = Geometry.Parse($"M{w},0 H9 L0,9 V{h} H{w - 9} L{w},{h - 9} V0 Z");
+    }
+
+    private void ActionButton_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        var h = grid.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+        if (grid.FindName("BtnPath") is not Path path) return;
+        path.Width = w;
+        path.Data = Geometry.Parse($"M{w},0 H9 L0,9 V{h} H{w - 9} L{w},{h - 9} V0 Z");
+    }
+
+    private void ComboBox_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        var h = grid.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+        if (grid.FindName("ComboBoxBg") is not Path path) return;
+        path.Width = w;
+        path.Height = h;
+        // 切角偏移 9px（与原始形状 M325...M5... 倾斜一致）
+        path.Data = Geometry.Parse($"M{w},0 H9 L0,9 V{h} H{w - 9} L{w},{h - 9} V0 Z");
+    }
+
 }
 
 public class PresetItem

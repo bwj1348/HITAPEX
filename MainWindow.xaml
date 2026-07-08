@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:HITAPEX.ViewModels"
         xmlns:ctrl="clr-namespace:HITAPEX.Controls"
+        xmlns:lex="clr-namespace:HITAPEX.Helpers"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
         Title="HITAPEX Racing Simulator"
@@ -14,6 +15,7 @@
         Background="Transparent"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
+        FontFamily="{lex:Font}"
         d:DataContext="{d:DesignInstance vm:MainWindowViewModel}">
 
     <Window.Resources>
@@ -39,7 +41,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <Border x:Name="LeftBar" Grid.Column="0" Background="Transparent" CornerRadius="0"/>
-                            <Border x:Name="GradientBg" Grid.Column="1" Background="Transparent" CornerRadius="0" Padding="15,0,14,0">
+                            <Border x:Name="GradientBg" Grid.Column="1" Background="Transparent" CornerRadius="0" Padding="10,0,10,0">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="25"/>
@@ -50,9 +52,8 @@
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     <TextBlock x:Name="Label" Grid.Column="1"
                                                Text="{Binding Label}" FontSize="18"
-                                               
                                                Foreground="#EEEEEE" FontWeight="Regular" Opacity="0.8"
-                                               VerticalAlignment="Center" Margin="31,0,0,0"/>
+                                               VerticalAlignment="Center" Margin="{lex:NavSpacing}"/>
                                 </Grid>
                             </Border>
                         </Grid>
@@ -283,7 +284,7 @@
                                     </Grid>
                                     
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="5,0,0,0">
-                                        <TextBlock Text="用&#x200A;户" FontSize="14" Foreground="#99EEEEEE" FontWeight="Bold"/>
+                                        <TextBlock Text="{lex:Loc Window.User}" FontSize="14" Foreground="#99EEEEEE" FontWeight="Bold"/>
                                                    
                                         <TextBlock Text="Alex_Racer" FontSize="14" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,2,0,0"
                                                    FontFamily="{StaticResource OrbitronFont}"/>

@@ -1,10 +1,13 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using HITAPEX.Models.Usb;
+using HITAPEX.Services;
 
 namespace HITAPEX.Views.DeviceParameters;
 
@@ -12,16 +15,17 @@ public partial class BaseParameterControl : UserControl
 {
     // 设备通信状态
     private UsbDeviceInfo? _connectedBaseDevice;
-    private string _deviceModelName = "基座";
-    private string _connectionStatusText = "未连接";
+    private string _deviceTypeName = LocalizationService.Instance["Status.DeviceTypeBase"];
+    private string _deviceModel = "";
+    private string _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
     private string _connectionStatusColor = "#C60E0E";
-    private string _firmwareVersion = "---";
+    private string _firmwareVersion = LocalizationService.Instance["DeviceParam.UnknownVersion"];
     private string? _latestApiFirmwareVersion;
 
     // 预设管理
     private bool _isPresetModified;
     private bool _isAppliedPresetPersonal;
-    private string _currentPresetName = "Default";
+    private string _currentPresetName = LocalizationService.Instance["DeviceParam.Default"];
     private string _devicePresetName = string.Empty;
     private bool _isInitialized;
 
@@ -39,6 +43,7 @@ public partial class BaseParameterControl : UserControl
         {
             _isInitialized = true;
             SubscribeUsbSerialEvents();
+            LocalizationService.Instance.PropertyChanged += OnLanguageChanged;
         }
 
         await RefreshDeviceInfoAsync();
@@ -62,15 +67,15 @@ public partial class BaseParameterControl : UserControl
             if (_connectedBaseDevice != null)
             {
                 var descriptor = DeviceRegistry.FindByVidPid(_connectedBaseDevice.Vid, _connectedBaseDevice.Pid);
-                _deviceModelName = descriptor?.ModelName ?? "基座";
-                _connectionStatusText = "已连接(直连)";
+                _deviceModel = descriptor?.ModelName ?? "";
+                _connectionStatusText = LocalizationService.Instance["DeviceParam.ConnectedDirect"];
                 _connectionStatusColor = "#179548";
 
                 if (App.ProtocolService != null && App.FirmwareUpdater != null)
                 {
                     var deviceInfo = await App.FirmwareUpdater.GetDeviceInfoAsync(
                         _connectedBaseDevice, DeviceType.Base);
-                    _firmwareVersion = deviceInfo?.VersionString ?? "未知";
+                    _firmwareVersion = deviceInfo?.VersionString ?? LocalizationService.Instance["DeviceParam.Unknown"];
                 }
             }
             else
@@ -147,7 +152,7 @@ public partial class BaseParameterControl : UserControl
             if (name != null)
             {
                 _devicePresetName = name;
-                if (_currentPresetName == "Default" && !_isPresetModified)
+                if (_currentPresetName == LocalizationService.Instance["DeviceParam.Default"] && !_isPresetModified)
                     UpdatePresetDisplay();
             }
         }
@@ -177,13 +182,13 @@ public partial class BaseParameterControl : UserControl
     private void SetDisconnected()
     {
         _connectedBaseDevice = null;
-        _deviceModelName = "基座";
-        _connectionStatusText = "未连接";
+        _deviceModel = "";
+        _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
         _connectionStatusColor = "#C60E0E";
-        _firmwareVersion = "---";
+        _firmwareVersion = LocalizationService.Instance["DeviceParam.UnknownVersion"];
 
         // 重置预设状态
-        _currentPresetName = "Default";
+        _currentPresetName = LocalizationService.Instance["DeviceParam.Default"];
         _devicePresetName = string.Empty;
         _isPresetModified = false;
         _isAppliedPresetPersonal = false;
@@ -192,7 +197,7 @@ public partial class BaseParameterControl : UserControl
     private void UpdateConnectionStatusDisplay()
     {
         if (DeviceModelName != null)
-            DeviceModelName.Text = _deviceModelName;
+            DeviceModelName.Text = BuildDeviceDisplayName();
 
         if (ConnectionStatusText != null)
             ConnectionStatusText.Text = _connectionStatusText;
@@ -215,7 +220,7 @@ public partial class BaseParameterControl : UserControl
     {
         try
         {
-            if (App.FirmwareApi == null || string.IsNullOrEmpty(_firmwareVersion) || _firmwareVersion == "---" || _firmwareVersion == "未知")
+            if (App.FirmwareApi == null || string.IsNullOrEmpty(_firmwareVersion) || _firmwareVersion == LocalizationService.Instance["DeviceParam.UnknownVersion"] || _firmwareVersion == LocalizationService.Instance["DeviceParam.Unknown"])
             {
                 if (NewVersionAvailableBorder != null)
                     NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
@@ -345,12 +350,12 @@ public partial class BaseParameterControl : UserControl
         }
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "未 保 存";
+        dialog.Title = LocalizationService.Instance["Dialog.UnsavedTitle"];
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设已更改，是否保存？",
+            Text = LocalizationService.Instance["Dialog.UnsavedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -361,7 +366,7 @@ public partial class BaseParameterControl : UserControl
 
         if (_isAppliedPresetPersonal)
         {
-            dialog.AddButton("保 存", (_, _) =>
+            dialog.AddButton(LocalizationService.Instance["Common.Save"], (_, _) =>
             {
                 dialog.Hide();
                 SaveCurrentPreset();
@@ -369,14 +374,14 @@ public partial class BaseParameterControl : UserControl
             });
         }
 
-        dialog.AddButton("不保存", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Dialog.DontSave"], (_, _) =>
         {
             dialog.Hide();
             DiscardChanges();
             onSaved?.Invoke();
         });
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
             onCancelled?.Invoke();
@@ -413,14 +418,14 @@ public partial class BaseParameterControl : UserControl
     private void UpdatePresetDisplay()
     {
         var isDeviceConnected = _connectedBaseDevice != null;
-        var isOnboard = _currentPresetName == "Default" && isDeviceConnected;
+        var isOnboard = _currentPresetName == LocalizationService.Instance["DeviceParam.Default"] && isDeviceConnected;
 
         if (PresetNameText != null)
         {
             if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
-                PresetNameText.Text = $"{_devicePresetName}_板载";
+                PresetNameText.Text = $"{_devicePresetName}_{LocalizationService.Instance["DeviceParam.Onboard"]}";
             else if (isOnboard)
-                PresetNameText.Text = "板载";
+                PresetNameText.Text = LocalizationService.Instance["DeviceParam.Onboard"];
             else
                 PresetNameText.Text = _currentPresetName;
             PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
@@ -490,7 +495,7 @@ public partial class BaseParameterControl : UserControl
     {
         if (!_isPresetModified) return;
 
-        if (!_isAppliedPresetPersonal && _currentPresetName != "Default")
+        if (!_isAppliedPresetPersonal && _currentPresetName != LocalizationService.Instance["DeviceParam.Default"])
         {
             SaveAsButton_Click(sender, e);
             return;
@@ -531,5 +536,30 @@ public partial class BaseParameterControl : UserControl
         _isPresetModified = false;
         UpdatePresetDisplay();
         Debug.WriteLine($"[BaseControl] 预设已应用: {preset.Name}");
+    }
+
+    private void ActionButton_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        if (w <= 0) return;
+        if (grid.Children.OfType<Canvas>().FirstOrDefault()?.Children.OfType<Path>().FirstOrDefault() is { } path)
+        {
+            path.Width = w;
+            path.Data = Geometry.Parse($"M{w},5 H11 L5,11 V42 H5.32 H{w - 6} L{w},36 V5 Z");
+        }
+    }
+
+    /// <summary>"设备类型 型号" 仅设备类型在语言切换时可刷新</summary>
+    private string BuildDeviceDisplayName()
+    {
+        _deviceTypeName = LocalizationService.Instance["Status.DeviceTypeBase"];
+        return string.IsNullOrEmpty(_deviceModel) ? _deviceTypeName : $"{_deviceTypeName} {_deviceModel}";
+    }
+
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == null && DeviceModelName != null)
+            DeviceModelName.Text = BuildDeviceDisplayName();
     }
 }

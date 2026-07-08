@@ -95,7 +95,7 @@ public class TelemetryService : IDisposable
 
 
     /// <summary>数据包已构建并准备发送时触发（可用于调试/日志）</summary>
-    public event Action<byte[][]>? OnPacketsBuilt;  // (three packets)
+    public event Action<byte[][]>? OnPacketsBuilt;  // (five packets: 0x6101~0x6105)
 
     /// <summary>遥测数据已下发到基座时触发</summary>
     public event Action<uint>? OnPacketsDispatched; // (timestampMs)
@@ -329,7 +329,7 @@ public class TelemetryService : IDisposable
             // 计算模拟时间戳（自启动以来的毫秒数）
             var timestampMs = (uint)Stopwatch.GetElapsedTime(_telemetryStartTick).TotalMilliseconds;
 
-            // 构建三个数据包
+            // 构建五个数据包 (0x6101~0x6105)
             var packets = TelemetryPacketBuilder.BuildAllPackets(data, timestampMs);
 
             OnPacketsBuilt?.Invoke(packets);
@@ -382,7 +382,7 @@ public class TelemetryService : IDisposable
     // ════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// 向所有已连接的设备广播遥测数据包。
+    /// 向所有已连接的设备广播遥测数据包（共 5 包：0x6101~0x6105）。
     /// 基座、面盘、踏板可能各自独立直连到电脑，不是只能通过基座中转。
     /// </summary>
     private void DispatchPackets(byte[][] packets)

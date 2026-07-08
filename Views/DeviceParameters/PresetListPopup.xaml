@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="924" d:DesignWidth="1202">
 
@@ -43,21 +44,28 @@
 
         <!-- 操作按钮样式（筛选 / 取消共用） -->
         <Style x:Key="ActionButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="80"/>
+            <Setter Property="MinWidth" Value="80"/>
             <Setter Property="Height" Value="45"/>
             <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="#EEEEEE"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Path x:Name="BtnPath"
-                                  Data="M85 5H14L5 14V50H5.32H76L85 41V5Z"
-                                  Fill="#33EEEEEE" Stretch="Fill"
-                                  Width="80" Height="45"/>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Grid x:Name="ButtonContainer"
+                              SizeChanged="ActionButton_SizeChanged"
+                              MinWidth="80" Height="45" HorizontalAlignment="Left">
+                            <Canvas>
+                                <Path x:Name="BtnPath"
+                                      Data="M85 5H14L5 14V50H5.32H76L85 41V5Z"
+                                      Fill="#33EEEEEE"
+                                      Height="45" Width="80"/>
+                            </Canvas>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="8,0"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -67,6 +75,7 @@
         <!-- 选项卡按钮样式 -->
         <Style x:Key="TabButtonStyle" TargetType="Button">
             <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontStyle" Value="Italic"/>
             <Setter Property="Foreground" Value="#EEEEEE"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -92,7 +101,6 @@
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontFamily" Value="{StaticResource OrbitronFont}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Width" Value="320"/>
             <Setter Property="Height" Value="45"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -123,12 +131,11 @@
                                 </Setter>
                             </Style>
                         </ControlTemplate.Resources>
-                        <Grid>
-                            <Path Data="M325 5H14L5 14V50H6.27018H316L325 41V5Z" Fill="#EEEEEE" Opacity="0.2" Stretch="Fill">
-                                <!--<Path.Effect>
-                                    <DropShadowEffect Color="#000000" Opacity="0.25" BlurRadius="5" ShadowDepth="2"/>
-                                </Path.Effect>-->
-                            </Path>
+                        <Grid x:Name="ComboBoxRoot" SizeChanged="ComboBox_SizeChanged">
+                            <Canvas>
+                                <Path x:Name="ComboBoxBg" Fill="#EEEEEE" Opacity="0.2"
+                                      Height="45" Data="M325 5H14L5 14V50H6.27018H316L325 41V5Z"/>
+                            </Canvas>
 
                             <ToggleButton x:Name="ToggleButton" Background="Transparent" BorderThickness="0" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" Cursor="Hand">
                                 <ToggleButton.Template>
@@ -150,7 +157,7 @@
                                 </Path.Data>
                             </Path>
 
-                            <TextBlock x:Name="Watermark" Text="筛选游戏" FontSize="22"
+                            <TextBlock x:Name="Watermark" Text="{lex:Loc Preset.FilterGame}" FontSize="22"
                                        Foreground="#99EEEEEE" VerticalAlignment="Center"
                                        HorizontalAlignment="Left" Margin="41,0,0,0"
                                        IsHitTestVisible="False" Visibility="Collapsed"/>
@@ -205,8 +212,7 @@
                                     <ScrollViewer Height="179"
                                                   VerticalScrollBarVisibility="Auto"
                                                   HorizontalScrollBarVisibility="Disabled"
-                                                  Margin="0,15,0,5"
-                                                  HorizontalAlignment="Left">
+                                                  Margin="0,15,0,5">
                                         <ItemsPresenter/>
                                     </ScrollViewer>
                                 </Grid>
@@ -271,7 +277,7 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ComboBoxItem">
-                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Width="293" Margin="8,2,0,2" Padding="0,5">
+                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Margin="8,2,8,2" Padding="0,5">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="23"/>
@@ -280,7 +286,7 @@
 
                                             <Path x:Name="CheckMark" Grid.Column="0" Data="M11.75 0.75L5.1532 9.75L0.75 6.37909" Stroke="#EEEEEE" StrokeThickness="1.5" Stretch="None" VerticalAlignment="Top" HorizontalAlignment="Center" Visibility="Hidden" Margin="0,5,0,0"/>
 
-                                            <TextBlock Grid.Column="1" Text="{TemplateBinding Content}" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Left" Width="262"/>
+                                            <TextBlock Grid.Column="1" Text="{TemplateBinding Content}" TextWrapping="Wrap" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                         </Grid>
                                     </Border>
 
@@ -321,7 +327,7 @@
 
         <!-- 导入/应用主按钮样式（参考 ActionButtonStyle，背景改为红色渐变） -->
         <Style x:Key="AccentButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="80"/>
+            <Setter Property="MinWidth" Value="80"/>
             <Setter Property="Height" Value="45"/>
             <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontWeight" Value="Bold"/>
@@ -330,12 +336,18 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Path x:Name="BtnPath"
-                                  Data="M85 5H14L5 14V50H5.32H76L85 41V5Z"
-                                  Fill="{StaticResource AccentGradient}" Stretch="Fill"
-                                  Width="80" Height="45"/>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Grid x:Name="ButtonContainer"
+                              SizeChanged="AccentButton_SizeChanged"
+                              MinWidth="80" Height="45">
+                            <Canvas>
+                                <Path x:Name="BtnPath"
+                                      Data="M85 5H14L5 14V50H5.32H76L85 41V5Z"
+                                      Fill="{StaticResource AccentGradient}"
+                                      Height="45" Width="80"/>
+                            </Canvas>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="10,0"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -524,28 +536,29 @@
                             </GeometryGroup>
                         </Path.Data>
                     </Path>
-                    <TextBlock Text="预 设 列 表" FontSize="26" FontWeight="Bold"
+                    <TextBlock Text="{lex:Loc Preset.Title}" FontSize="26" FontWeight="Bold"
                                Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- 第二行：下拉框 + 筛选按钮 + 取消按钮 -->
                 <Grid Grid.Row="1" Margin="0,0,0,20">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <ComboBox x:Name="CategoryComboBox" Grid.Column="0"
                               Style="{StaticResource PresetComboBoxStyle}" Margin="0,0,10,0"
+                              HorizontalAlignment="Stretch"
                               SelectionChanged="CategoryComboBox_SelectionChanged"/>
 
                     <Button x:Name="FilterButton" Grid.Column="1"
-                            Content="筛选" Style="{StaticResource ActionButtonStyle}" Margin="0,0,10,0"
+                            Content="{lex:Loc Preset.Filter}" Style="{StaticResource ActionButtonStyle}" Margin="0,0,10,0"
                             Click="FilterButton_Click"/>
 
                     <Button x:Name="CancelButton" Grid.Column="2"
-                            Content="取消" Style="{StaticResource ActionButtonStyle}"
+                            Content="{lex:Loc Preset.Cancel}" Style="{StaticResource ActionButtonStyle}"
                             Click="CancelButton_Click"/>
                 </Grid>
 
@@ -576,11 +589,11 @@
 
                     <!-- 官方预设 -->
                     <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Width="132">
+                        <StackPanel x:Name="TabOfficialRow" Orientation="Horizontal" HorizontalAlignment="Center">
                             <Path Stroke="#EEEEEE" StrokeThickness="1.5"
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                   StrokeLineJoin="Round" VerticalAlignment="Center"
-                                  Margin="0,0,6,0">
+                                  Margin="6,0,6,0">
                                 <Path.Data>
                                     <GeometryGroup>
                                         <PathGeometry Figures="M9.85 15.7494L5.3 12.2879L0.75 15.7494V5.36478C0.75 5.05876 0.886964 4.76528 1.13076 4.54889C1.37456 4.3325 1.70522 4.21094 2.05 4.21094H8.55C8.89478 4.21094 9.22544 4.3325 9.46924 4.54889C9.71304 4.76528 9.85 5.05876 9.85 5.36478V15.7494Z"/>
@@ -588,13 +601,18 @@
                                     </GeometryGroup>
                                 </Path.Data>
                             </Path>
-                            <Button x:Name="TabOfficial" Content="官 方 预 设"
+                            <Button x:Name="TabOfficial" Content="{lex:Loc Preset.OfficialPresets}"
                                     Style="{StaticResource TabButtonStyle}"
-                                    Click="TabOfficial_Click"/>
+                                    FontSize="{lex:LocFontSize Preset.TabFontSize}"
+                                    Click="TabOfficial_Click" Margin="0,0,10,0"/>
                         </StackPanel>
-                        <Path x:Name="TabOfficialUnderline"
-                              Data="M3 0H139L135 3H0L3 0Z" Fill="#C60E0E"
-                              Stretch="Uniform" Height="3" Visibility="Visible"/>
+                        <Border x:Name="TabOfficialUnderline" Height="3" Background="#C60E0E"
+                                HorizontalAlignment="Center" Visibility="Visible"
+                                Width="{Binding ElementName=TabOfficialRow, Path=ActualWidth}">
+                            <Border.RenderTransform>
+                                <SkewTransform AngleX="-45"/>
+                            </Border.RenderTransform>
+                        </Border>
                     </StackPanel>
 
                     <!-- 分隔竖线 -->
@@ -604,11 +622,11 @@
 
                     <!-- 个人预设 -->
                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                        <StackPanel Orientation="Horizontal" Width="132">
+                        <StackPanel x:Name="TabPersonalRow" Orientation="Horizontal" HorizontalAlignment="Center">
                             <Path Stroke="#EEEEEE" StrokeThickness="1.5"
                                   StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                   StrokeLineJoin="Round" VerticalAlignment="Center"
-                                  Margin="0,0,6,0">
+                                  Margin="6,0,6,0">
                                 <Path.Data>
                                     <GeometryGroup>
                                         <PathGeometry Figures="M8.24962 8.25C10.4279 8.25 12.1938 6.57107 12.1938 4.5C12.1938 2.42893 10.4279 0.75 8.24962 0.75C6.07132 0.75 4.30545 2.42893 4.30545 4.5C4.30545 6.57107 6.07132 8.25 8.24962 8.25Z"/>
@@ -616,24 +634,29 @@
                                     </GeometryGroup>
                                 </Path.Data>
                             </Path>
-                            <Button x:Name="TabPersonal" Content="个 人 预 设"
+                            <Button x:Name="TabPersonal" Content="{lex:Loc Preset.PersonalPresets}"
                                     Style="{StaticResource TabButtonStyle}"
-                                    Click="TabPersonal_Click"/>
+                                    FontSize="{lex:LocFontSize Preset.TabFontSize}"
+                                    Click="TabPersonal_Click" Margin="0,0,10,0"/>
                         </StackPanel>
-                        <Path x:Name="TabPersonalUnderline"
-                              Data="M3 0H139L135 3H0L3 0Z" Fill="#C60E0E"
-                              Stretch="Uniform" Height="3" Visibility="Collapsed"/>
+                        <Border x:Name="TabPersonalUnderline" Height="3" Background="#C60E0E"
+                                HorizontalAlignment="Center" Visibility="Collapsed"
+                                Width="{Binding ElementName=TabPersonalRow, Path=ActualWidth}">
+                            <Border.RenderTransform>
+                                <SkewTransform AngleX="-45"/>
+                            </Border.RenderTransform>
+                        </Border>
                     </StackPanel>
                 </Grid>
 
                 <!-- 第五行：底部按钮（导入 / 应用） -->
                 <Border Grid.Row="4" Margin="0,20,0,0" Padding="0,0,0,0">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button x:Name="ImportButton" Content="导入"
+                        <Button x:Name="ImportButton" Content="{lex:Loc Preset.Import}"
                                 Style="{StaticResource AccentButtonStyle}"
                                 Click="ImportButton_Click"
                                 Visibility="Collapsed"/>
-                        <Button x:Name="ApplyButton" Content="应用"
+                        <Button x:Name="ApplyButton" Content="{lex:Loc Preset.Apply}"
                                 Style="{StaticResource AccentButtonStyle}"
                                 Click="ApplyButton_Click"
                                 Margin="20,0,0,0"/>

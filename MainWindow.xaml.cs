@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using HITAPEX.Helpers;
 using HITAPEX.Models.Usb;
+using HITAPEX.Services;
 using HITAPEX.ViewModels;
 using HITAPEX.Controls;
 using HITAPEX.Views;
@@ -118,7 +119,7 @@ public partial class MainWindow : Window
         }
         _isShowingUpdateModeDialog = true;
 
-        GlobalDialog.Title = "设 备 异 常";
+        GlobalDialog.Title = LocalizationService.Instance["Firmware.DeviceAbnormal"];
         GlobalDialog.ClearButtons();
 
         var deviceNames = updateModeDevices
@@ -131,7 +132,7 @@ public partial class MainWindow : Window
             .ToList();
 
         var namesText = string.Join("、", deviceNames);
-        var messageText = $"检测到{namesText}设备固件异常，需进行固件更新才可正常使用。";
+        var messageText = LocalizationService.Instance.Format("Firmware.DeviceFirmwareAbnormal", namesText);
 
         var messageBlock = new TextBlock
         {
@@ -144,7 +145,7 @@ public partial class MainWindow : Window
             Margin = new Thickness(0, 0, 0, 30)
         };
 
-        var button = BuildPrimaryButton("前 往 更 新");
+        var button = BuildPrimaryButton(LocalizationService.Instance["Firmware.GoToUpdate"]);
         button.Click += (_, _) =>
         {
             _isShowingUpdateModeDialog = false;

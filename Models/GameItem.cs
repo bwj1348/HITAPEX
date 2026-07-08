@@ -14,6 +14,7 @@ public class GameItem : INotifyPropertyChanged
     public string LaunchPath { get; set; } = "";
     public LaunchModeUdf LaunchMode { get; set; } = LaunchModeUdf.Steam;
     public string Description { get; set; } = "";
+    public string DescriptionEn { get; set; } = "";
     public string Version { get; set; } = "";
     public string LastPlayed { get; set; } = "";
     public DateTime? LastLaunchTime { get; set; }

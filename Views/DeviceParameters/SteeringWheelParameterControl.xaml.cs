@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
@@ -6,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using HITAPEX.Models.Usb;
+using HITAPEX.Services;
 using HITAPEX.Services.Usb;
 
 namespace HITAPEX.Views.DeviceParameters;
@@ -16,8 +18,9 @@ public partial class SteeringWheelParameterControl : UserControl
     private UsbDeviceInfo? _connectedWheelDevice;
     private UsbDeviceInfo? _baseDevice;
     private bool _isWheelViaBase;
-    private string _deviceModelName = "面盘";
-    private string _connectionStatusText = "未连接";
+    private string _deviceTypeName = LocalizationService.Instance["Status.DeviceTypeWheel"];
+    private string _deviceModel = "";
+    private string _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
     private string _connectionStatusColor = "#C60E0E";
     private string _firmwareVersion = "---";
     private string? _latestApiFirmwareVersion;
@@ -105,6 +108,8 @@ public partial class SteeringWheelParameterControl : UserControl
         {
             _isInitialized = true;
 
+            LocalizationService.Instance.PropertyChanged += OnLanguageChanged;
+
             // 首次 Load 时订阅 HID 数据，之后一直保持（不随 Unload 取消）
             SubscribeHidData();
 
@@ -173,8 +178,8 @@ public partial class SteeringWheelParameterControl : UserControl
             if (_connectedWheelDevice != null)
             {
                 var descriptor = DeviceRegistry.FindByVidPid(_connectedWheelDevice.Vid, _connectedWheelDevice.Pid);
-                _deviceModelName = descriptor?.ModelName ?? "面盘";
-                _connectionStatusText = "已连接(直连)";
+                _deviceModel = descriptor?.ModelName ?? "";
+                _connectionStatusText = LocalizationService.Instance["DeviceParam.ConnectedDirect"];
                 _connectionStatusColor = "#179548";
 
                 if (App.ProtocolService != null && App.FirmwareUpdater != null)
@@ -201,8 +206,8 @@ public partial class SteeringWheelParameterControl : UserControl
                     {
                         _isWheelViaBase = true;
                         _baseDevice = baseDevice;
-                        _deviceModelName = GetWheelModelFromConnectionStatus(baseInfo.WheelConnectionStatus);
-                        _connectionStatusText = "已连接(基座)";
+                        _deviceModel = GetWheelModelFromConnectionStatus(baseInfo.WheelConnectionStatus);
+                        _connectionStatusText = LocalizationService.Instance["DeviceParam.ConnectedBase"];
                         _connectionStatusColor = "#179548";
                         _firmwareVersion = $"v{baseInfo.WheelNormalFwVersion >> 8}.{baseInfo.WheelNormalFwVersion & 0xFF}";
                     }
@@ -345,8 +350,8 @@ public partial class SteeringWheelParameterControl : UserControl
         _connectedWheelDevice = null;
         _baseDevice = null;
         _isWheelViaBase = false;
-        _deviceModelName = "面盘";
-        _connectionStatusText = "未连接";
+        _deviceModel = "";
+        _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
         _connectionStatusColor = "#C60E0E";
         _firmwareVersion = "---";
 
@@ -389,7 +394,7 @@ public partial class SteeringWheelParameterControl : UserControl
     private void UpdateConnectionStatusDisplay()
     {
         if (DeviceModelName != null)
-            DeviceModelName.Text = _deviceModelName;
+            DeviceModelName.Text = BuildDeviceDisplayName();
 
         if (ConnectionStatusText != null)
             ConnectionStatusText.Text = _connectionStatusText;
@@ -2521,6 +2526,45 @@ public partial class SteeringWheelParameterControl : UserControl
 
             _buttonGlows[i] = btn.Template.FindName("GlowCircle", btn) as Ellipse;
             _buttonRings[i] = btn.Template.FindName("OuterRing", btn) as Ellipse;
+        }
+    }
+
+    private void ActionButton_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        if (w <= 0) return;
+        if (grid.Children.OfType<Canvas>().FirstOrDefault()?.Children.OfType<Path>().FirstOrDefault() is { } path)
+        {
+            path.Width = w;
+            path.Data = Geometry.Parse($"M{w},5 H11 L5,11 V42 H5.32 H{w - 6} L{w},36 V5 Z");
+        }
+    }
+
+    private void ButtonResponseIndicator_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var h = grid.ActualHeight;
+        if (h <= 0) return;
+        // 宽度固定 126，切角偏移固定 5.707px。
+        // 所有坐标内缩 0.5px，确保 1px 描边完全落在可见区域内，避免上下横线被裁切变细。
+        ButtonResponseBorder.Height = h;
+        ButtonResponseBorder.Data = Geometry.Parse($"M125.5,0.5 V{(h - 6.207):F3} L119.793,{(h - 0.5):F3} H0.5 V6.207 L6.207,0.5 H125.5 Z");
+    }
+
+    private string BuildDeviceDisplayName()
+    {
+        _deviceTypeName = LocalizationService.Instance["Status.DeviceTypeWheel"];
+        return string.IsNullOrEmpty(_deviceModel) ? _deviceTypeName : $"{_deviceTypeName} {_deviceModel}";
+    }
+
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == null)
+        {
+            if (DeviceModelName != null)
+                DeviceModelName.Text = BuildDeviceDisplayName();
+            UpdateConnectionStatusDisplay();
         }
     }
 }

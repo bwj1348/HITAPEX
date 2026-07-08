@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:local="clr-namespace:HITAPEX.Views.DeviceParameters"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="639" d:DesignWidth="455">
 
@@ -488,7 +489,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- 第一行：按键设置 标题 -->
-                    <TextBlock Grid.Row="0" Text="按 键 灯 设 置"
+                    <TextBlock Grid.Row="0" Text="{lex:Loc ButtonSettings.Title}"
                                FontSize="26" FontWeight="Bold"
                                Foreground="#EEEEEE"
                                HorizontalAlignment="Center"
@@ -575,7 +576,7 @@
                                             </Path>
                                         </Grid>
                                     </Viewbox>
-                                    <TextBlock Text="按 键 灯 颜 色" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{lex:Loc ButtonSettings.LedColor}" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <StackPanel x:Name="KeyColorPanel" Grid.Row="1" Orientation="Horizontal">
                                     <RadioButton GroupName="KeyColor" Style="{StaticResource PopupColorBlockRadioStyle}"
@@ -640,7 +641,7 @@
                                             </Path>
                                         </Grid>
                                     </Viewbox>
-                                    <TextBlock Text="遥 测 功 能" FontSize="18" FontWeight="Bold" Margin="18,0,0,0"
+                                    <TextBlock Text="{lex:Loc ButtonSettings.TelemetryFunction}" FontSize="18" FontWeight="Bold" Margin="18,0,0,0"
                                                Foreground="#EEEEEE" VerticalAlignment="Center"/>
                                     <CheckBox x:Name="TelemetryToggle" HorizontalAlignment="Right"
                                               Style="{StaticResource PopupDualStateSvgToggleStyle}" IsChecked="True"/>
@@ -662,13 +663,13 @@
                                     </Grid.Style>
                                     <ComboBox x:Name="TeleFuncCombo" Style="{StaticResource PopupComboBoxStyle}"
                                               Tag="201" SelectedIndex="0">
-                                        <ComboBoxItem Content="ABS介入"/>
-                                        <ComboBoxItem Content="TC介入"/>
-                                        <ComboBoxItem Content="DRS可用"/>
-                                        <ComboBoxItem Content="DRS开启"/>
-                                        <ComboBoxItem Content="车轮抱死"/>
-                                        <ComboBoxItem Content="维修区限速"/>
-                                        <ComboBoxItem Content="车轮打滑"/>
+                                        <ComboBoxItem Content="{lex:Loc ButtonSettings.AbsEngage}"/>
+                                        <ComboBoxItem Content="{lex:Loc ButtonSettings.TcEngage}"/>
+                                        <ComboBoxItem Content="{lex:Loc ButtonSettings.DrsAvailable}"/>
+                                        <ComboBoxItem Content="{lex:Loc ButtonSettings.DrsActive}"/>
+                                        <ComboBoxItem Content="{lex:Loc ButtonSettings.WheelLock}"/>
+                                        <ComboBoxItem Content="{lex:Loc ButtonSettings.PitLimiter}"/>
+                                        <ComboBoxItem Content="{lex:Loc ButtonSettings.WheelSlip}"/>
                                     </ComboBox>
                                 </Grid>
                             </Grid>
@@ -693,15 +694,15 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="遥 测 灯 效"
+                                <TextBlock Grid.Row="0" Text="{lex:Loc ButtonSettings.TelemetryEffect}"
                                            FontSize="16" FontWeight="Bold"
                                            Foreground="#EEEEEE" Margin="0,0,0,10"/>
                                 <ComboBox x:Name="TelemetryLightEffectComboBox" Grid.Row="1"
                                           Style="{StaticResource PopupComboBoxStyle}"
                                           SelectedIndex="0"
                                           SelectionChanged="TelemetryLightEffectComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="常亮"/>
-                                    <ComboBoxItem Content="闪烁"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.SteadyOn}"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.Blinking}"/>
                                 </ComboBox>
                             </Grid>
 
@@ -725,7 +726,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="按键灯触发遥测颜色"
+                                <TextBlock Grid.Row="0" Text="{lex:Loc ButtonSettings.KeyLedTriggerTelemetryColor}"
                                            FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
                                 <Grid Grid.Row="1">
                                     <StackPanel x:Name="TeleColorPanel" Orientation="Horizontal">
@@ -798,7 +799,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="速度"
+                                <TextBlock Grid.Row="0" Text="{lex:Loc ButtonSettings.Speed}"
                                            FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" Margin="0,0,0,10"/>
                                 <Slider x:Name="PopupSpeedSlider" Grid.Row="1"
                                         Style="{StaticResource PopupSpeedSliderStyle}"
@@ -821,13 +822,13 @@
                         <Button Grid.Column="0"
                                 Style="{StaticResource PopupConfirmButtonStyle}"
                                 HorizontalAlignment="Left"
-                                Content="确定"
+                                Content="{lex:Loc Common.Confirm}"
                                 Click="ConfirmButton_Click"/>
 
                         <Button Grid.Column="1"
                                 Style="{StaticResource PopupCancelButtonStyle}"
                                 HorizontalAlignment="Right"
-                                Content="取消"
+                                Content="{lex:Loc Common.Cancel}"
                                 Click="CancelButton_Click"/>
                     </Grid>
                 </Grid>

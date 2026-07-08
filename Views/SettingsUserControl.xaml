@@ -6,6 +6,7 @@
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
              xmlns:controls="clr-namespace:HITAPEX.Controls"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="924" d:DesignWidth="1342"
              Background="Transparent"
@@ -348,7 +349,7 @@
         </Style>
 
         <Style x:Key="UpdateButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="122"/>
+            <Setter Property="MinWidth" Value="122"/>
             <Setter Property="Height" Value="27"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="#FFFFFF"/>
@@ -357,29 +358,21 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Grid Width="122" Height="27">
-                            <Path x:Name="ButtonBackground"
-                                  Data="M0 6V27H116L122 21V0H6L0 6Z"
-                                  Stretch="Fill"
-                                  Fill="#EEEEEE"
-                                  Opacity="0.3"/>
-                            <Path x:Name="ProgressBackground"
-                                  Data="M0 6V27H116L122 21V0H6L0 6Z"
-                                  Stretch="Fill">
-                                <Path.Fill>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                        <GradientStop Color="#C60E0E" Offset="0"/>
-                                        <GradientStop Color="#600707" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Path.Fill>
-                                <Path.Clip>
-                                    <PathGeometry Figures="M-500,0 L0,0 L0,21 L-6,27 L-500,27 Z">
-                                        <PathGeometry.Transform>
-                                            <TranslateTransform x:Name="ProgressClipTransform" X="122"/>
-                                        </PathGeometry.Transform>
-                                    </PathGeometry>
-                                </Path.Clip>
-                            </Path>
+                        <Grid x:Name="UpdateButtonGrid" MinWidth="122" Height="27"
+                              HorizontalAlignment="Left"
+                              SizeChanged="UpdateButtonGrid_SizeChanged">
+                            <Canvas>
+                                <Path x:Name="ButtonBackground" Height="27"
+                                      Fill="#EEEEEE" Opacity="0.3"/>
+                                <Path x:Name="ProgressBackground" Height="27">
+                                    <Path.Fill>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#C60E0E" Offset="0"/>
+                                            <GradientStop Color="#600707" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Path.Fill>
+                                </Path>
+                            </Canvas>
                             <TextBlock x:Name="ButtonText"
                                        Text="{TemplateBinding Content}"
                                        Foreground="#FFFFFF"
@@ -387,7 +380,8 @@
                                        FontWeight="Bold"
                                        FontStyle="Italic"
                                        HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center"
+                                       Margin="4,0"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -459,9 +453,9 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,7">
-            <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,0" VerticalAlignment="Bottom"/>
-            <Grid Height="26">
-                <TextBlock Text="设 置" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+            <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,3" VerticalAlignment="Bottom"/>
+            <Grid>
+                <TextBlock Text="{lex:Loc Settings.Title}" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
             </Grid>
         </StackPanel>
 
@@ -470,7 +464,7 @@
         <Grid Grid.Row="2" HorizontalAlignment="Left" Margin="0,20,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <RadioButton x:Name="SystemSettingsTab"
-                             Content="系 统 设 置"
+                             Content="{lex:Loc Settings.SystemSettings}"
                              Style="{StaticResource SettingsTabButtonStyle}"
                              GroupName="SettingsTabs"
                              IsChecked="True"
@@ -478,7 +472,7 @@
                              Tag="SystemSettings"
                              Margin="0,0,-5,0"/>
                 <RadioButton x:Name="FirmwareUpdateTab"
-                             Content="固 件 更 新"
+                             Content="{lex:Loc Settings.FirmwareUpdate}"
                              Style="{StaticResource SettingsTabButtonStyle2}"
                              GroupName="SettingsTabs"
                              Checked="Tab_Checked"
@@ -505,26 +499,26 @@
                                     <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                         <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
-                                    <TextBlock Text="软 件 设 置" Style="{StaticResource SectionTitleStyle}"/>
+                                    <TextBlock Text="{lex:Loc Settings.SoftwareSettings}" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
                                 <CheckBox x:Name="AutoStartCheckBox"
-                                          Content="开机自启动"
+                                          Content="{lex:Loc Settings.AutoStart}"
                                           Style="{StaticResource CheckBoxStyle}"
                                           Checked="AutoStartCheckBox_Changed"
                                           Unchecked="AutoStartCheckBox_Changed"
-                                          AutomationProperties.Name="开机自启动"/>
+                                          AutomationProperties.Name="{lex:Loc Settings.AutoStart}"/>
                                 <CheckBox x:Name="StartMinimizedCheckBox"
-                                          Content="启动后最小化到托盘"
+                                          Content="{lex:Loc Settings.StartMinimizedToTray}"
                                           Style="{StaticResource CheckBoxStyle}"
                                           Checked="StartMinimizedCheckBox_Changed"
                                           Unchecked="StartMinimizedCheckBox_Changed"
-                                          AutomationProperties.Name="启动后最小化到托盘"/>
+                                          AutomationProperties.Name="{lex:Loc Settings.StartMinimizedToTray}"/>
                                 <CheckBox x:Name="CloseMinimizedCheckBox"
-                                          Content="关闭软件后最小化到托盘"
+                                          Content="{lex:Loc Settings.CloseMinimizedToTray}"
                                           Style="{StaticResource CheckBoxStyle}"
                                           Checked="CloseMinimizedCheckBox_Changed"
                                           Unchecked="CloseMinimizedCheckBox_Changed"
-                                          AutomationProperties.Name="关闭软件后最小化到托盘"/>
+                                          AutomationProperties.Name="{lex:Loc Settings.CloseMinimizedToTray}"/>
                             </StackPanel>
                         </Border>
 
@@ -534,17 +528,16 @@
                                     <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                         <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
-                                    <TextBlock Text="语言设置" Style="{StaticResource SectionTitleStyle}"/>
+                                    <TextBlock Text="{lex:Loc Settings.LanguageSettings}" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
                                 <ComboBox x:Name="LanguageComboBox"
                                           Style="{StaticResource ComboBoxStyle}"
                                           Width="450"
                                           HorizontalAlignment="Left"
                                           SelectionChanged="LanguageComboBox_SelectionChanged"
-                                          AutomationProperties.Name="选择应用程序显示语言">
-                                    <ComboBoxItem Content="简体中文" Style="{StaticResource ComboBoxItemStyle}" Tag="zh-CN"/>
+                                          AutomationProperties.Name="{lex:Loc Settings.SelectLanguage}">
+                                    <ComboBoxItem Content="{lex:Loc Settings.Chinese}" Style="{StaticResource ComboBoxItemStyle}" Tag="zh-CN"/>
                                     <ComboBoxItem Content="English" Style="{StaticResource ComboBoxItemStyle}" Tag="en-US"/>
-                                    <ComboBoxItem Content="日本語" Style="{StaticResource ComboBoxItemStyle}" Tag="ja-JP"/>
                                 </ComboBox>
                             </StackPanel>
                         </Border>
@@ -555,14 +548,14 @@
                                     <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                         <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
-                                    <TextBlock Text="自定义主题" Style="{StaticResource SectionTitleStyle}"/>
+                                    <TextBlock Text="{lex:Loc Settings.ThemeSettings}" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
                                 <ComboBox x:Name="ThemeComboBox"
                                           Style="{StaticResource ComboBoxStyle}"
                                           Width="450"
                                           HorizontalAlignment="Left"
-                                          SelectionChanged="ThemeComboBox_SelectionChanged"
-                                          AutomationProperties.Name="选择应用程序主题样式">
+                                          SelectedIndex="0"
+                                          AutomationProperties.Name="{lex:Loc Settings.SelectTheme}">
                                     <ComboBoxItem Style="{StaticResource ComboBoxItemStyle}" Tag="Dark">
                                         <StackPanel Orientation="Horizontal">
                                             <Rectangle Width="18" Height="18">
@@ -573,11 +566,9 @@
                                                     </LinearGradientBrush>
                                                 </Rectangle.Fill>
                                             </Rectangle>
-                                            <TextBlock Text="暗夜红" Margin="5,0,0,0"/>
+                                            <TextBlock Text="{lex:Loc Settings.DarkRed}" Margin="5,0,0,0"/>
                                         </StackPanel>
                                     </ComboBoxItem>
-                                    <ComboBoxItem Content="浅色主题" Style="{StaticResource ComboBoxItemStyle}" Tag="Light"/>
-                                    <ComboBoxItem Content="跟随系统" Style="{StaticResource ComboBoxItemStyle}" Tag="System"/>
                                 </ComboBox>
                             </StackPanel>
                         </Border>
@@ -588,7 +579,7 @@
                                     <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                         <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
-                                    <TextBlock Text="版本更新" Style="{StaticResource SectionTitleStyle}"/>
+                                    <TextBlock Text="{lex:Loc Settings.VersionUpdate}" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -597,7 +588,7 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="当前软件版本 " Foreground="#EEEEEE" FontSize="16" FontWeight="Regular"/>
+                                            <TextBlock Text="{lex:Loc Settings.CurrentVersion}" Foreground="#EEEEEE" FontSize="16" FontWeight="Regular"/>
                                             <TextBlock x:Name="CurrentVersionText" 
                                                        Text="V 1.0.0" 
                                                        Foreground="#EEEEEE" 
@@ -606,10 +597,10 @@
                                                        FontFamily="{StaticResource OrbitronFont}"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                            <TextBlock Text="上次检查更新 " Foreground="#66EEEEEE" FontSize="16" FontWeight="Regular"/>
-                                            <TextBlock x:Name="LastCheckTimeText" 
-                                                       Text="未检查" 
-                                                       Foreground="#66EEEEEE" 
+                                            <TextBlock Text="{lex:Loc Settings.LastCheckUpdate}" Foreground="#66EEEEEE" FontSize="16" FontWeight="Regular"/>
+                                            <TextBlock x:Name="LastCheckTimeText"
+                                                       Text="{lex:Loc Settings.NotChecked}"
+                                                       Foreground="#66EEEEEE"
                                                        FontSize="16"
                                                        FontWeight="Bold"
                                                        FontFamily="{StaticResource OrbitronFont}"/>
@@ -618,7 +609,7 @@
                                                     Orientation="Horizontal" 
                                                     Margin="0,8,0,0"
                                                     Visibility="Collapsed">
-                                            <TextBlock Text="检测到新版本 " Foreground="#C60E0E" FontSize="16" FontWeight="Bold"/>
+                                            <TextBlock Text="{lex:Loc Settings.NewVersionDetected}" Foreground="#C60E0E" FontSize="16" FontWeight="Bold"/>
                                             <TextBlock x:Name="NewVersionText" 
                                                        Text="V 1.1.1" 
                                                        Foreground="#EEEEEE" 
@@ -626,21 +617,21 @@
                                                        FontWeight="Bold"
                                                        FontFamily="{StaticResource OrbitronFont}"/>
                                             <Button x:Name="ViewUpdateLogButton"
-                                                    Content="查看更新日志"
+                                                    Content="{lex:Loc Settings.ViewUpdateLog}"
                                                     Style="{StaticResource LinkButtonStyle}"
                                                     FontSize="16"
                                                     FontWeight="Regular"
-                                                    AutomationProperties.Name="查看更新日志"
+                                                    AutomationProperties.Name="{lex:Loc Settings.ViewUpdateLog}"
                                                     Margin="10,0,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
                                     <Button x:Name="CheckUpdateButton"
                                             Grid.Column="1"
-                                            Content="检 查 更 新"
+                                            Content="{lex:Loc Settings.CheckUpdate}"
                                             Style="{StaticResource UpdateButtonStyle}"
                                             FontSize="16"
                                             Click="CheckUpdateButton_Click"
-                                            AutomationProperties.Name="检 查 更 新"
+                                            AutomationProperties.Name="{lex:Loc Settings.CheckUpdate}"
                                             VerticalAlignment="Top"/>
                                 </Grid>
                             </StackPanel>
@@ -652,7 +643,7 @@
                                     <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                         <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                     </Grid>
-                                    <TextBlock Text="关于我们" Style="{StaticResource SectionTitleStyle}"/>
+                                    <TextBlock Text="{lex:Loc Settings.AboutUs}" Style="{StaticResource SectionTitleStyle}"/>
                                 </StackPanel>
                                 <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
@@ -661,10 +652,9 @@
                                     </Grid.ColumnDefinitions>
                                     
                                     <StackPanel Grid.Column="0" VerticalAlignment="Top">
-                                        <TextBlock Text="深圳市乘物游心科技有限公司"
+                                        <TextBlock Text="{lex:Loc Settings.CompanyName}"
                                                    Foreground="#EEEEEE"
                                                    FontSize="16"
-                                                   FontWeight="SemiBold"
                                                    Margin="0,0,0,10"/>
                                         
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
@@ -757,7 +747,7 @@
                                     <StackPanel Grid.Column="1" 
                                                 VerticalAlignment="Top"
                                                 Margin="0,0,0,0">
-                                        <TextBlock Text="售后客服"
+                                        <TextBlock Text="{lex:Loc Settings.AfterSalesSupport}"
                                                    Foreground="#FFFFFF"
                                                    FontSize="16"
                                                    FontWeight="Bold"
@@ -778,19 +768,19 @@
                                 <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                     <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                 </Grid>
-                                <TextBlock Text="版权声明" Style="{StaticResource SectionTitleStyle}"/>
+                                <TextBlock Text="{lex:Loc Settings.Copyright}" Style="{StaticResource SectionTitleStyle}"/>
                             </StackPanel>
                             <StackPanel Margin="0,0,0,0" >
                                 <Border Width="401" Height="97" Background="#D9D9D9" HorizontalAlignment="Left" Margin="0,0,0,20">
                                     <TextBlock Text="HITAPEX" Foreground="#000000" FontSize="28" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}"  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 
-                                <TextBlock Text="本软件内容受法律保护，未经授权不得复制或使用。"
+                                <TextBlock Text="{lex:Loc Settings.CopyrightText}"
                                            Foreground="#EEEEEE"
                                            FontSize="16"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,10"/>
-                                <TextBlock Text="© 2026 [名称] All Rights Reserved."
+                                <TextBlock Text="{lex:Loc Settings.CopyrightYear}"
                                            Foreground="#EEEEEE"
                                            FontFamily="{StaticResource OrbitronFont}"
                                            FontSize="16"/>
@@ -809,20 +799,20 @@
                                 </Grid.ColumnDefinitions>
                                 <Button x:Name="FirmwareCheckUpdateButton"
                                         Grid.Column="0"
-                                        Content="检 查 更 新"
+                                        Content="{lex:Loc Settings.CheckUpdate}"
                                         Style="{StaticResource UpdateButtonStyle}"
                                         FontSize="16"
                                         Click="FirmwareCheckUpdateButton_Click"
-                                        AutomationProperties.Name="检查固件更新"/>
+                                        AutomationProperties.Name="{lex:Loc Settings.FirmwareCheckUpdate}"/>
                             </Grid>
                         </Border>
 
                         <Border Margin="0,0,0,20">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="上次检查更新 " Foreground="#66EEEEEE" FontSize="18" FontWeight="Regular"/>
-                                <TextBlock x:Name="FirmwareLastCheckTimeText" 
-                                           Text="未检查" 
-                                           Foreground="#66EEEEEE" 
+                                <TextBlock Text="{lex:Loc Settings.FirmwareLastCheck}" Foreground="#66EEEEEE" FontSize="18" FontWeight="Regular"/>
+                                <TextBlock x:Name="FirmwareLastCheckTimeText"
+                                           Text="{lex:Loc Settings.NotChecked}"
+                                           Foreground="#66EEEEEE"
                                            FontSize="18"
                                            FontWeight="Regular"
                                            FontFamily="{StaticResource OrbitronFont}"/>
@@ -846,42 +836,42 @@
                                             <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}" Margin="20,0,0,0">
                                                 <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
-                                            <TextBlock Text="设 备" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc Settings.Device}" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                                             <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                                 <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
-                                            <TextBlock Text="型 号" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc Settings.Model}" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="2" Orientation="Horizontal">
                                             <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                                 <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
-                                            <TextBlock Text="设 备 序 列 号" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc Settings.SerialNumber}" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="3" Orientation="Horizontal">
                                             <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                                 <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
-                                            <TextBlock Text="当 前 版 本" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc Settings.CurrentVersionCol}" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="4" Orientation="Horizontal">
                                             <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                                 <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
-                                            <TextBlock Text="状 态" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc Settings.Status}" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="5" Orientation="Horizontal">
                                             <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
                                                 <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
                                             </Grid>
-                                            <TextBlock Text="更 新" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc Settings.Update}" Foreground="#E6EEEEEE" FontSize="18" FontWeight="Bold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Grid>
                                 </ContentControl>
@@ -937,7 +927,7 @@
                                                            FontFamily="{StaticResource OrbitronFont}"
                                                            VerticalAlignment="Center"/>
                                                     <Button Grid.Column="5"
-                                                         Content="更 新"
+                                                         Content="{lex:Loc Settings.Update}"
                                                          Width="122"
                                                          Height="36"
                                                          FontSize="18"

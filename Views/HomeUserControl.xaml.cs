@@ -1035,13 +1035,13 @@ public partial class HomeUserControl : UserControl
         {
             var dialog = mainWindow.GlobalDialogControl;
 
-            dialog.Title = "启动失败";
+            dialog.Title = LocalizationService.Instance["Dialog.LaunchFailed"];
             dialog.ShowIcon = true;
             dialog.ClearButtons();
 
             dialog.DialogContent = new TextBlock
             {
-                Text = "游戏启动失败，请确认游戏已安装且启动路径正确，或尝试重新设置路径后再试。",
+                Text = LocalizationService.Instance["Dialog.LaunchFailedMessage"],
                 FontSize = 22,
                 Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
                 TextWrapping = TextWrapping.Wrap,
@@ -1051,12 +1051,12 @@ public partial class HomeUserControl : UserControl
                 FontWeight = FontWeights.Regular
             };
 
-            dialog.AddButton("重 新 启 动", (s, args) =>
+            dialog.AddButton(LocalizationService.Instance["Dialog.Restart"], (s, args) =>
             {
                 dialog.Hide();
             }, isPrimary: true);
 
-            dialog.AddButton("取 消", (s, args) =>
+            dialog.AddButton(LocalizationService.Instance["Dialog.Cancel"], (s, args) =>
             {
                 dialog.Hide();
             });

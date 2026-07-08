@@ -56,6 +56,9 @@ public partial class GameUserControl : UserControl
         if (_isInitialized) return;
         _isInitialized = true;
 
+        // 订阅语言切换事件，以便动态更新游戏介绍文本
+        LocalizationService.Instance.PropertyChanged += OnLanguageChanged;
+
         InitializeGameList();
         StartTelemetrySimulation();
         UpdateScrollbarThumb();
@@ -172,7 +175,7 @@ public partial class GameUserControl : UserControl
         _selectedGame = game;
         GameTitleText.Text = game.Name;
         GameTitleText2.Text = game.Name;
-        GameDescriptionText.Text = game.Description;
+        UpdateGameDescription();
 
         GameBackgroundImage.SetBinding(Image.SourceProperty, new Binding("BgImageUrl") { Source = game });
 
@@ -184,7 +187,7 @@ public partial class GameUserControl : UserControl
             CustomPathPanel.Visibility = Visibility.Visible;
             CustomPathText.Text = !string.IsNullOrEmpty(game.LaunchPath)
                 ? game.LaunchPath
-                : "点击选择游戏路径...";
+                : LocalizationService.Instance["Game.SelectGamePath"];
         }
         else
         {
@@ -197,7 +200,7 @@ public partial class GameUserControl : UserControl
         {
             LaunchButtonPath.Visibility = Visibility.Visible;
             LaunchButtonPathNotInstalled.Visibility = Visibility.Collapsed;
-            LaunchButtonText.Text = "启 动 游 戏";
+            SetLaunchButtonBinding("Game.LaunchGame");
 
             // 仅对已安装且需要遥测配置的游戏显示按钮
             TelemetryConfigButton.Visibility = game.NeedsTelemetryConfig
@@ -208,9 +211,23 @@ public partial class GameUserControl : UserControl
         {
             LaunchButtonPath.Visibility = Visibility.Collapsed;
             LaunchButtonPathNotInstalled.Visibility = Visibility.Visible;
-            LaunchButtonText.Text = "未 安 装";
+            SetLaunchButtonBinding("Common.NotInstalled");
             TelemetryConfigButton.Visibility = Visibility.Collapsed;
         }
+    }
+
+    /// <summary>
+    /// 通过绑定设置启动按钮文字，避免破坏 XAML 中的 {lex:Loc} 绑定。
+    /// 直接赋值 Text 属性会清除绑定，导致语言切换时文字不再更新。
+    /// </summary>
+    private void SetLaunchButtonBinding(string locKey)
+    {
+        LaunchButtonText.SetBinding(TextBlock.TextProperty, new Binding
+        {
+            Source = LocalizationService.Instance,
+            Path = new PropertyPath($"[{locKey}]"),
+            Mode = BindingMode.OneWay
+        });
     }
 
     private void FilterButton_Click(object sender, RoutedEventArgs e)
@@ -343,7 +360,7 @@ public partial class GameUserControl : UserControl
 
         contentPanel.Children.Add(new TextBlock
         {
-            Text = "配 置 成 功",
+            Text = LocalizationService.Instance["Game.ConfigSuccess"],
             FontSize = 30,
             Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
             FontWeight = FontWeights.Bold,
@@ -438,7 +455,7 @@ public partial class GameUserControl : UserControl
 
         contentPanel.Children.Add(new TextBlock
         {
-            Text = "配 置 失 败",
+            Text = LocalizationService.Instance["Game.ConfigFailed"],
             FontSize = 30,
             Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
             FontWeight = FontWeights.Bold,
@@ -488,7 +505,7 @@ public partial class GameUserControl : UserControl
             }
             else
             {
-                CustomPathText.Text = "点击选择游戏路径...";
+                CustomPathText.Text = LocalizationService.Instance["Game.SelectGamePath"];
             }
         }
         else
@@ -506,8 +523,8 @@ public partial class GameUserControl : UserControl
         
         var dialog = new OpenFileDialog
         {
-            Filter = "可执行文件 (*.exe)|*.exe|所有文件 (*.*)|*.*",
-            Title = "选择游戏启动文件"
+            Filter = LocalizationService.Instance["Game.ExeFilter"],
+            Title = LocalizationService.Instance["Game.SelectGameExe"]
         };
 
         if (dialog.ShowDialog() == true)
@@ -540,13 +557,13 @@ public partial class GameUserControl : UserControl
         {
             var dialog = mainWindow.GlobalDialogControl;
 
-            dialog.Title = "提示";
+            dialog.Title = LocalizationService.Instance["Dialog.Prompt"];
             dialog.ShowIcon = true;
             dialog.ClearButtons();
 
             dialog.DialogContent = new TextBlock
             {
-                Text = "游戏启动失败，请确认游戏已安装且启动路径正确，或尝试重新设置路径后再试。",
+                Text = LocalizationService.Instance["Dialog.LaunchFailedMessage"],
                 FontSize = 22,
                 Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
                 TextWrapping = TextWrapping.Wrap,
@@ -556,7 +573,7 @@ public partial class GameUserControl : UserControl
                 FontWeight = FontWeights.Regular
             };
 
-            dialog.AddButton("重 新 启 动", (s, args) =>
+            dialog.AddButton(LocalizationService.Instance["Dialog.Restart"], (s, args) =>
             {
                 dialog.Hide();
                 if (_selectedGame != null)
@@ -567,7 +584,7 @@ public partial class GameUserControl : UserControl
                 }
             }, isPrimary: true);
 
-            dialog.AddButton("取 消", (s, args) =>
+            dialog.AddButton(LocalizationService.Instance["Dialog.Cancel"], (s, args) =>
             {
                 dialog.Hide();
             });
@@ -952,5 +969,53 @@ public partial class GameUserControl : UserControl
                 transform.BeginAnimation(TranslateTransform.XProperty, anim);
             }
         }
+    }
+
+    /// <summary>
+    /// 语言切换时更新游戏介绍文本和适配按钮。
+    /// </summary>
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == null) // null 表示全部属性刷新（SetLanguage 触发）
+        {
+            UpdateGameDescription();
+            // 延迟更新：等布局完成（内容层文本已变化、ActualWidth 已定）后再重绘背景
+            Dispatcher.BeginInvoke(new Action(UpdateTelemetryButtonShape), DispatcherPriority.Loaded);
+        }
+    }
+
+    /// <summary>
+    /// 遥测配置按钮内容区域尺寸变化时，重新绘制背景平行四边形。
+    /// </summary>
+    private void TelemetryButtonContent_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateTelemetryButtonShape();
+    }
+
+    /// <summary>
+    /// 根据内容层实际宽度绘制平行四边形背景，切角偏移固定不变。
+    /// </summary>
+    private void UpdateTelemetryButtonShape()
+    {
+        var w = TelemetryButtonContent.ActualWidth;
+        if (w <= 0) return;
+
+        TelemetryButtonBackground.Width = w;
+        TelemetryButtonBackground.Data = Geometry.Parse(
+            $"M0,5.0625 V27 H{w - 6.19048:F4} L{w},21.9375 V0 H6.19048 Z");
+    }
+
+    /// <summary>
+    /// 根据当前语言选择中文或英文描述。
+    /// </summary>
+    private void UpdateGameDescription()
+    {
+        if (_selectedGame == null) return;
+
+        var isEnglish = LocalizationService.Instance.CurrentLanguage != "zh-CN";
+        var desc = isEnglish && !string.IsNullOrEmpty(_selectedGame.DescriptionEn)
+            ? _selectedGame.DescriptionEn
+            : _selectedGame.Description;
+        GameDescriptionText.Text = desc;
     }
 }

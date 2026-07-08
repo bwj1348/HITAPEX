@@ -166,4 +166,17 @@ public partial class CalibrationDialog : UserControl
         st.BeginAnimation(ScaleTransform.ScaleXProperty, scaleX);
         st.BeginAnimation(ScaleTransform.ScaleYProperty, scaleY);
     }
+
+    private void StartCalibrationButton_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        if (w <= 0) return;
+
+        var geom = Geometry.Parse($"M6,0 H{w} V29 L{w - 6},35 H0 V6 Z");
+        StartButtonBg.Width = w;
+        StartButtonBg.Data = geom;
+        StartButtonMask.Width = w;
+        StartButtonMask.Data = geom;
+    }
 }

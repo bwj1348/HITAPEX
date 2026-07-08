@@ -42,5 +42,7 @@
     "throttleDeadZoneFront": 7,
     "throttleDeadZoneRear": 8
   },
-  "IsPersonal": true
+  "WheelParameters": null,
+  "IsPersonal": true,
+  "DeviceType": 2
 }

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="924" d:DesignWidth="1342"
              Loaded="HomeUserControl_Loaded">
@@ -58,7 +59,7 @@
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,7">
                 <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,0" VerticalAlignment="Bottom"/>
                 <Grid Height="26">
-                    <TextBlock Text="设 备 预 览" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock Text="{lex:Loc Home.DevicePreview}" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </Grid>
             </StackPanel>
 
@@ -94,8 +95,8 @@
                             </Grid.ColumnDefinitions>
                             
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
-                                <TextBlock Text="基&#x200A;座" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
-                                <TextBlock Text="Base Station" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Center" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
+                                <TextBlock Text="{lex:Loc Home.BaseStation}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
+                                <TextBlock Text="{lex:Loc Home.BaseStationEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
                             
                             <svgc:SvgViewbox Grid.Column="2" Source="/Assets/Group.svg" Width="15" Height="15" VerticalAlignment="Top"/>
@@ -129,29 +130,30 @@
                                 </Path>
                                 
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,0">
-                                    <TextBlock Text="力反馈" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic"/>
+                                    <TextBlock Text="{lex:Loc Home.ForceFeedback}" FontSize="{lex:LocFontSize Home.ForceFeedbackFontSize}" Width="100" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic" TextWrapping="Wrap" TextAlignment="Center"/>
                                 </StackPanel>
                                 
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,8">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,6">
                                     <TextBlock x:Name="ForceFeedbackText" Text="75" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic"/>
                                     <TextBlock Text="Nm" FontSize="12" Foreground="#80EEEEEE" HorizontalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
 
-                        <Rectangle Grid.Row="2" Height="0.2" Fill="#EEEEEE" Margin="0,9,0,0" Width="215"/>
+                        <Rectangle Grid.Row="2" Height="0.2" Fill="#EEEEEE" Margin="0,9,0,0" Width="230"/>
 
-                        <Grid Grid.Row="3" Margin="0,8,0,0" Width="215">
+                        <Grid Grid.Row="3" Margin="0,8,0,0" Width="228">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
-                            <TextBlock Grid.Column="0" Text="基&#x200A;座&#x200A;温&#x200A;度" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="{lex:Loc Home.BaseTemperature}" MinWidth="61" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                             
-                            <Border Grid.Column="1" Width="98" Height="11" BorderBrush="#1F2937" BorderThickness="1" Background="Transparent" Margin="4,0,4,0" VerticalAlignment="Center">
+                            <Border Grid.Column="1" Width="98" Height="11" BorderBrush="#1F2937" BorderThickness="1" Background="Transparent" Margin="4,0,0,0" VerticalAlignment="Center">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -188,11 +190,11 @@
                                 </Grid>
                             </Border>
                             
-                            <TextBlock Grid.Column="2" x:Name="TemperatureText" Text="45" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
-                            <TextBlock Grid.Column="3" Text="°C" FontSize="16" FontWeight="Regular" Foreground="#80EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                            <TextBlock Grid.Column="3" x:Name="TemperatureText" Text="45" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                            <TextBlock Grid.Column="4" Text="°C" FontSize="16" FontWeight="Regular" Foreground="#80EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
                         </Grid>
 
-                        <Rectangle Grid.Row="4" Height="0.2" Fill="#EEEEEE" Margin="0,9,0,0" Width="215"/>
+                        <Rectangle Grid.Row="4" Height="0.2" Fill="#EEEEEE" Margin="0,9,0,0" Width="230"/>
                     </Grid>
                 </Grid>
 
@@ -225,8 +227,8 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
-                                <TextBlock Text="方&#x200A;向&#x200A;盘" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
-                                <TextBlock Text="Steering Wheel" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Center" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
+                                <TextBlock Text="{lex:Loc Home.SteeringWheel}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
+                                <TextBlock Text="{lex:Loc Home.SteeringWheelEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
 
                             <svgc:SvgViewbox Grid.Column="2" Source="/Assets/Group.svg" Width="15" Height="15" VerticalAlignment="Top"/>
@@ -255,16 +257,16 @@
                             </Grid>
                         </Grid>
 
-                        <Rectangle Grid.Row="2" Height="0.2" Fill="#EEEEEE" Margin="0,6,0,0" Width="215"/>
+                        <Rectangle Grid.Row="2" Height="0.2" Fill="#EEEEEE" Margin="0,6,0,0" Width="230"/>
 
-                        <Grid Grid.Row="3" Margin="26,8,26,0">
+                        <Grid Grid.Row="3" Margin="19,8,19,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
-                            <TextBlock Grid.Column="0" Text="按&#x200A;键&#x200A;响&#x200A;应" FontSize="16" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="0" Text="{lex:Loc Home.ButtonResponse}" FontSize="16" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                             
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                 <Border Width="12" Height="12" Background="#C60E0E" Margin="0,0,3,0">
@@ -276,7 +278,7 @@
                             </StackPanel>
                         </Grid>
 
-                        <Rectangle Grid.Row="4" Height="0.2" Fill="#EEEEEE" Margin="0,9,0,0" Width="215"/>
+                        <Rectangle Grid.Row="4" Height="0.2" Fill="#EEEEEE" Margin="0,9,0,0" Width="230"/>
                     </Grid>
                 </Grid>
 
@@ -306,8 +308,8 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
-                                <TextBlock Text="脚&#x200A;踏&#x200A;板" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
-                                <TextBlock Text="Pedals" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Center" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
+                                <TextBlock Text="{lex:Loc Home.Pedals}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
+                                <TextBlock Text="{lex:Loc Home.PedalsEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
 
                             <svgc:SvgViewbox Grid.Column="2" Source="/Assets/Group.svg" Width="15" Height="15" VerticalAlignment="Top"/>
@@ -341,7 +343,7 @@
                                     </Grid>
                                     
                                 </Grid>
-                                <TextBlock Text="离&#x200A;合" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                                <TextBlock Text="{lex:Loc Home.Clutch}" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                             </StackPanel>
                             
                             <StackPanel Margin="0,0,24,0">
@@ -371,7 +373,7 @@
                                     </Grid>
                                     
                                 </Grid>
-                                <TextBlock Text="刹&#x200A;车" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                                <TextBlock Text="{lex:Loc Home.Brake}" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                             </StackPanel>
                             
                             <StackPanel>
@@ -401,7 +403,7 @@
                                     </Grid>
                                     
                                 </Grid>
-                                <TextBlock Text="油&#x200A;门" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Center" Margin="0,1,0,0"/>
+                                <TextBlock Text="{lex:Loc Home.Throttle}" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Center" Margin="0,1,0,0"/>
                             </StackPanel>
                         </StackPanel>
                     </Grid>
@@ -434,7 +436,7 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
-                                <TextBlock Text="排&#x200A;挡" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
+                                <TextBlock Text="{lex:Loc Home.Shifter}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
                                
                             </StackPanel>
 
@@ -476,7 +478,7 @@
 
                                 <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,30,0,0">
                                     <svgc:SvgViewbox Source="/Assets/disconnect.svg" Width="27" Height="27" Margin="0,0,0,8"/>
-                                    <TextBlock Text="设 备 未 连 接" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="{lex:Loc Home.DeviceNotConnected}" Width="120" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
@@ -496,7 +498,7 @@
             <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,7">
                 <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,0" VerticalAlignment="Bottom"/>
                 <Grid Height="26">
-                    <TextBlock Text="快 速 游 玩" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock Text="{lex:Loc Home.QuickPlay}" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </Grid>
             </StackPanel>
 
@@ -750,7 +752,7 @@
                                                                     <Setter.Value>
                                                                         <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="从置顶移除"/>
+                                                                                <TextBlock Text="{lex:Loc Home.RemoveFromPin}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>
@@ -768,7 +770,7 @@
                                                                     <Setter.Value>
                                                                         <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="添加到置顶"/>
+                                                                                <TextBlock Text="{lex:Loc Home.AddToPin}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>
@@ -847,10 +849,10 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsInstalled}" Value="True">
-                                                                        <Setter Property="Text" Value="启 动"/>
+                                                                        <Setter Property="Text" Value="{lex:Loc Common.Launch}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding IsInstalled}" Value="False">
-                                                                        <Setter Property="Text" Value="未 安 装"/>
+                                                                        <Setter Property="Text" Value="{lex:Loc Common.NotInstalled}"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -887,7 +889,7 @@
                                         </Style>
                                     </Path.Style>
                                 </Path>
-                                <TextBlock Text="正在加载游戏列表..." FontSize="14" Foreground="#EEEEEE" Margin="0,12,0,0" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{lex:Loc Home.LoadingGames}" FontSize="14" Foreground="#EEEEEE" Margin="0,12,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Grid>
                     </Grid>

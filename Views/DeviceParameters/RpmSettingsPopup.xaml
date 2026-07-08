@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="704" d:DesignWidth="1047">
 
@@ -815,7 +816,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- 标题 -->
-                    <TextBlock Grid.Row="0" Text="转 速 灯 设 置"
+                    <TextBlock Grid.Row="0" Text="{lex:Loc RpmSettings.Title}"
                                FontSize="26" FontWeight="Bold"
                                Foreground="#EEEEEE"
                                HorizontalAlignment="Center"
@@ -1392,7 +1393,7 @@
                                                     </Path>
                                                 </Grid>
                                             </Viewbox>
-                                            <TextBlock Text="转 速 灯 颜 色" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc RpmSettings.LedColor}" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel Grid.Row="1" Orientation="Horizontal">
                                             <RadioButton x:Name="RpmLightColor1" GroupName="RpmLightColor" Style="{StaticResource PopupColorBlockRadioStyle}"
@@ -1443,7 +1444,7 @@
                                                     </Path>
                                                 </Grid>
                                             </Viewbox>
-                                            <TextBlock Text="遥 测 模 式" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc RpmSettings.TelemetryMode}" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <CheckBox x:Name="RpmTelemetryToggle"
                                                   Style="{StaticResource PopupDualStateSvgToggleStyle}"
@@ -1471,7 +1472,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="灯光模式"
+                                        <TextBlock Grid.Row="0" Text="{lex:Loc RpmSettings.LightMode}"
                                                    FontSize="16" FontWeight="Bold"
                                                    Foreground="#EEEEEE"  Margin="0,0,0,10">
                                         </TextBlock>
@@ -1479,9 +1480,9 @@
                                             <ComboBox x:Name="RpmLightModeCombo"
                                                       Style="{StaticResource PopupComboBoxStyle}"
                                                       SelectedIndex="0" Width="300" Height="35">
-                                                <ComboBoxItem Content="序列"/>
-                                                <ComboBoxItem Content="扩散"/>
-                                                <ComboBoxItem Content="汇聚"/>
+                                                <ComboBoxItem Content="{lex:Loc RpmSettings.Sequence}"/>
+                                                <ComboBoxItem Content="{lex:Loc RpmSettings.Diffuse}"/>
+                                                <ComboBoxItem Content="{lex:Loc RpmSettings.Converge}"/>
                                             </ComboBox>
                                         </Grid>
                                     </Grid>
@@ -1506,7 +1507,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="爆闪灯光"
+                                        <TextBlock Grid.Row="0" Text="{lex:Loc RpmSettings.StrobeLight}"
                                                    FontSize="16" FontWeight="Bold"
                                                    Foreground="#EEEEEE" Margin="0,0,0,10">
                                         </TextBlock>
@@ -1515,9 +1516,9 @@
                                                       Style="{StaticResource PopupComboBoxStyle}"
                                                       SelectedIndex="0" Width="300" Height="35"
                                                       SelectionChanged="StrobeModeComboBox_SelectionChanged">
-                                                <ComboBoxItem Content="与转速灯颜色一致"/>
-                                                <ComboBoxItem Content="自定义"/>
-                                                <ComboBoxItem Content="关灯"/>
+                                                <ComboBoxItem Content="{lex:Loc RpmSettings.StrobeSameAsLed}"/>
+                                                <ComboBoxItem Content="{lex:Loc RpmSettings.StrobeCustom}"/>
+                                                <ComboBoxItem Content="{lex:Loc RpmSettings.StrobeOff}"/>
                                             </ComboBox>
                                         </Grid>
                                     </Grid>
@@ -1558,7 +1559,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="爆闪颜色"
+                                        <TextBlock Grid.Row="0" Text="{lex:Loc RpmSettings.StrobeColor}"
                                                    FontSize="16" FontWeight="Bold"
                                                    Foreground="#EEEEEE" Margin="0,0,0,10"/>
                                         <StackPanel Grid.Row="1" Orientation="Horizontal">
@@ -1625,7 +1626,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="速度"
+                                        <TextBlock Grid.Row="0" Text="{lex:Loc RpmSettings.Speed}"
                                                    FontSize="16" FontWeight="Bold"
                                                    Foreground="#EEEEEE" Margin="0,0,0,10"/>
                                         <Slider x:Name="RpmSpeedSlider1" Grid.Row="1"
@@ -1655,15 +1656,15 @@
                                                     </Path>
                                                 </Grid>
                                             </Viewbox>
-                                            <TextBlock Text="基 础 灯 光" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc RpmSettings.BaseLight}" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <ComboBox Grid.Row="1" x:Name="BaseLightModeComboBox"
                                                   Style="{StaticResource PopupComboBoxStyle}"
                                                   SelectedIndex="0" Width="300" Height="35"
                                                   SelectionChanged="BaseLightModeComboBox_SelectionChanged">
-                                            <ComboBoxItem Content="恒亮"/>
-                                            <ComboBoxItem Content="呼吸"/>
-                                            <ComboBoxItem Content="彩色循环"/>
+                                            <ComboBoxItem Content="{lex:Loc RpmSettings.SteadyOn}"/>
+                                            <ComboBoxItem Content="{lex:Loc RpmSettings.Breathing}"/>
+                                            <ComboBoxItem Content="{lex:Loc RpmSettings.ColorCycle}"/>
                                         </ComboBox>
                                     </Grid>
 
@@ -1687,7 +1688,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
-                                        <TextBlock Grid.Row="0" Text="速度"
+                                        <TextBlock Grid.Row="0" Text="{lex:Loc RpmSettings.Speed}"
                                                    FontSize="16" FontWeight="Bold"
                                                    Foreground="#EEEEEE" Margin="0,0,0,10"/>
                                         <Slider x:Name="RpmSpeedSlider2" Grid.Row="1"
@@ -1709,12 +1710,12 @@
 
                         <Button Grid.Column="0"
                                 Style="{StaticResource PopupConfirmButtonStyle}"
-                                Content="确 定"
+                                Content="{lex:Loc Common.Confirm}"
                                 Click="ConfirmButton_Click"/>
 
                         <Button Grid.Column="2"
                                 Style="{StaticResource PopupCancelButtonStyle}"
-                                Content="取 消"
+                                Content="{lex:Loc Common.Cancel}"
                                 Click="CancelButton_Click"/>
                     </Grid>
                 </Grid>

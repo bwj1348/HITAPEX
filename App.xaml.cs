@@ -29,7 +29,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // 在独立 STA 线程上显示 splash，避免主线程初始化阻塞导致动画卡顿
+        // 初始化本地化服务（必须在显示任何 UI 之前）
+        var language = HITAPEX.Properties.Settings.Default.Language ?? "zh-CN";
+        LocalizationService.Instance.Initialize(language);
+
+        //在独立 STA 线程上显示 splash，避免主线程初始化阻塞导致动画卡顿
         var splashReady = new ManualResetEventSlim();
         var splashThread = new Thread(() =>
         {

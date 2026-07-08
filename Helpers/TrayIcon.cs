@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using HITAPEX.Services;
 using SharpVectors.Dom.Css;
 
 namespace HITAPEX.Helpers;
@@ -140,9 +141,9 @@ public class TrayIcon : IDisposable
         var hWnd = helper.EnsureHandle();
 
         var hMenu = CreatePopupMenu();
-        AppendMenu(hMenu, MF_STRING, CMD_SHOW, "显示主窗口");
+        AppendMenu(hMenu, MF_STRING, CMD_SHOW, LocalizationService.Instance["Tray.ShowWindow"]);
         AppendMenu(hMenu, MF_SEPARATOR, 0, null);
-        AppendMenu(hMenu, MF_STRING, CMD_EXIT, "退出");
+        AppendMenu(hMenu, MF_STRING, CMD_EXIT, LocalizationService.Instance["Tray.Exit"]);
 
         // Must set foreground window so the menu can receive clicks and dismiss properly
         SetForegroundWindow(hWnd);

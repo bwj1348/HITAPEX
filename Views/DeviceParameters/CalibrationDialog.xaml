@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              >
 
     <UserControl.Resources>
@@ -134,7 +135,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- Row 0: Title -->
-                    <TextBlock Grid.Row="0" Text="校 准"
+                    <TextBlock Grid.Row="0" Text="{lex:Loc Calibration.Title}"
                                FontSize="26" FontWeight="Bold"
                                Foreground="#EEEEEE"
                                HorizontalAlignment="Center"
@@ -148,26 +149,35 @@
                         </Grid.ColumnDefinitions>
 
                         <TextBlock x:Name="InstructionText" Grid.Column="0"
-                                   Text="请确保踏板处于释放状态后开始校准"
-                                   FontSize="22"
+                                   Text="{lex:Loc Calibration.Instruction}"
+                                   FontSize="{lex:LocFontSize Calibration.InstructionFontSize}"
                                    Foreground="#EEEEEE"
-                                   VerticalAlignment="Center"/>
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap" Margin="0,0,10,0"/>
 
-                        <!-- Start calibration button (matches pedal interface style) -->
+                        <!-- Start calibration button (adaptive width, min 171) -->
                         <Grid Grid.Column="1" x:Name="StartCalibrationButton"
-                              Width="171" Height="35" Cursor="Hand"
-                              MouseLeftButtonDown="StartCalibrationButton_Click">
-                            <Path Data="M6 0H171V29L165 35H0V6L6 0Z">
-                                <Path.Fill>
-                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                        <GradientStop Color="#C60E0E" Offset="0"/>
-                                        <GradientStop Color="#600707" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Path.Fill>
-                            </Path>
+                              Height="35" Cursor="Hand"
+                              MouseLeftButtonDown="StartCalibrationButton_Click"
+                              SizeChanged="StartCalibrationButton_SizeChanged">
+                            <Canvas>
+                                <Path x:Name="StartButtonBg" Height="35"
+                                      Data="M6 0H171V29L165 35H0V6L6 0Z">
+                                    <Path.Fill>
+                                        <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                            <GradientStop Color="#C60E0E" Offset="0"/>
+                                            <GradientStop Color="#600707" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Path.Fill>
+                                </Path>
+                                <Path x:Name="StartButtonMask" Height="35"
+                                      Data="M6 0H171V29L165 35H0V6L6 0Z"
+                                      Fill="#991B1B1B"
+                                      Visibility="Collapsed"/>
+                            </Canvas>
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Center"
-                                        VerticalAlignment="Center">
+                                        VerticalAlignment="Center" Margin="20,0">
                                 <Viewbox Width="17" Height="17" Margin="0,0,10,0">
                                     <Canvas Width="17" Height="17">
                                         <Path Data="M12.2891 0.75H14.5968C14.9028 0.75 15.1963 0.871566 15.4126 1.08795C15.629 1.30434 15.7506 1.59783 15.7506 1.90385V4.21154" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
@@ -177,15 +187,11 @@
                                         <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                                     </Canvas>
                                 </Viewbox>
-                                <TextBlock Text="开 始 校 准" FontSize="22"
+                                <TextBlock Text="{lex:Loc Calibration.StartCalibration}" FontSize="18"
                                            Foreground="#EEEEEE"
                                            FontWeight="Bold" FontStyle="Italic"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
-                            <Path x:Name="StartButtonMask"
-                                  Data="M6 0H171V29L165 35H0V6L6 0Z"
-                                  Fill="#991B1B1B"
-                                  Visibility="Collapsed"/>
                         </Grid>
                     </Grid>
 
@@ -193,8 +199,13 @@
                     <Rectangle Grid.Row="2" Height="1" Fill="#4DEEEEEE"
                                Margin="0,0,0,20"/>
 
-                    <!-- Row 3: Progress bars -->
+                    <!-- Row 3: Progress bars (shared columns for alignment) -->
                     <Grid Grid.Row="3" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -202,216 +213,190 @@
                         </Grid.RowDefinitions>
 
                         <!-- Clutch progress bar -->
-                        <Grid Grid.Row="0" Margin="0,0,0,20">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{lex:Loc Home.Clutch}"
+                                   FontSize="18" FontWeight="Bold"
+                                   Foreground="#EEEEEE"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,0,20"/>
 
-                            <TextBlock Grid.Column="0" Text="离 合"
-                                       FontSize="18" FontWeight="Bold"
-                                       Foreground="#EEEEEE"
-                                       VerticalAlignment="Center"
-                                       Width="60"/>
+                        <Grid Grid.Row="0" Grid.Column="1" Width="424" Margin="0,0,0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                            <Grid Grid.Column="1" Margin="15,0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <!-- Top corners -->
-                                <Grid Grid.Row="0" Height="6">
-                                    <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
-                                    <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                                </Grid>
-
-                                <!-- Progress bar -->
-                                <Grid Grid.Row="1" Height="7" Margin="0,3">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition x:Name="ClutchProgressGreen" Width="0*"/>
-                                        <ColumnDefinition x:Name="ClutchProgressRed" Width="100*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#7B6000" Offset="0"/>
-                                                <GradientStop Color="#FFC800" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Border.Background>
-                                    </Border>
-                                    <Border Grid.Column="1" Height="7" VerticalAlignment="Center"
-                                            Background="{StaticResource ProgressBgGradient}"/>
-                                    <Path Data="M3.75448 7.12579H1.23828L5.43195 -0.175781H7.94816Z M-0.718172 7.12579H-3.23438L0.959297 -0.175781H3.4755Z M8.22714 7.12579H5.71094L9.90461 -0.175781H12.4208Z M12.6959 7.12579H10.1797L14.3734 -0.175781H16.8896Z M17.1685 7.12579H14.6523L18.846 -0.175781H21.3622Z M21.6412 7.12579H19.125L23.3187 -0.175781H25.8349Z M26.1178 7.12579H23.6016L27.7952 -0.175781H30.3114Z M30.5865 7.12579H28.0703L32.264 -0.175781H34.7802Z M35.0631 7.12579H32.5469L36.7405 -0.175781H39.2568Z M39.5357 7.12579H37.0195L41.2132 -0.175781H43.7294Z M44.0162 7.12579H41.5L45.6937 -0.175781H48.2099Z M48.481 7.12579H45.9648L50.1585 -0.175781H52.6747Z M52.9615 7.12579H50.4453L54.639 -0.175781H57.1552Z M57.4264 7.12579H54.9102L59.1038 -0.175781H61.62Z M61.9029 7.12579H59.3867L63.5804 -0.175781H66.0966Z M66.3795 7.12579H63.8633L68.057 -0.175781H70.5732Z M70.8482 7.12579H68.332L72.5257 -0.175781H75.0419Z M75.3287 7.12579H72.8125L77.0062 -0.175781H79.5224Z M79.7975 7.12579H77.2812L81.4749 -0.175781H83.9911Z M84.2701 7.12579H81.7539L85.9476 -0.175781H88.4638Z M88.7467 7.12579H86.2305L90.4241 -0.175781H92.9403Z M93.2154 7.12579H90.6992L94.8929 -0.175781H97.4091Z M97.6881 7.12579H95.1719L99.3655 -0.175781H101.882Z M102.165 7.12579H99.6484L103.842 -0.175781H106.358Z M106.641 7.12579H104.125L108.319 -0.175781H110.835Z M111.106 7.12579H108.59L112.784 -0.175781H115.3Z M115.583 7.12579H113.066L117.26 -0.175781H119.776Z M120.059 7.12579H117.543L121.737 -0.175781H124.253Z M124.524 7.12579H122.008L126.201 -0.175781H128.718Z M129.008 7.12579H126.492L130.686 -0.175781H133.202Z M133.469 7.12579H130.953L135.147 -0.175781H137.663Z M137.946 7.12579H135.43L139.623 -0.175781H142.14Z M142.415 7.12579H139.898L144.092 -0.175781H146.608Z M146.891 7.12579H144.375L148.569 -0.175781H151.085Z M151.364 7.12579H148.848L153.041 -0.175781H155.558Z M155.844 7.12579H153.328L157.522 -0.175781H160.038Z M160.317 7.12579H157.801L161.994 -0.175781H164.511Z M164.79 7.12579H162.273L166.467 -0.175781H168.983Z M169.262 7.12579H166.746L170.94 -0.175781H173.456Z M173.735 7.12579H171.219L175.412 -0.175781H177.929Z M178.204 7.12579H175.688L179.881 -0.175781H182.397Z M182.68 7.12579H180.164L184.358 -0.175781H186.874Z M187.149 7.12579H184.633L188.826 -0.175781H191.343Z M191.629 7.12579H189.113L193.307 -0.175781H195.823Z M196.098 7.12579H193.582L197.776 -0.175781H200.292Z M200.579 7.12579H198.062L202.256 -0.175781H204.772Z M205.047 7.12579H202.531L206.725 -0.175781H209.241Z M209.524 7.12579H207.008L211.201 -0.175781H213.718Z M213.997 7.12579H211.48L215.674 -0.175781H218.19Z M218.465 7.12579H215.949L220.143 -0.175781H222.659Z M222.946 7.12579H220.43L224.623 -0.175781H227.14Z M227.419 7.12579H224.902L229.096 -0.175781H231.612Z M231.891 7.12579H229.375L233.569 -0.175781H236.085Z M236.356 7.12579H233.84L238.034 -0.175781H240.55Z M240.833 7.12579H238.316L242.51 -0.175781H245.026Z M245.309 7.12579H242.793L246.987 -0.175781H249.503Z M249.782 7.12579H247.266L251.459 -0.175781H253.976Z M254.254 7.12579H251.738L255.932 -0.175781H258.448Z M258.719 7.12579H256.203L260.397 -0.175781H262.913Z M263.2 7.12579H260.684L264.877 -0.175781H267.393Z M267.669 7.12579H265.152L269.346 -0.175781H271.862Z M272.145 7.12579H269.629L273.823 -0.175781H276.339Z M276.622 7.12579H274.105L278.299 -0.175781H280.815Z M281.094 7.12579H278.578L282.772 -0.175781H285.288Z M285.571 7.12579H283.055L287.248 -0.175781H289.765Z M290.04 7.12579H287.523L291.717 -0.175781H294.233Z M294.508 7.12579H291.992L296.186 -0.175781H298.702Z M298.985 7.12579H296.469L300.662 -0.175781H303.179Z M303.458 7.12579H300.941L305.135 -0.175781H307.651Z M307.93 7.12579H305.414L309.608 -0.175781H312.124Z M312.403 7.12579H309.887L314.08 -0.175781H316.597Z M316.883 7.12579H314.367L318.561 -0.175781H321.077Z M321.352 7.12579H318.836L323.03 -0.175781H325.546Z M325.833 7.12579H323.316L327.51 -0.175781H330.026Z M330.301 7.12579H327.785L331.979 -0.175781H334.495Z M334.774 7.12579H332.258L336.451 -0.175781H338.968Z M339.243 7.12579H336.727L340.92 -0.175781H343.436Z M343.712 7.12579H341.195L345.389 -0.175781H347.905Z"
-                                          Fill="#EEEEEE" Opacity="0.3"
-                                          Stretch="Fill" Grid.ColumnSpan="2"/>
-                                </Grid>
-
-                                <!-- Bottom corners -->
-                                <Grid Grid.Row="2" Height="6">
-                                    <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                    <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                                </Grid>
+                            <Grid Grid.Row="0" Height="6">
+                                <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                             </Grid>
 
-                            <TextBlock Grid.Column="2" x:Name="ClutchPercentText"
-                                       Text="0%" FontSize="18" FontWeight="Bold"
-                                       Foreground="#EEEEEE"
-                                       FontFamily="{StaticResource OrbitronFont}"
-                                       VerticalAlignment="Center" Width="60"
-                                       TextAlignment="Right"/>
+                            <Grid Grid.Row="1" Height="7" Margin="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="ClutchProgressGreen" Width="0*"/>
+                                    <ColumnDefinition x:Name="ClutchProgressRed" Width="100*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#7B6000" Offset="0"/>
+                                            <GradientStop Color="#FFC800" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <Border Grid.Column="1" Height="7" VerticalAlignment="Center"
+                                        Background="{StaticResource ProgressBgGradient}"/>
+                                <Path Data="M3.75448 7.12579H1.23828L5.43195 -0.175781H7.94816Z M-0.718172 7.12579H-3.23438L0.959297 -0.175781H3.4755Z M8.22714 7.12579H5.71094L9.90461 -0.175781H12.4208Z M12.6959 7.12579H10.1797L14.3734 -0.175781H16.8896Z M17.1685 7.12579H14.6523L18.846 -0.175781H21.3622Z M21.6412 7.12579H19.125L23.3187 -0.175781H25.8349Z M26.1178 7.12579H23.6016L27.7952 -0.175781H30.3114Z M30.5865 7.12579H28.0703L32.264 -0.175781H34.7802Z M35.0631 7.12579H32.5469L36.7405 -0.175781H39.2568Z M39.5357 7.12579H37.0195L41.2132 -0.175781H43.7294Z M44.0162 7.12579H41.5L45.6937 -0.175781H48.2099Z M48.481 7.12579H45.9648L50.1585 -0.175781H52.6747Z M52.9615 7.12579H50.4453L54.639 -0.175781H57.1552Z M57.4264 7.12579H54.9102L59.1038 -0.175781H61.62Z M61.9029 7.12579H59.3867L63.5804 -0.175781H66.0966Z M66.3795 7.12579H63.8633L68.057 -0.175781H70.5732Z M70.8482 7.12579H68.332L72.5257 -0.175781H75.0419Z M75.3287 7.12579H72.8125L77.0062 -0.175781H79.5224Z M79.7975 7.12579H77.2812L81.4749 -0.175781H83.9911Z M84.2701 7.12579H81.7539L85.9476 -0.175781H88.4638Z M88.7467 7.12579H86.2305L90.4241 -0.175781H92.9403Z M93.2154 7.12579H90.6992L94.8929 -0.175781H97.4091Z M97.6881 7.12579H95.1719L99.3655 -0.175781H101.882Z M102.165 7.12579H99.6484L103.842 -0.175781H106.358Z M106.641 7.12579H104.125L108.319 -0.175781H110.835Z M111.106 7.12579H108.59L112.784 -0.175781H115.3Z M115.583 7.12579H113.066L117.26 -0.175781H119.776Z M120.059 7.12579H117.543L121.737 -0.175781H124.253Z M124.524 7.12579H122.008L126.201 -0.175781H128.718Z M129.008 7.12579H126.492L130.686 -0.175781H133.202Z M133.469 7.12579H130.953L135.147 -0.175781H137.663Z M137.946 7.12579H135.43L139.623 -0.175781H142.14Z M142.415 7.12579H139.898L144.092 -0.175781H146.608Z M146.891 7.12579H144.375L148.569 -0.175781H151.085Z M151.364 7.12579H148.848L153.041 -0.175781H155.558Z M155.844 7.12579H153.328L157.522 -0.175781H160.038Z M160.317 7.12579H157.801L161.994 -0.175781H164.511Z M164.79 7.12579H162.273L166.467 -0.175781H168.983Z M169.262 7.12579H166.746L170.94 -0.175781H173.456Z M173.735 7.12579H171.219L175.412 -0.175781H177.929Z M178.204 7.12579H175.688L179.881 -0.175781H182.397Z M182.68 7.12579H180.164L184.358 -0.175781H186.874Z M187.149 7.12579H184.633L188.826 -0.175781H191.343Z M191.629 7.12579H189.113L193.307 -0.175781H195.823Z M196.098 7.12579H193.582L197.776 -0.175781H200.292Z M200.579 7.12579H198.062L202.256 -0.175781H204.772Z M205.047 7.12579H202.531L206.725 -0.175781H209.241Z M209.524 7.12579H207.008L211.201 -0.175781H213.718Z M213.997 7.12579H211.48L215.674 -0.175781H218.19Z M218.465 7.12579H215.949L220.143 -0.175781H222.659Z M222.946 7.12579H220.43L224.623 -0.175781H227.14Z M227.419 7.12579H224.902L229.096 -0.175781H231.612Z M231.891 7.12579H229.375L233.569 -0.175781H236.085Z M236.356 7.12579H233.84L238.034 -0.175781H240.55Z M240.833 7.12579H238.316L242.51 -0.175781H245.026Z M245.309 7.12579H242.793L246.987 -0.175781H249.503Z M249.782 7.12579H247.266L251.459 -0.175781H253.976Z M254.254 7.12579H251.738L255.932 -0.175781H258.448Z M258.719 7.12579H256.203L260.397 -0.175781H262.913Z M263.2 7.12579H260.684L264.877 -0.175781H267.393Z M267.669 7.12579H265.152L269.346 -0.175781H271.862Z M272.145 7.12579H269.629L273.823 -0.175781H276.339Z M276.622 7.12579H274.105L278.299 -0.175781H280.815Z M281.094 7.12579H278.578L282.772 -0.175781H285.288Z M285.571 7.12579H283.055L287.248 -0.175781H289.765Z M290.04 7.12579H287.523L291.717 -0.175781H294.233Z M294.508 7.12579H291.992L296.186 -0.175781H298.702Z M298.985 7.12579H296.469L300.662 -0.175781H303.179Z M303.458 7.12579H300.941L305.135 -0.175781H307.651Z M307.93 7.12579H305.414L309.608 -0.175781H312.124Z M312.403 7.12579H309.887L314.08 -0.175781H316.597Z M316.883 7.12579H314.367L318.561 -0.175781H321.077Z M321.352 7.12579H318.836L323.03 -0.175781H325.546Z M325.833 7.12579H323.316L327.51 -0.175781H330.026Z M330.301 7.12579H327.785L331.979 -0.175781H334.495Z M334.774 7.12579H332.258L336.451 -0.175781H338.968Z M339.243 7.12579H336.727L340.92 -0.175781H343.436Z M343.712 7.12579H341.195L345.389 -0.175781H347.905Z"
+                                      Fill="#EEEEEE" Opacity="0.3"
+                                      Stretch="Fill" Grid.ColumnSpan="2"/>
+                            </Grid>
+
+                            <Grid Grid.Row="2" Height="6">
+                                <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
                         </Grid>
+
+                        <TextBlock Grid.Row="0" Grid.Column="2" x:Name="ClutchPercentText"
+                                   Text="0%" FontSize="18" FontWeight="Bold"
+                                   Foreground="#EEEEEE"
+                                   FontFamily="{StaticResource OrbitronFont}"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Right"
+                                   Margin="0,0,0,20"/>
 
                         <!-- Brake progress bar -->
-                        <Grid Grid.Row="1" Margin="0,0,0,20">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{lex:Loc Home.Brake}"
+                                   FontSize="18" FontWeight="Bold"
+                                   Foreground="#EEEEEE"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,0,20"/>
 
-                            <TextBlock Grid.Column="0" Text="刹 车"
-                                       FontSize="18" FontWeight="Bold"
-                                       Foreground="#EEEEEE"
-                                       VerticalAlignment="Center"
-                                       Width="60"/>
+                        <Grid Grid.Row="1" Grid.Column="1" Width="424" Margin="0,0,0,20">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                            <Grid Grid.Column="1" Margin="15,0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <Grid Grid.Row="0" Height="6">
-                                    <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
-                                    <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                                </Grid>
-
-                                <Grid Grid.Row="1" Height="7" Margin="0,3">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition x:Name="BrakeProgressGreen" Width="0*"/>
-                                        <ColumnDefinition x:Name="BrakeProgressRed" Width="100*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#600707" Offset="0"/>
-                                                <GradientStop Color="#C60E0E" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Border.Background>
-                                    </Border>
-                                    <Border Grid.Column="1" Height="7" VerticalAlignment="Center"
-                                            Background="{StaticResource ProgressBgGradient}"/>
-                                    <Path Data="M3.75448 7.12579H1.23828L5.43195 -0.175781H7.94816Z M-0.718172 7.12579H-3.23438L0.959297 -0.175781H3.4755Z M8.22714 7.12579H5.71094L9.90461 -0.175781H12.4208Z M12.6959 7.12579H10.1797L14.3734 -0.175781H16.8896Z M17.1685 7.12579H14.6523L18.846 -0.175781H21.3622Z M21.6412 7.12579H19.125L23.3187 -0.175781H25.8349Z M26.1178 7.12579H23.6016L27.7952 -0.175781H30.3114Z M30.5865 7.12579H28.0703L32.264 -0.175781H34.7802Z M35.0631 7.12579H32.5469L36.7405 -0.175781H39.2568Z M39.5357 7.12579H37.0195L41.2132 -0.175781H43.7294Z M44.0162 7.12579H41.5L45.6937 -0.175781H48.2099Z M48.481 7.12579H45.9648L50.1585 -0.175781H52.6747Z M52.9615 7.12579H50.4453L54.639 -0.175781H57.1552Z M57.4264 7.12579H54.9102L59.1038 -0.175781H61.62Z M61.9029 7.12579H59.3867L63.5804 -0.175781H66.0966Z M66.3795 7.12579H63.8633L68.057 -0.175781H70.5732Z M70.8482 7.12579H68.332L72.5257 -0.175781H75.0419Z M75.3287 7.12579H72.8125L77.0062 -0.175781H79.5224Z M79.7975 7.12579H77.2812L81.4749 -0.175781H83.9911Z M84.2701 7.12579H81.7539L85.9476 -0.175781H88.4638Z M88.7467 7.12579H86.2305L90.4241 -0.175781H92.9403Z M93.2154 7.12579H90.6992L94.8929 -0.175781H97.4091Z M97.6881 7.12579H95.1719L99.3655 -0.175781H101.882Z M102.165 7.12579H99.6484L103.842 -0.175781H106.358Z M106.641 7.12579H104.125L108.319 -0.175781H110.835Z M111.106 7.12579H108.59L112.784 -0.175781H115.3Z M115.583 7.12579H113.066L117.26 -0.175781H119.776Z M120.059 7.12579H117.543L121.737 -0.175781H124.253Z M124.524 7.12579H122.008L126.201 -0.175781H128.718Z M129.008 7.12579H126.492L130.686 -0.175781H133.202Z M133.469 7.12579H130.953L135.147 -0.175781H137.663Z M137.946 7.12579H135.43L139.623 -0.175781H142.14Z M142.415 7.12579H139.898L144.092 -0.175781H146.608Z M146.891 7.12579H144.375L148.569 -0.175781H151.085Z M151.364 7.12579H148.848L153.041 -0.175781H155.558Z M155.844 7.12579H153.328L157.522 -0.175781H160.038Z M160.317 7.12579H157.801L161.994 -0.175781H164.511Z M164.79 7.12579H162.273L166.467 -0.175781H168.983Z M169.262 7.12579H166.746L170.94 -0.175781H173.456Z M173.735 7.12579H171.219L175.412 -0.175781H177.929Z M178.204 7.12579H175.688L179.881 -0.175781H182.397Z M182.68 7.12579H180.164L184.358 -0.175781H186.874Z M187.149 7.12579H184.633L188.826 -0.175781H191.343Z M191.629 7.12579H189.113L193.307 -0.175781H195.823Z M196.098 7.12579H193.582L197.776 -0.175781H200.292Z M200.579 7.12579H198.062L202.256 -0.175781H204.772Z M205.047 7.12579H202.531L206.725 -0.175781H209.241Z M209.524 7.12579H207.008L211.201 -0.175781H213.718Z M213.997 7.12579H211.48L215.674 -0.175781H218.19Z M218.465 7.12579H215.949L220.143 -0.175781H222.659Z M222.946 7.12579H220.43L224.623 -0.175781H227.14Z M227.419 7.12579H224.902L229.096 -0.175781H231.612Z M231.891 7.12579H229.375L233.569 -0.175781H236.085Z M236.356 7.12579H233.84L238.034 -0.175781H240.55Z M240.833 7.12579H238.316L242.51 -0.175781H245.026Z M245.309 7.12579H242.793L246.987 -0.175781H249.503Z M249.782 7.12579H247.266L251.459 -0.175781H253.976Z M254.254 7.12579H251.738L255.932 -0.175781H258.448Z M258.719 7.12579H256.203L260.397 -0.175781H262.913Z M263.2 7.12579H260.684L264.877 -0.175781H267.393Z M267.669 7.12579H265.152L269.346 -0.175781H271.862Z M272.145 7.12579H269.629L273.823 -0.175781H276.339Z M276.622 7.12579H274.105L278.299 -0.175781H280.815Z M281.094 7.12579H278.578L282.772 -0.175781H285.288Z M285.571 7.12579H283.055L287.248 -0.175781H289.765Z M290.04 7.12579H287.523L291.717 -0.175781H294.233Z M294.508 7.12579H291.992L296.186 -0.175781H298.702Z M298.985 7.12579H296.469L300.662 -0.175781H303.179Z M303.458 7.12579H300.941L305.135 -0.175781H307.651Z M307.93 7.12579H305.414L309.608 -0.175781H312.124Z M312.403 7.12579H309.887L314.08 -0.175781H316.597Z M316.883 7.12579H314.367L318.561 -0.175781H321.077Z M321.352 7.12579H318.836L323.03 -0.175781H325.546Z M325.833 7.12579H323.316L327.51 -0.175781H330.026Z M330.301 7.12579H327.785L331.979 -0.175781H334.495Z M334.774 7.12579H332.258L336.451 -0.175781H338.968Z M339.243 7.12579H336.727L340.92 -0.175781H343.436Z M343.712 7.12579H341.195L345.389 -0.175781H347.905Z"
-                                          Fill="#EEEEEE" Opacity="0.3"
-                                          Stretch="Fill" Grid.ColumnSpan="2"/>
-                                </Grid>
-
-                                <Grid Grid.Row="2" Height="6">
-                                    <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                    <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                                </Grid>
+                            <Grid Grid.Row="0" Height="6">
+                                <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                             </Grid>
 
-                            <TextBlock Grid.Column="2" x:Name="BrakePercentText"
-                                       Text="0%" FontSize="18" FontWeight="Bold"
-                                       Foreground="#EEEEEE"
-                                       FontFamily="{StaticResource OrbitronFont}"
-                                       VerticalAlignment="Center" Width="60"
-                                       TextAlignment="Right"/>
+                            <Grid Grid.Row="1" Height="7" Margin="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="BrakeProgressGreen" Width="0*"/>
+                                    <ColumnDefinition x:Name="BrakeProgressRed" Width="100*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#600707" Offset="0"/>
+                                            <GradientStop Color="#C60E0E" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <Border Grid.Column="1" Height="7" VerticalAlignment="Center"
+                                        Background="{StaticResource ProgressBgGradient}"/>
+                                <Path Data="M3.75448 7.12579H1.23828L5.43195 -0.175781H7.94816Z M-0.718172 7.12579H-3.23438L0.959297 -0.175781H3.4755Z M8.22714 7.12579H5.71094L9.90461 -0.175781H12.4208Z M12.6959 7.12579H10.1797L14.3734 -0.175781H16.8896Z M17.1685 7.12579H14.6523L18.846 -0.175781H21.3622Z M21.6412 7.12579H19.125L23.3187 -0.175781H25.8349Z M26.1178 7.12579H23.6016L27.7952 -0.175781H30.3114Z M30.5865 7.12579H28.0703L32.264 -0.175781H34.7802Z M35.0631 7.12579H32.5469L36.7405 -0.175781H39.2568Z M39.5357 7.12579H37.0195L41.2132 -0.175781H43.7294Z M44.0162 7.12579H41.5L45.6937 -0.175781H48.2099Z M48.481 7.12579H45.9648L50.1585 -0.175781H52.6747Z M52.9615 7.12579H50.4453L54.639 -0.175781H57.1552Z M57.4264 7.12579H54.9102L59.1038 -0.175781H61.62Z M61.9029 7.12579H59.3867L63.5804 -0.175781H66.0966Z M66.3795 7.12579H63.8633L68.057 -0.175781H70.5732Z M70.8482 7.12579H68.332L72.5257 -0.175781H75.0419Z M75.3287 7.12579H72.8125L77.0062 -0.175781H79.5224Z M79.7975 7.12579H77.2812L81.4749 -0.175781H83.9911Z M84.2701 7.12579H81.7539L85.9476 -0.175781H88.4638Z M88.7467 7.12579H86.2305L90.4241 -0.175781H92.9403Z M93.2154 7.12579H90.6992L94.8929 -0.175781H97.4091Z M97.6881 7.12579H95.1719L99.3655 -0.175781H101.882Z M102.165 7.12579H99.6484L103.842 -0.175781H106.358Z M106.641 7.12579H104.125L108.319 -0.175781H110.835Z M111.106 7.12579H108.59L112.784 -0.175781H115.3Z M115.583 7.12579H113.066L117.26 -0.175781H119.776Z M120.059 7.12579H117.543L121.737 -0.175781H124.253Z M124.524 7.12579H122.008L126.201 -0.175781H128.718Z M129.008 7.12579H126.492L130.686 -0.175781H133.202Z M133.469 7.12579H130.953L135.147 -0.175781H137.663Z M137.946 7.12579H135.43L139.623 -0.175781H142.14Z M142.415 7.12579H139.898L144.092 -0.175781H146.608Z M146.891 7.12579H144.375L148.569 -0.175781H151.085Z M151.364 7.12579H148.848L153.041 -0.175781H155.558Z M155.844 7.12579H153.328L157.522 -0.175781H160.038Z M160.317 7.12579H157.801L161.994 -0.175781H164.511Z M164.79 7.12579H162.273L166.467 -0.175781H168.983Z M169.262 7.12579H166.746L170.94 -0.175781H173.456Z M173.735 7.12579H171.219L175.412 -0.175781H177.929Z M178.204 7.12579H175.688L179.881 -0.175781H182.397Z M182.68 7.12579H180.164L184.358 -0.175781H186.874Z M187.149 7.12579H184.633L188.826 -0.175781H191.343Z M191.629 7.12579H189.113L193.307 -0.175781H195.823Z M196.098 7.12579H193.582L197.776 -0.175781H200.292Z M200.579 7.12579H198.062L202.256 -0.175781H204.772Z M205.047 7.12579H202.531L206.725 -0.175781H209.241Z M209.524 7.12579H207.008L211.201 -0.175781H213.718Z M213.997 7.12579H211.48L215.674 -0.175781H218.19Z M218.465 7.12579H215.949L220.143 -0.175781H222.659Z M222.946 7.12579H220.43L224.623 -0.175781H227.14Z M227.419 7.12579H224.902L229.096 -0.175781H231.612Z M231.891 7.12579H229.375L233.569 -0.175781H236.085Z M236.356 7.12579H233.84L238.034 -0.175781H240.55Z M240.833 7.12579H238.316L242.51 -0.175781H245.026Z M245.309 7.12579H242.793L246.987 -0.175781H249.503Z M249.782 7.12579H247.266L251.459 -0.175781H253.976Z M254.254 7.12579H251.738L255.932 -0.175781H258.448Z M258.719 7.12579H256.203L260.397 -0.175781H262.913Z M263.2 7.12579H260.684L264.877 -0.175781H267.393Z M267.669 7.12579H265.152L269.346 -0.175781H271.862Z M272.145 7.12579H269.629L273.823 -0.175781H276.339Z M276.622 7.12579H274.105L278.299 -0.175781H280.815Z M281.094 7.12579H278.578L282.772 -0.175781H285.288Z M285.571 7.12579H283.055L287.248 -0.175781H289.765Z M290.04 7.12579H287.523L291.717 -0.175781H294.233Z M294.508 7.12579H291.992L296.186 -0.175781H298.702Z M298.985 7.12579H296.469L300.662 -0.175781H303.179Z M303.458 7.12579H300.941L305.135 -0.175781H307.651Z M307.93 7.12579H305.414L309.608 -0.175781H312.124Z M312.403 7.12579H309.887L314.08 -0.175781H316.597Z M316.883 7.12579H314.367L318.561 -0.175781H321.077Z M321.352 7.12579H318.836L323.03 -0.175781H325.546Z M325.833 7.12579H323.316L327.51 -0.175781H330.026Z M330.301 7.12579H327.785L331.979 -0.175781H334.495Z M334.774 7.12579H332.258L336.451 -0.175781H338.968Z M339.243 7.12579H336.727L340.92 -0.175781H343.436Z M343.712 7.12579H341.195L345.389 -0.175781H347.905Z"
+                                      Fill="#EEEEEE" Opacity="0.3"
+                                      Stretch="Fill" Grid.ColumnSpan="2"/>
+                            </Grid>
+
+                            <Grid Grid.Row="2" Height="6">
+                                <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
                         </Grid>
+
+                        <TextBlock Grid.Row="1" Grid.Column="2" x:Name="BrakePercentText"
+                                   Text="0%" FontSize="18" FontWeight="Bold"
+                                   Foreground="#EEEEEE"
+                                   FontFamily="{StaticResource OrbitronFont}"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Right"
+                                   Margin="0,0,0,20"/>
 
                         <!-- Throttle progress bar -->
-                        <Grid Grid.Row="2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{lex:Loc Home.Throttle}"
+                                   FontSize="18" FontWeight="Bold"
+                                   Foreground="#EEEEEE"
+                                   VerticalAlignment="Center"/>
 
-                            <TextBlock Grid.Column="0" Text="油 门"
-                                       FontSize="18" FontWeight="Bold"
-                                       Foreground="#EEEEEE"
-                                       VerticalAlignment="Center"
-                                       Width="60"/>
+                        <Grid Grid.Row="2" Grid.Column="1" Width="424">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                            <Grid Grid.Column="1" Margin="15,0">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <Grid Grid.Row="0" Height="6">
-                                    <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
-                                    <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                                </Grid>
-
-                                <Grid Grid.Row="1" Height="7" Margin="0,3">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition x:Name="ThrottleProgressGreen" Width="0*"/>
-                                        <ColumnDefinition x:Name="ThrottleProgressRed" Width="100*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#0A6020" Offset="0"/>
-                                                <GradientStop Color="#16C642" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Border.Background>
-                                    </Border>
-                                    <Border Grid.Column="1" Height="7" VerticalAlignment="Center"
-                                            Background="{StaticResource ProgressBgGradient}"/>
-                                    <Path Data="M3.75448 7.12579H1.23828L5.43195 -0.175781H7.94816Z M-0.718172 7.12579H-3.23438L0.959297 -0.175781H3.4755Z M8.22714 7.12579H5.71094L9.90461 -0.175781H12.4208Z M12.6959 7.12579H10.1797L14.3734 -0.175781H16.8896Z M17.1685 7.12579H14.6523L18.846 -0.175781H21.3622Z M21.6412 7.12579H19.125L23.3187 -0.175781H25.8349Z M26.1178 7.12579H23.6016L27.7952 -0.175781H30.3114Z M30.5865 7.12579H28.0703L32.264 -0.175781H34.7802Z M35.0631 7.12579H32.5469L36.7405 -0.175781H39.2568Z M39.5357 7.12579H37.0195L41.2132 -0.175781H43.7294Z M44.0162 7.12579H41.5L45.6937 -0.175781H48.2099Z M48.481 7.12579H45.9648L50.1585 -0.175781H52.6747Z M52.9615 7.12579H50.4453L54.639 -0.175781H57.1552Z M57.4264 7.12579H54.9102L59.1038 -0.175781H61.62Z M61.9029 7.12579H59.3867L63.5804 -0.175781H66.0966Z M66.3795 7.12579H63.8633L68.057 -0.175781H70.5732Z M70.8482 7.12579H68.332L72.5257 -0.175781H75.0419Z M75.3287 7.12579H72.8125L77.0062 -0.175781H79.5224Z M79.7975 7.12579H77.2812L81.4749 -0.175781H83.9911Z M84.2701 7.12579H81.7539L85.9476 -0.175781H88.4638Z M88.7467 7.12579H86.2305L90.4241 -0.175781H92.9403Z M93.2154 7.12579H90.6992L94.8929 -0.175781H97.4091Z M97.6881 7.12579H95.1719L99.3655 -0.175781H101.882Z M102.165 7.12579H99.6484L103.842 -0.175781H106.358Z M106.641 7.12579H104.125L108.319 -0.175781H110.835Z M111.106 7.12579H108.59L112.784 -0.175781H115.3Z M115.583 7.12579H113.066L117.26 -0.175781H119.776Z M120.059 7.12579H117.543L121.737 -0.175781H124.253Z M124.524 7.12579H122.008L126.201 -0.175781H128.718Z M129.008 7.12579H126.492L130.686 -0.175781H133.202Z M133.469 7.12579H130.953L135.147 -0.175781H137.663Z M137.946 7.12579H135.43L139.623 -0.175781H142.14Z M142.415 7.12579H139.898L144.092 -0.175781H146.608Z M146.891 7.12579H144.375L148.569 -0.175781H151.085Z M151.364 7.12579H148.848L153.041 -0.175781H155.558Z M155.844 7.12579H153.328L157.522 -0.175781H160.038Z M160.317 7.12579H157.801L161.994 -0.175781H164.511Z M164.79 7.12579H162.273L166.467 -0.175781H168.983Z M169.262 7.12579H166.746L170.94 -0.175781H173.456Z M173.735 7.12579H171.219L175.412 -0.175781H177.929Z M178.204 7.12579H175.688L179.881 -0.175781H182.397Z M182.68 7.12579H180.164L184.358 -0.175781H186.874Z M187.149 7.12579H184.633L188.826 -0.175781H191.343Z M191.629 7.12579H189.113L193.307 -0.175781H195.823Z M196.098 7.12579H193.582L197.776 -0.175781H200.292Z M200.579 7.12579H198.062L202.256 -0.175781H204.772Z M205.047 7.12579H202.531L206.725 -0.175781H209.241Z M209.524 7.12579H207.008L211.201 -0.175781H213.718Z M213.997 7.12579H211.48L215.674 -0.175781H218.19Z M218.465 7.12579H215.949L220.143 -0.175781H222.659Z M222.946 7.12579H220.43L224.623 -0.175781H227.14Z M227.419 7.12579H224.902L229.096 -0.175781H231.612Z M231.891 7.12579H229.375L233.569 -0.175781H236.085Z M236.356 7.12579H233.84L238.034 -0.175781H240.55Z M240.833 7.12579H238.316L242.51 -0.175781H245.026Z M245.309 7.12579H242.793L246.987 -0.175781H249.503Z M249.782 7.12579H247.266L251.459 -0.175781H253.976Z M254.254 7.12579H251.738L255.932 -0.175781H258.448Z M258.719 7.12579H256.203L260.397 -0.175781H262.913Z M263.2 7.12579H260.684L264.877 -0.175781H267.393Z M267.669 7.12579H265.152L269.346 -0.175781H271.862Z M272.145 7.12579H269.629L273.823 -0.175781H276.339Z M276.622 7.12579H274.105L278.299 -0.175781H280.815Z M281.094 7.12579H278.578L282.772 -0.175781H285.288Z M285.571 7.12579H283.055L287.248 -0.175781H289.765Z M290.04 7.12579H287.523L291.717 -0.175781H294.233Z M294.508 7.12579H291.992L296.186 -0.175781H298.702Z M298.985 7.12579H296.469L300.662 -0.175781H303.179Z M303.458 7.12579H300.941L305.135 -0.175781H307.651Z M307.93 7.12579H305.414L309.608 -0.175781H312.124Z M312.403 7.12579H309.887L314.08 -0.175781H316.597Z M316.883 7.12579H314.367L318.561 -0.175781H321.077Z M321.352 7.12579H318.836L323.03 -0.175781H325.546Z M325.833 7.12579H323.316L327.51 -0.175781H330.026Z M330.301 7.12579H327.785L331.979 -0.175781H334.495Z M334.774 7.12579H332.258L336.451 -0.175781H338.968Z M339.243 7.12579H336.727L340.92 -0.175781H343.436Z M343.712 7.12579H341.195L345.389 -0.175781H347.905Z"
-                                          Fill="#EEEEEE" Opacity="0.3"
-                                          Stretch="Fill" Grid.ColumnSpan="2"/>
-                                </Grid>
-
-                                <Grid Grid.Row="2" Height="6">
-                                    <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                                    <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
-                                          Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
-                                          HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                                </Grid>
+                            <Grid Grid.Row="0" Height="6">
+                                <Path Data="M9.65527 0V4.82715H4.82812V9.65527H0V0H9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                <Path Data="M9.65527 0V9.65527H4.82715V4.82715H0V0H9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
                             </Grid>
 
-                            <TextBlock Grid.Column="2" x:Name="ThrottlePercentText"
-                                       Text="0%" FontSize="18" FontWeight="Bold"
-                                       Foreground="#EEEEEE"
-                                       FontFamily="{StaticResource OrbitronFont}"
-                                       VerticalAlignment="Center" Width="60"
-                                       TextAlignment="Right"/>
+                            <Grid Grid.Row="1" Height="7" Margin="0,3">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="ThrottleProgressGreen" Width="0*"/>
+                                    <ColumnDefinition x:Name="ThrottleProgressRed" Width="100*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Height="7" VerticalAlignment="Center">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="#0A6020" Offset="0"/>
+                                            <GradientStop Color="#16C642" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <Border Grid.Column="1" Height="7" VerticalAlignment="Center"
+                                        Background="{StaticResource ProgressBgGradient}"/>
+                                <Path Data="M3.75448 7.12579H1.23828L5.43195 -0.175781H7.94816Z M-0.718172 7.12579H-3.23438L0.959297 -0.175781H3.4755Z M8.22714 7.12579H5.71094L9.90461 -0.175781H12.4208Z M12.6959 7.12579H10.1797L14.3734 -0.175781H16.8896Z M17.1685 7.12579H14.6523L18.846 -0.175781H21.3622Z M21.6412 7.12579H19.125L23.3187 -0.175781H25.8349Z M26.1178 7.12579H23.6016L27.7952 -0.175781H30.3114Z M30.5865 7.12579H28.0703L32.264 -0.175781H34.7802Z M35.0631 7.12579H32.5469L36.7405 -0.175781H39.2568Z M39.5357 7.12579H37.0195L41.2132 -0.175781H43.7294Z M44.0162 7.12579H41.5L45.6937 -0.175781H48.2099Z M48.481 7.12579H45.9648L50.1585 -0.175781H52.6747Z M52.9615 7.12579H50.4453L54.639 -0.175781H57.1552Z M57.4264 7.12579H54.9102L59.1038 -0.175781H61.62Z M61.9029 7.12579H59.3867L63.5804 -0.175781H66.0966Z M66.3795 7.12579H63.8633L68.057 -0.175781H70.5732Z M70.8482 7.12579H68.332L72.5257 -0.175781H75.0419Z M75.3287 7.12579H72.8125L77.0062 -0.175781H79.5224Z M79.7975 7.12579H77.2812L81.4749 -0.175781H83.9911Z M84.2701 7.12579H81.7539L85.9476 -0.175781H88.4638Z M88.7467 7.12579H86.2305L90.4241 -0.175781H92.9403Z M93.2154 7.12579H90.6992L94.8929 -0.175781H97.4091Z M97.6881 7.12579H95.1719L99.3655 -0.175781H101.882Z M102.165 7.12579H99.6484L103.842 -0.175781H106.358Z M106.641 7.12579H104.125L108.319 -0.175781H110.835Z M111.106 7.12579H108.59L112.784 -0.175781H115.3Z M115.583 7.12579H113.066L117.26 -0.175781H119.776Z M120.059 7.12579H117.543L121.737 -0.175781H124.253Z M124.524 7.12579H122.008L126.201 -0.175781H128.718Z M129.008 7.12579H126.492L130.686 -0.175781H133.202Z M133.469 7.12579H130.953L135.147 -0.175781H137.663Z M137.946 7.12579H135.43L139.623 -0.175781H142.14Z M142.415 7.12579H139.898L144.092 -0.175781H146.608Z M146.891 7.12579H144.375L148.569 -0.175781H151.085Z M151.364 7.12579H148.848L153.041 -0.175781H155.558Z M155.844 7.12579H153.328L157.522 -0.175781H160.038Z M160.317 7.12579H157.801L161.994 -0.175781H164.511Z M164.79 7.12579H162.273L166.467 -0.175781H168.983Z M169.262 7.12579H166.746L170.94 -0.175781H173.456Z M173.735 7.12579H171.219L175.412 -0.175781H177.929Z M178.204 7.12579H175.688L179.881 -0.175781H182.397Z M182.68 7.12579H180.164L184.358 -0.175781H186.874Z M187.149 7.12579H184.633L188.826 -0.175781H191.343Z M191.629 7.12579H189.113L193.307 -0.175781H195.823Z M196.098 7.12579H193.582L197.776 -0.175781H200.292Z M200.579 7.12579H198.062L202.256 -0.175781H204.772Z M205.047 7.12579H202.531L206.725 -0.175781H209.241Z M209.524 7.12579H207.008L211.201 -0.175781H213.718Z M213.997 7.12579H211.48L215.674 -0.175781H218.19Z M218.465 7.12579H215.949L220.143 -0.175781H222.659Z M222.946 7.12579H220.43L224.623 -0.175781H227.14Z M227.419 7.12579H224.902L229.096 -0.175781H231.612Z M231.891 7.12579H229.375L233.569 -0.175781H236.085Z M236.356 7.12579H233.84L238.034 -0.175781H240.55Z M240.833 7.12579H238.316L242.51 -0.175781H245.026Z M245.309 7.12579H242.793L246.987 -0.175781H249.503Z M249.782 7.12579H247.266L251.459 -0.175781H253.976Z M254.254 7.12579H251.738L255.932 -0.175781H258.448Z M258.719 7.12579H256.203L260.397 -0.175781H262.913Z M263.2 7.12579H260.684L264.877 -0.175781H267.393Z M267.669 7.12579H265.152L269.346 -0.175781H271.862Z M272.145 7.12579H269.629L273.823 -0.175781H276.339Z M276.622 7.12579H274.105L278.299 -0.175781H280.815Z M281.094 7.12579H278.578L282.772 -0.175781H285.288Z M285.571 7.12579H283.055L287.248 -0.175781H289.765Z M290.04 7.12579H287.523L291.717 -0.175781H294.233Z M294.508 7.12579H291.992L296.186 -0.175781H298.702Z M298.985 7.12579H296.469L300.662 -0.175781H303.179Z M303.458 7.12579H300.941L305.135 -0.175781H307.651Z M307.93 7.12579H305.414L309.608 -0.175781H312.124Z M312.403 7.12579H309.887L314.08 -0.175781H316.597Z M316.883 7.12579H314.367L318.561 -0.175781H321.077Z M321.352 7.12579H318.836L323.03 -0.175781H325.546Z M325.833 7.12579H323.316L327.51 -0.175781H330.026Z M330.301 7.12579H327.785L331.979 -0.175781H334.495Z M334.774 7.12579H332.258L336.451 -0.175781H338.968Z M339.243 7.12579H336.727L340.92 -0.175781H343.436Z M343.712 7.12579H341.195L345.389 -0.175781H347.905Z"
+                                      Fill="#EEEEEE" Opacity="0.3"
+                                      Stretch="Fill" Grid.ColumnSpan="2"/>
+                            </Grid>
+
+                            <Grid Grid.Row="2" Height="6">
+                                <Path Data="M4.82812 0V4.82715H9.65527V9.65527H0V0H4.82812Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                                <Path Data="M9.65527 9.65527H0V4.82715H4.82715V0H9.65527V9.65527Z"
+                                      Fill="#EEEEEE" Width="6" Height="6" Stretch="Fill"
+                                      HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
                         </Grid>
+
+                        <TextBlock Grid.Row="2" Grid.Column="2" x:Name="ThrottlePercentText"
+                                   Text="0%" FontSize="18" FontWeight="Bold"
+                                   Foreground="#EEEEEE"
+                                   FontFamily="{StaticResource OrbitronFont}"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Right"/>
                     </Grid>
 
                     <!-- Row 4: Complete button -->
                     <Button Grid.Row="4" x:Name="CompleteButton"
-                            Content="完 成"
+                            Content="{lex:Loc Calibration.Complete}"
                             Style="{StaticResource CompleteButtonStyle}"
                             IsEnabled="False"
                             HorizontalAlignment="Center"

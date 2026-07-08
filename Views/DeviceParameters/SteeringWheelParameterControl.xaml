@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="884" d:DesignWidth="1202"
              Background="Transparent">
@@ -876,7 +877,7 @@
 
                 <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,3" VerticalAlignment="Bottom"/>
 
-                <TextBlock x:Name="DeviceModelName" Grid.Column="1" Text="面盘" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                <TextBlock x:Name="DeviceModelName" Grid.Column="1" Text="{lex:Loc Status.DeviceTypeWheel}" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
 
                 <Border Grid.Column="2" Width="1" Height="26" Background="#EEEEEE" Margin="20,0,20,0" VerticalAlignment="Center"/>
 
@@ -899,16 +900,16 @@
                                   Stroke="#C60E0E" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                         </Canvas>
                     </Viewbox>
-                    <TextBlock x:Name="ConnectionStatusText" Text="未连接" FontSize="22" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ConnectionStatusText" Text="{lex:Loc DeviceParam.NotConnected}" FontSize="22" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <Border Grid.Column="5" Width="1" Height="26" Background="#EEEEEE" Margin="20,0,20,0" VerticalAlignment="Center"/>
 
                 <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="固件版本:" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="FirmwareVersionText" Text="---" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                    <TextBlock Text="{lex:Loc DeviceParam.FirmwareVersion}" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="FirmwareVersionText" Text="{lex:Loc DeviceParam.UnknownVersion}" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
                     <Border x:Name="NewVersionAvailableBorder" BorderThickness="0,0,0,1" BorderBrush="#C60E0E" Padding="0,0,0,0" Margin="10,0,0,0" VerticalAlignment="Center" Cursor="Hand" Visibility="Collapsed" MouseLeftButtonDown="NewVersionAvailable_Click">
-                        <TextBlock x:Name="NewVersionAvailableText" Text="新版本可用" FontSize="22" Foreground="#C60E0E"/>
+                        <TextBlock x:Name="NewVersionAvailableText" Text="{lex:Loc DeviceParam.NewVersionAvailable}" FontSize="22" Foreground="#C60E0E"/>
                     </Border>
                 </StackPanel>
             </Grid>
@@ -928,7 +929,7 @@
             <Grid Grid.Column="0" Width="388" Height="37">
                 <Path Data="M393 5H10.1733L5 11V42H6.552H387.827L393 36V5Z" Fill="#33EEEEEE" Stretch="Fill"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,15,0">
-                    <TextBlock Text="当前" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock Text="{lex:Loc DeviceParam.Current}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                     <Border Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
                     <Viewbox Width="15" Height="17" Margin="0,0,8,0">
                         <Grid Width="15" Height="17">
@@ -964,48 +965,60 @@
                             </Canvas>
                         </Grid>
                     </Viewbox>
-                    <TextBlock x:Name="PresetNameText" Text="Default" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="PresetNameText" Text="{lex:Loc DeviceParam.Default}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
                     <TextBlock x:Name="ModifiedIndicator" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Visibility="Collapsed">
                         <Run Text="(" Foreground="#EEEEEE"/>
-                        <Run Text="已更改" Foreground="#C60E0E"/>
+                        <Run Text="{lex:Loc DeviceParam.Modified}" Foreground="#C60E0E"/>
                         <Run Text=")" Foreground="#EEEEEE"/>
                     </TextBlock>
                 </StackPanel>
             </Grid>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
-                <Grid x:Name="UndoButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
-                      MouseLeftButtonDown="UndoButton_Click">
-                    <Path x:Name="UndoButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="撤回" FontSize="18" Foreground="#EEEEEE"
+                <Grid x:Name="UndoButtonGrid" MinWidth="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="UndoButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="UndoButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Undo}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>
 
-                <Grid x:Name="SaveButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
-                      MouseLeftButtonDown="SaveButton_Click">
-                    <Path x:Name="SaveButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="保存" FontSize="18" Foreground="#EEEEEE"
+                <Grid x:Name="SaveButtonGrid" MinWidth="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="SaveButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Save}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>
 
-                <Grid Width="80" Height="37" Margin="0,0,10,0"
-                      MouseLeftButtonDown="SaveAsButton_Click">
-                    <Path x:Name="SaveAsButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="另存为" FontSize="18" Foreground="#EEEEEE"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                <Grid MinWidth="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveAsButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="SaveAsButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.SaveAs}" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="9,0"
                                IsHitTestVisible="False"/>
                 </Grid>
 
-                <Grid Width="80" Height="37"
-                      MouseLeftButtonDown="ExportButton_Click">
-                    <Path x:Name="ExportButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="导出" FontSize="18" Foreground="#EEEEEE"
+                <Grid MinWidth="80" Height="37"
+                      MouseLeftButtonDown="ExportButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="ExportButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Export}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>
@@ -1025,7 +1038,7 @@
                             <Path Data="M2.75 5.08398L1.25 7.25065L2.75 9.41732" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                         </Canvas>
                     </Viewbox>
-                    <TextBlock Text="预设列表" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock Text="{lex:Loc DeviceParam.PresetList}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Grid>
@@ -1033,10 +1046,10 @@
         <!-- 第三行：选项卡 + 按键响应指示器 -->
         <Grid Grid.Row="2" Margin="0,0,0,19">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                <RadioButton x:Name="ButtonTab" GroupName="SectionTabs" Content="按 键 &amp; 转 速 灯"
+                <RadioButton x:Name="ButtonTab" GroupName="SectionTabs" Content="{lex:Loc WheelParam.ButtonsAndRpm}"
                              Style="{StaticResource SectionTabStyle}" IsChecked="True"
                              Checked="SectionTab_Checked"/>
-                <RadioButton x:Name="PaddleTab" GroupName="SectionTabs" Content="拨 片"
+                <RadioButton x:Name="PaddleTab" GroupName="SectionTabs" Content="{lex:Loc WheelParam.Paddles}"
                              Style="{StaticResource SectionTabStyle2}"
                              Checked="SectionTab_Checked"/>
             </StackPanel>
@@ -1126,12 +1139,16 @@
 
         <!-- 按键响应指示器（左下角） -->
         <Grid HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="0,0,0,0"
-              Width="126" Height="96" Grid.Row="3">
-            <Path Data="M125.5 0.5V89.793L119.793 95.5H0.5V6.20703L6.20703 0.5H125.5Z"
-                  Stroke="#C60E0E" StrokeThickness="1" Stretch="Fill"/>
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="按键响应" FontSize="18" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center"/>
-                <TextBlock x:Name="KeyResponseName" Text="---" FontSize="30" Foreground="#EEEEEE"
+              Width="126" MinHeight="96" Grid.Row="3"
+              SizeChanged="ButtonResponseIndicator_SizeChanged">
+            <Canvas>
+                <Path x:Name="ButtonResponseBorder" Stroke="#C60E0E" StrokeThickness="1"
+                      SnapsToDevicePixels="True"
+                      Data="M125.5 0.5V89.793L119.793 95.5H0.5V6.20703L6.20703 0.5H125.5Z"/>
+            </Canvas>
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,11">
+                <TextBlock Text="{lex:Loc WheelParam.ButtonResponse}" FontSize="18" Foreground="#EEEEEE" FontWeight="Bold" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" Width="110"/>
+                <TextBlock x:Name="KeyResponseName" Text="{lex:Loc DeviceParam.UnknownVersion}" FontSize="30" Foreground="#EEEEEE"
                    FontWeight="Bold" HorizontalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"
                    Margin="0,10,0,0"/>
             </StackPanel>
@@ -1180,7 +1197,7 @@
                                     </Path>
                                 </Grid>
                             </Viewbox>
-                            <TextBlock Text="全 局 设 置" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <TextBlock Text="{lex:Loc WheelParam.GlobalSettings}" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- 第二行：按键颜色 -->
@@ -1190,7 +1207,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid Margin="0,0,0,10">
-                                <TextBlock Text="按键灯颜色" FontSize="16" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                                <TextBlock Text="{lex:Loc WheelParam.KeyColor}" FontSize="16" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                                 <CheckBox x:Name="KeyColorToggle" HorizontalAlignment="Right"
                                           Style="{StaticResource DualStateSvgToggleStyle}" IsChecked="True"
                                           Checked="KeyColorToggle_Checked" Unchecked="KeyColorToggle_Unchecked"/>
@@ -1222,7 +1239,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid>
-                                <TextBlock Text="按键灯亮度" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock Text="{lex:Loc WheelParam.KeyBrightness}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="KeyBrightnessPercent" Text="50%" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"
                                            HorizontalAlignment="Right" VerticalAlignment="Center"
                                            FontFamily="{StaticResource OrbitronFont}"/>
@@ -1239,7 +1256,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             <Grid>
-                                <TextBlock Text="转速灯亮度" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <TextBlock Text="{lex:Loc WheelParam.RpmBrightness}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
                                 <TextBlock x:Name="RpmBrightnessPercent" Text="50%" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"
                                            HorizontalAlignment="Right" VerticalAlignment="Center"
                                            FontFamily="{StaticResource OrbitronFont}"/>
@@ -1265,7 +1282,7 @@
 
                         <!-- 第一行：显示按键编号 -->
                         <Grid Margin="0,0,0,20">
-                            <TextBlock Text="显示按键编号" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{lex:Loc WheelParam.ShowKeyNumber}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
                             <CheckBox x:Name="ShowKeyNumberToggle" HorizontalAlignment="Right"
                                       Style="{StaticResource DualStateSvgToggleStyle}" IsChecked="True"
                                       Checked="ShowKeyNumberToggle_Checked" Unchecked="ShowKeyNumberToggle_Unchecked"/>
@@ -1277,16 +1294,16 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="睡眠灯光时间" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <TextBlock Text="{lex:Loc WheelParam.SleepLightTime}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
                             <ComboBox x:Name="SleepTimeCombo" Grid.Row="1"
                                       Style="{StaticResource SteeringComboBoxStyle}" Width="359" Height="35" Tag="121" FontFamily="{StaticResource OrbitronFont}"
                                       SelectedIndex="0">
-                                <ComboBoxItem Content="5 分钟"/>
-                                <ComboBoxItem Content="10 分钟"/>
-                                <ComboBoxItem Content="15 分钟"/>
-                                <ComboBoxItem Content="30 分钟"/>
-                                <ComboBoxItem Content="60 分钟"/>
-                                <ComboBoxItem Content="从不"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Minutes5}"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Minutes10}"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Minutes15}"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Minutes30}"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Minutes60}"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Never}"/>
                             </ComboBox>
                         </Grid>
 
@@ -1296,12 +1313,12 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="待机灯效" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <TextBlock Text="{lex:Loc WheelParam.StandbyEffect}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
                             <ComboBox x:Name="StandbyEffectCombo" Grid.Row="1"
                                       Style="{StaticResource SteeringComboBoxStyle}"
                                       SelectedIndex="0">
-                                <ComboBoxItem Content="呼吸"/>
-                                <ComboBoxItem Content="关灯"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Breathing}"/>
+                                <ComboBoxItem Content="{lex:Loc WheelParam.Off}"/>
                             </ComboBox>
                         </Grid>
 
@@ -1311,7 +1328,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="速度" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <TextBlock Text="{lex:Loc WheelParam.Speed}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,10"/>
                             <Slider x:Name="SpeedSlider" Grid.Row="1" Style="{StaticResource SpeedSliderStyle}"
                                     Value="3"/>
                         </Grid>
@@ -1333,7 +1350,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Text="遥测效果预览" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,8"/>
+                            <TextBlock Text="{lex:Loc WheelParam.TelemetryPreview}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,0,8"/>
 
                             <Grid Grid.Row="1">
                                 <Grid.ColumnDefinitions>
@@ -1344,13 +1361,13 @@
                                 <ComboBox x:Name="TelemetryEffectCombo" Margin="0,0,10,0"
                                           Style="{StaticResource SteeringComboBoxStyle}" Width="314" Height="35" Tag="201" FontFamily="{StaticResource OrbitronFont}"
                                           SelectedIndex="0">
-                                    <ComboBoxItem Content="ABS介入"/>
-                                    <ComboBoxItem Content="TC介入"/>
-                                    <ComboBoxItem Content="DRS可用"/>
-                                    <ComboBoxItem Content="DRS开启"/>
-                                    <ComboBoxItem Content="车轮抱死"/>
-                                    <ComboBoxItem Content="维修区限速"/>
-                                    <ComboBoxItem Content="车轮打滑"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.AbsEngage}"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.TcEngage}"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.DrsAvailable}"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.DrsActive}"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.WheelLock}"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.PitLimiter}"/>
+                                    <ComboBoxItem Content="{lex:Loc ButtonSettings.WheelSlip}"/>
                                 </ComboBox>
 
                                 <Button x:Name="PlayPauseButton" Grid.Column="1"
@@ -1403,7 +1420,7 @@
                                     </Path>
                                 </Grid>
                             </Viewbox>
-                            <TextBlock Text="离 合 拨 片" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <TextBlock Text="{lex:Loc WheelParam.ClutchPaddles}" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- 第二行：模式单选 -->
@@ -1411,17 +1428,17 @@
                             <RadioButton x:Name="CombinedAxisRadio" GroupName="ClutchMode"
                                          Style="{StaticResource PaddleModeRadioStyle}" IsChecked="True"
                                          Checked="ClutchMode_Checked"/>
-                            <TextBlock Text="合成轴" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <TextBlock Text="{lex:Loc WheelParam.CombinedAxis}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" Margin="{lex:LocThickness WheelParam.ClutchModeSpacing}"/>
 
                             <RadioButton x:Name="IndependentAxisRadio" GroupName="ClutchMode"
                                          Style="{StaticResource PaddleModeRadioStyle}"
                                          Checked="ClutchMode_Checked"/>
-                            <TextBlock Text="独立轴" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <TextBlock Text="{lex:Loc WheelParam.IndependentAxis}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" Margin="{lex:LocThickness WheelParam.ClutchModeSpacing}"/>
 
                             <RadioButton x:Name="KeyModeRadio" GroupName="ClutchMode"
                                          Style="{StaticResource PaddleModeRadioStyle}"
                                          Checked="ClutchMode_Checked"/>
-                            <TextBlock Text="按键" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock Text="{lex:Loc WheelParam.KeyMode}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" Margin="-3,0,0,0"/>
                         </StackPanel>
 
                         <!-- 第三行：动态内容（根据模式切换） -->
@@ -1441,10 +1458,10 @@
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="左 离 合" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,10,0"/>
+                                <TextBlock Grid.Column="0" Text="{lex:Loc WheelParam.LeftClutch}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,0,10,0"/>
                                 <TextBlock Grid.Column="1" x:Name="CombinedLeftPercent" Text="0%"
                                            FontSize="16" Foreground="#C60E0E" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}"/>
-                                <TextBlock Grid.Column="4" Text="右 离 合" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                <TextBlock Grid.Column="4" Text="{lex:Loc WheelParam.RightClutch}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
                                 <TextBlock Grid.Column="3" x:Name="CombinedRightPercent" Text="0%"
                                            FontSize="16" Foreground="#C60E0E" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}" Margin="0,0,10,0"/>
                             </Grid>
@@ -1531,7 +1548,7 @@
                             </Grid>
 
                             <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,22,0,0" HorizontalAlignment="Center">
-                                <TextBlock Text="离 合 点：" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                <TextBlock Text="{lex:Loc WheelParam.ClutchPoint}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
                                 <TextBlock x:Name="ClutchPointPercent" Text="0%" FontSize="16" Width="50"
                                            Foreground="#C60E0E" FontWeight="Bold" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
@@ -1553,7 +1570,7 @@
                                 </Grid.RowDefinitions>
 
                                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                                    <TextBlock Text="左拨片" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"
+                                    <TextBlock Text="{lex:Loc WheelParam.LeftClutch}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"
                                                HorizontalAlignment="Left"/>
                                     <TextBlock x:Name="LeftPaddlePercent" Text="0%" FontSize="16" Foreground="#C60E0E" FontWeight="Bold"
                                                FontFamily="{StaticResource OrbitronFont}" HorizontalAlignment="Right"/>
@@ -1617,7 +1634,7 @@
                                 </Grid.RowDefinitions>
 
                                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                                    <TextBlock Text="右拨片" FontSize="14" Foreground="#EEEEEE" FontWeight="Bold"
+                                    <TextBlock Text="{lex:Loc WheelParam.RightClutch}" FontSize="14" Foreground="#EEEEEE" FontWeight="Bold"
                                                HorizontalAlignment="Left"/>
                                     <TextBlock x:Name="RightPaddlePercent" Text="0%" FontSize="16" Foreground="#C60E0E" FontWeight="Bold"
                                                FontFamily="{StaticResource OrbitronFont}" HorizontalAlignment="Right"/>
@@ -1710,7 +1727,7 @@
                                         <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                                     </Canvas>
                                 </Viewbox>
-                                <TextBlock Text="开 始 校 准" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
+                                <TextBlock Text="{lex:Loc WheelParam.StartCalibration}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Grid>
                     </Grid>
@@ -1743,11 +1760,11 @@
                                     </Path>
                                 </Grid>
                             </Viewbox>
-                            <TextBlock Text="换 挡 拨 片" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <TextBlock Text="{lex:Loc WheelParam.ShiftPaddles}" FontSize="18" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- 第二行：提示文字 -->
-                        <TextBlock Grid.Row="1" Text="请按下需要校准的拨片，系统将自动识别当前输入，然后点击&quot;校准&quot;"
+                        <TextBlock Grid.Row="1" Text="{lex:Loc WheelParam.ShiftPaddleInstruction}"
                                    FontSize="16" Foreground="#EEEEEE" TextWrapping="Wrap" Margin="0,0,0,20"/>
 
                         <!-- 第三行：左/右拨片校准区 -->
@@ -1762,11 +1779,11 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="左 拨 片" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                    <TextBlock Grid.Row="0" Text="{lex:Loc WheelParam.LeftPaddle}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,10">
                                         <Ellipse x:Name="LeftShiftPaddleStatusDot" Width="5" Height="5"
                                                  Fill="#80EEEEEE" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock x:Name="LeftShiftPaddleStatus" Text="等待输入..."
+                                        <TextBlock x:Name="LeftShiftPaddleStatus" Text="{lex:Loc WheelParam.WaitingForInput}"
                                                    FontSize="14" Foreground="#80EEEEEE"/>
                                     </StackPanel>
                                     <Grid Grid.Row="2" Width="152" Height="35"
@@ -1783,7 +1800,7 @@
                                                     <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                                                 </Canvas>
                                             </Viewbox>
-                                            <TextBlock Text="校 准" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc WheelParam.Calibrate}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Grid>
                                 </Grid>
@@ -1799,11 +1816,11 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Text="右 拨 片" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                    <TextBlock Grid.Row="0" Text="{lex:Loc WheelParam.RightPaddle}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold"/>
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,10,0,10">
                                         <Ellipse x:Name="RightShiftPaddleStatusDot" Width="5" Height="5"
                                                  Fill="#80EEEEEE" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock x:Name="RightShiftPaddleStatus" Text="等待输入..."
+                                        <TextBlock x:Name="RightShiftPaddleStatus" Text="{lex:Loc WheelParam.WaitingForInput}"
                                                    FontSize="14" Foreground="#80EEEEEE"/>
                                     </StackPanel>
                                     <Grid Grid.Row="2" Width="152" Height="35"
@@ -1820,7 +1837,7 @@
                                                     <Path Data="M8.2494 12.2879C10.4798 12.2879 12.2879 10.4798 12.2879 8.2494C12.2879 6.01902 10.4798 4.21094 8.2494 4.21094C6.01902 4.21094 4.21094 6.01902 4.21094 8.2494C4.21094 10.4798 6.01902 12.2879 8.2494 12.2879Z" Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                                                 </Canvas>
                                             </Viewbox>
-                                            <TextBlock Text="校 准" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{lex:Loc WheelParam.Calibrate}" FontSize="16" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Grid>
                                 </Grid>

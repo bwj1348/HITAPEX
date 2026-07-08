@@ -15,6 +15,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Resources\Locales\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Assets\TelemetryConfigs\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

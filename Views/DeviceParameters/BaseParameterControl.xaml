@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="884" d:DesignWidth="1202"
              Background="Transparent">
@@ -109,7 +110,7 @@
                 <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,3" VerticalAlignment="Bottom"/>
 
                 <!-- 设备名称 -->
-                <TextBlock x:Name="DeviceModelName" Grid.Column="1" Text="基座" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                <TextBlock x:Name="DeviceModelName" Grid.Column="1" Text="{lex:Loc Status.DeviceTypeBase}" FontSize="26" Foreground="#EEEEEE" FontWeight="Bold" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
 
                 <!-- 垂直分割线1 -->
                 <Border Grid.Column="2" Width="1" Height="26" Background="#EEEEEE" Margin="20,0,20,0" VerticalAlignment="Center"/>
@@ -134,7 +135,7 @@
                                   Stroke="#C60E0E" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                         </Canvas>
                     </Viewbox>
-                    <TextBlock x:Name="ConnectionStatusText" Text="未连接" FontSize="22" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ConnectionStatusText" Text="{lex:Loc DeviceParam.NotConnected}" FontSize="22" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- 垂直分割线2 -->
@@ -142,10 +143,10 @@
 
                 <!-- 固件版本 -->
                 <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="固件版本:" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="FirmwareVersionText" Text="---" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
+                    <TextBlock Text="{lex:Loc DeviceParam.FirmwareVersion}" FontSize="22" Foreground="#80EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="FirmwareVersionText" Text="{lex:Loc DeviceParam.UnknownVersion}" FontSize="22" Foreground="#EEEEEE" Margin="5,0,0,0" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}"/>
                     <Border x:Name="NewVersionAvailableBorder" BorderThickness="0,0,0,1" BorderBrush="#C60E0E" Padding="0,0,0,0" Margin="10,0,0,0" VerticalAlignment="Center" Cursor="Hand" Visibility="Collapsed" MouseLeftButtonDown="NewVersionAvailable_Click">
-                        <TextBlock x:Name="NewVersionAvailableText" Text="新版本可用" FontSize="22" Foreground="#C60E0E"/>
+                        <TextBlock x:Name="NewVersionAvailableText" Text="{lex:Loc DeviceParam.NewVersionAvailable}" FontSize="22" Foreground="#C60E0E"/>
                     </Border>
                 </StackPanel>
             </Grid>
@@ -166,7 +167,7 @@
             <Grid Grid.Column="0" Width="388" Height="37">
                 <Path Data="M393 5H10.1733L5 11V42H6.552H387.827L393 36V5Z" Fill="#33EEEEEE" Stretch="Fill"/>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,15,0">
-                    <TextBlock Text="当前" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock Text="{lex:Loc DeviceParam.Current}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                     <Border Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
                     <Viewbox Width="15" Height="17" Margin="0,0,8,0">
                         <Grid Width="15" Height="17">
@@ -217,53 +218,61 @@
                             </Canvas>
                         </Grid>
                     </Viewbox>
-                    <TextBlock x:Name="PresetNameText" Text="Default" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="ModifiedIndicator" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Visibility="Collapsed">
-                        <Run Text="(" Foreground="#EEEEEE"/>
-                        <Run Text="已更改" Foreground="#C60E0E"/>
-                        <Run Text=")" Foreground="#EEEEEE"/>
-                    </TextBlock>
+                    <TextBlock x:Name="PresetNameText" Text="{lex:Loc DeviceParam.Default}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="ModifiedIndicator" Text="{lex:Loc DeviceParam.Modified}" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Foreground="#C60E0E" Visibility="Collapsed"/>
                 </StackPanel>
             </Grid>
 
             <!-- 功能按钮 -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
                 <!-- 撤回按钮 -->
-                <Grid x:Name="UndoButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
-                      MouseLeftButtonDown="UndoButton_Click">
-                    <Path x:Name="UndoButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="撤回" FontSize="18" Foreground="#EEEEEE"
+                <Grid x:Name="UndoButtonGrid" MinWidth="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="UndoButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="UndoButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Undo}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>
 
                 <!-- 保存按钮 -->
-                <Grid x:Name="SaveButtonGrid" Width="80" Height="37" Margin="0,0,10,0"
-                      MouseLeftButtonDown="SaveButton_Click">
-                    <Path x:Name="SaveButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="保存" FontSize="18" Foreground="#EEEEEE"
+                <Grid x:Name="SaveButtonGrid" MinWidth="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="SaveButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Save}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>
 
                 <!-- 另存为按钮 -->
-                <Grid Width="80" Height="37" Margin="0,0,10,0"
-                      MouseLeftButtonDown="SaveAsButton_Click">
-                    <Path x:Name="SaveAsButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="另存为" FontSize="18" Foreground="#EEEEEE"
-                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                <Grid MinWidth="80" Height="37" Margin="0,0,10,0"
+                      MouseLeftButtonDown="SaveAsButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="SaveAsButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.SaveAs}" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="9,0"
                                IsHitTestVisible="False"/>
                 </Grid>
 
                 <!-- 导出按钮 -->
-                <Grid Width="80" Height="37"
-                      MouseLeftButtonDown="ExportButton_Click">
-                    <Path x:Name="ExportButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
-                          Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
-                    <TextBlock Text="导出" FontSize="18" Foreground="#EEEEEE"
+                <Grid MinWidth="80" Height="37"
+                      MouseLeftButtonDown="ExportButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="ExportButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Export}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>
@@ -289,7 +298,7 @@
                                   Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
                         </Canvas>
                     </Viewbox>
-                    <TextBlock Text="预设列表" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <TextBlock Text="{lex:Loc DeviceParam.PresetList}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Grid>
@@ -304,7 +313,7 @@
                     </LinearGradientBrush>
                 </Path.Fill>
             </Path>
-            <TextBlock Text="基 座" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Text="{lex:Loc BaseParam.Title}" FontSize="22" Foreground="#EEEEEE" FontWeight="Bold" FontStyle="Italic" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
 
         <!-- 第四行：基座参数调节区（占位，后续实现） -->

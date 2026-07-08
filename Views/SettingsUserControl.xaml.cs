@@ -8,14 +8,17 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using Microsoft.Win32;
 using HITAPEX.Models;
 using HITAPEX.Models.Usb;
+using HITAPEX.Services;
 using HITAPEX.Services.Usb;
 
 namespace HITAPEX.Views;
@@ -68,14 +71,14 @@ public partial class SettingsUserControl : UserControl
     private void ShowUpdateDialog(DeviceItem device)
     {
         if (device == null || device.FirmwareInfo == null) return;
-        if (device.Status == "已是最新版本") return;
+        if (device.Status == LocalizationService.Instance["Firmware.AlreadyLatest"]) return;
 
         var parentWindow = Window.GetWindow(this);
         if (parentWindow is MainWindow mainWindow)
         {
             var dialog = mainWindow.GlobalDialog;
             var deviceName = device.FirmwareInfo?.DeviceName ?? device.Model;
-            dialog.Title = $"{deviceName} 更新提示";
+            dialog.Title = string.Format(LocalizationService.Instance["Firmware.UpdatePrompt"], deviceName);
             dialog.ClearButtons();
 
             var scrollViewer = new ScrollViewer
@@ -102,13 +105,13 @@ public partial class SettingsUserControl : UserControl
             scrollViewer.Content = descText;
             dialog.DialogContent = scrollViewer;
 
-            dialog.AddButton("立即更新", async (s, e) =>
+            dialog.AddButton(LocalizationService.Instance["Firmware.UpdateNow"], async (s, e) =>
             {
                 dialog.Hide();
                 await StartDeviceUpdateAsync(device);
             }, true);
 
-            dialog.AddButton("稍后再说", (s, e) =>
+            dialog.AddButton(LocalizationService.Instance["Firmware.UpdateLater"], (s, e) =>
             {
                 dialog.Hide();
             }, false);
@@ -133,9 +136,9 @@ public partial class SettingsUserControl : UserControl
 
         var usbDevice = device.UsbDevice;
         var firmwareInfo = device.FirmwareInfo;
-        var deviceName = device.Model ?? firmwareInfo.DeviceName ?? "设备";
+        var deviceName = device.Model ?? firmwareInfo.DeviceName ?? LocalizationService.Instance["Settings.Device"];
 
-        device.Status = "更新中...";
+        device.Status = LocalizationService.Instance["Firmware.Updating"];
 
         var parentWindow = Window.GetWindow(this);
         if (parentWindow is not MainWindow mainWindow) return;
@@ -165,7 +168,7 @@ public partial class SettingsUserControl : UserControl
 
         var titleShadow = new TextBlock
         {
-            Text = $"{deviceName} 更新中...",
+            Text = string.Format(LocalizationService.Instance["Firmware.UpdatingDevice"], deviceName),
             FontSize = 36, FontWeight = FontWeights.Black, FontStyle = FontStyles.Italic,
             FontFamily = new FontFamily(new Uri("pack://application:,,,/"), "./Assets/Fonts/#Orbitron"),
             Margin = new Thickness(4, 4, 0, 0), Foreground = shadowGradient
@@ -179,7 +182,7 @@ public partial class SettingsUserControl : UserControl
 
         var titleMain = new TextBlock
         {
-            Text = $"{deviceName} 更新中...",
+            Text = string.Format(LocalizationService.Instance["Firmware.UpdatingDevice"], deviceName),
             FontSize = 36, FontWeight = FontWeights.Black, FontStyle = FontStyles.Italic,
             FontFamily = new FontFamily(new Uri("pack://application:,,,/"), "./Assets/Fonts/#Orbitron"),
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238))
@@ -375,7 +378,7 @@ public partial class SettingsUserControl : UserControl
         // Row 2: Warning text
         var warningText = new TextBlock
         {
-            Text = "固件更新中，请勿关闭软件、断开设备或关闭设备电源，否则可能导致软件更新失败！",
+            Text = LocalizationService.Instance["Firmware.WarningMessage"],
             FontSize = 12, Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom,
@@ -421,7 +424,7 @@ public partial class SettingsUserControl : UserControl
             {
                 Debug.WriteLine("[FirmwareUI] 固件下载失败");
                 progressDialog.Hide();
-                device.Status = "下载失败";
+                device.Status = LocalizationService.Instance["Firmware.DownloadFailed"];
                 return;
             }
 
@@ -433,7 +436,7 @@ public partial class SettingsUserControl : UserControl
             if (firmwareUpdater == null)
             {
                 progressDialog.Hide();
-                device.Status = "服务不可用";
+                device.Status = LocalizationService.Instance["Firmware.ServiceUnavailable"];
                 return;
             }
 
@@ -464,7 +467,7 @@ public partial class SettingsUserControl : UserControl
             if (result.Success)
             {
                 device.CurrentVersion = $"v{result.NewVersion}";
-                device.Status = "更新完成，等待设备重启...";
+                device.Status = LocalizationService.Instance["Firmware.UpdateComplete"];
                 device.ButtonBackground = disabledBrush;
                 Debug.WriteLine($"[FirmwareUI] {deviceName} 更新成功 -> v{result.NewVersion}");
 
@@ -499,20 +502,20 @@ public partial class SettingsUserControl : UserControl
             }
             else
             {
-                device.Status = $"更新失败: {result.ErrorMessage}";
+                device.Status = string.Format(LocalizationService.Instance["Firmware.UpdateFailed"], result.ErrorMessage);
                 Debug.WriteLine($"[FirmwareUI] {deviceName} 更新失败: {result.ErrorMessage}");
             }
         }
         catch (OperationCanceledException)
         {
             progressDialog.Hide();
-            device.Status = "更新已取消";
+            device.Status = LocalizationService.Instance["Firmware.UpdateCancelled"];
             Debug.WriteLine($"[FirmwareUI] {deviceName} 更新已取消");
         }
         catch (Exception ex)
         {
             progressDialog.Hide();
-            device.Status = $"更新异常: {ex.Message}";
+            device.Status = string.Format(LocalizationService.Instance["Firmware.UpdateException"], ex.Message);
             Debug.WriteLine($"[FirmwareUI] {deviceName} 更新异常: {ex.Message}");
         }
         finally
@@ -544,7 +547,7 @@ public partial class SettingsUserControl : UserControl
             }
             else
             {
-                FirmwareLastCheckTimeText.Text = "未检查";
+                FirmwareLastCheckTimeText.Text = LocalizationService.Instance["Settings.NotChecked"];
             }
         }
     }
@@ -579,19 +582,6 @@ public partial class SettingsUserControl : UserControl
                     break;
                 }
             }
-
-            var theme = GetThemeSetting();
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                foreach (ComboBoxItem item in ThemeComboBox.Items)
-                {
-                    if (item.Tag?.ToString() == theme)
-                    {
-                        ThemeComboBox.SelectedItem = item;
-                        break;
-                    }
-                }
-            }), System.Windows.Threading.DispatcherPriority.Loaded);
 
             var version = GetAssemblyVersion();
             CurrentVersionText.Text = version;
@@ -648,17 +638,6 @@ public partial class SettingsUserControl : UserControl
         Properties.Settings.Default.Save();
     }
 
-    private string GetThemeSetting()
-    {
-        return Properties.Settings.Default.Theme ?? "Dark";
-    }
-
-    private void SetThemeSetting(string theme)
-    {
-        Properties.Settings.Default.Theme = theme;
-        Properties.Settings.Default.Save();
-    }
-
     private string GetAssemblyVersion()
     {
         var version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -673,7 +652,7 @@ public partial class SettingsUserControl : UserControl
         }
         else
         {
-            LastCheckTimeText.Text = "未检查";
+            LastCheckTimeText.Text = LocalizationService.Instance["Settings.NotChecked"];
         }
     }
 
@@ -751,73 +730,13 @@ public partial class SettingsUserControl : UserControl
         if (LanguageComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
         {
             var newLanguage = item.Tag.ToString() ?? "zh-CN";
-            var currentLanguage = GetLanguageSetting();
+            var currentLanguage = LocalizationService.Instance.CurrentLanguage;
 
             if (newLanguage != currentLanguage)
             {
-                SetLanguageSetting(newLanguage);
-                ShowRestartPrompt("语言设置已更改，重启应用程序后生效。");
+                // 即时切换语言，无需重启
+                LocalizationService.Instance.SetLanguage(newLanguage);
             }
-        }
-    }
-
-    private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (ThemeComboBox.SelectedItem is ComboBoxItem item && item.Tag != null)
-        {
-            var newTheme = item.Tag.ToString() ?? "Dark";
-            var currentTheme = GetThemeSetting();
-
-            if (newTheme != currentTheme)
-            {
-                SetThemeSetting(newTheme);
-                ShowRestartPrompt("主题设置已更改，重启应用程序后生效。");
-            }
-        }
-    }
-
-    private void ShowRestartPrompt(string message)
-    {
-        var parentWindow = Window.GetWindow(this);
-        if (parentWindow is MainWindow mainWindow)
-        {
-            var dialog = mainWindow.GlobalDialog;
-            dialog.Title = "提示";
-            dialog.ClearButtons();
-
-            dialog.AddButton("稍后重启", (s, e) =>
-            {
-                dialog.Hide();
-            }, false);
-
-            dialog.AddButton("立即重启", (s, e) =>
-            {
-                dialog.Hide();
-                RestartApplication();
-            }, true);
-
-            var content = new TextBlock
-            {
-                Text = message,
-                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(238, 238, 238)),
-                FontSize = 16,
-                TextWrapping = TextWrapping.Wrap,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            dialog.DialogContent = content;
-            dialog.Show();
-        }
-    }
-
-    private void RestartApplication()
-    {
-        var appPath = Environment.ProcessPath;
-        if (appPath != null)
-        {
-            Process.Start(appPath);
-            Application.Current.Shutdown();
         }
     }
 
@@ -828,7 +747,7 @@ public partial class SettingsUserControl : UserControl
         if (!_isNewVersionDetected)
         {
             CheckUpdateButton.IsEnabled = false;
-            UpdateButtonText("检 查 中...");
+            UpdateButtonText("Settings.Checking");
 
             try
             {
@@ -840,7 +759,7 @@ public partial class SettingsUserControl : UserControl
                 NewVersionPanel.Visibility = Visibility.Visible;
                 NewVersionText.Text = "V 1.1.1";
                 _isNewVersionDetected = true;
-                UpdateButtonText("立 即 更 新");
+                UpdateButtonText("Settings.UpdateNow");
 
                 // 阶段一结束，确保按钮呈现完整红色（瞬间拉满）
                 UpdateProgress(100, false);
@@ -865,56 +784,74 @@ public partial class SettingsUserControl : UserControl
                 _updateProgress = i;
                 // 启动带有平滑过渡的进度推进
                 UpdateProgress(i, true);
-                UpdateButtonText($"{i}%");
+                UpdateButtonTextRaw($"{i}%");
             }
-            
-            UpdateButtonText("已完成");
+
+            UpdateButtonText("Settings.Completed");
 
             // 确保最终精度完美贴合 122px
             UpdateProgress(100, true);
 
             await Task.Delay(1000);
-            UpdateButtonText("立即更新");
+            UpdateButtonText("Firmware.UpdateNow");
             _isUpdating = false;
             CheckUpdateButton.IsEnabled = true;
         }
     }
 
-    private void UpdateButtonText(string text)
+    /// <summary>
+    /// 通过绑定设置按钮文字，语言切换时自动刷新（适用本地化 key）。
+    /// </summary>
+    private void UpdateButtonText(string locKey)
+    {
+        if (CheckUpdateButton.Template?.FindName("ButtonText", CheckUpdateButton) is TextBlock buttonText)
+        {
+            buttonText.SetBinding(TextBlock.TextProperty, new Binding
+            {
+                Source = LocalizationService.Instance,
+                Path = new PropertyPath($"[{locKey}]"),
+                Mode = BindingMode.OneWay
+            });
+        }
+        ScheduleShapeRedraw();
+    }
+
+    /// <summary>
+    /// 直接设置按钮文字（适用非本地化的动态文本，如百分比 "50%"）。
+    /// </summary>
+    private void UpdateButtonTextRaw(string text)
     {
         if (CheckUpdateButton.Template?.FindName("ButtonText", CheckUpdateButton) is TextBlock buttonText)
         {
             buttonText.Text = text;
         }
+        ScheduleShapeRedraw();
+    }
+
+    private void ScheduleShapeRedraw()
+    {
+        var button = CheckUpdateButton;
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (button.Template.FindName("UpdateButtonGrid", button) is Grid grid)
+                RedrawUpdateButtonShape(grid);
+        }), DispatcherPriority.Loaded);
     }
 
     private void UpdateProgress(int progress, bool smooth = true)
     {
-        double width = 122 * progress / 100.0;
+        var grid = CheckUpdateButton.Template.FindName("UpdateButtonGrid", CheckUpdateButton) as Grid;
+        var buttonWidth = grid?.ActualWidth ?? 122;
+        double width = buttonWidth * progress / 100.0;
         SetProgressClip(width, smooth);
     }
 
     private void SetProgressClip(double width, bool smooth = true)
     {
-        if (CheckUpdateButton.Template.FindName("ProgressClipTransform", CheckUpdateButton) is TranslateTransform transform)
+        if (CheckUpdateButton.Template.FindName("ProgressBackground", CheckUpdateButton) is System.Windows.Shapes.Path pg)
         {
-            if (smooth)
-            {
-                // 启用 WPF 硬件加速动画，让 50ms 一次的循环数值跳跃变得极致平滑
-                var animation = new DoubleAnimation
-                {
-                    To = width,
-                    Duration = TimeSpan.FromMilliseconds(150),
-                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                };
-                transform.BeginAnimation(TranslateTransform.XProperty, animation);
-            }
-            else
-            {
-                // 瞬间改变：必须先清除绑定的动画，否则直接赋值会失效
-                transform.BeginAnimation(TranslateTransform.XProperty, null);
-                transform.X = width;
-            }
+            // 右侧切角和按钮形状一致：从 (p,21) 斜切到 (p-6,27)
+            pg.Clip = Geometry.Parse($"M-100,0 L{width:F3},0 L{width:F3},21 L{width - 6:F3},27 L-100,27 Z");
         }
     }
 
@@ -998,19 +935,19 @@ public partial class SettingsUserControl : UserControl
                 var descriptor = DeviceRegistry.FindByVidPid(usbDevice.Vid, usbDevice.Pid);
                 var isUpdateMode = DeviceRegistry.IsUpdateMode(usbDevice.Vid, usbDevice.Pid);
                 var displayName = isUpdateMode
-                    ? $"{descriptor?.ModelName ?? "未知设备"} (更新模式)"
+                    ? string.Format(LocalizationService.Instance["Firmware.UpdateModeDevice"], descriptor?.ModelName ?? LocalizationService.Instance["Firmware.UnknownDevice"])
                     : DeviceRegistry.GetDisplayName(usbDevice.Vid, usbDevice.Pid);
                 var deviceTypeName = deviceType switch
                 {
-                    DeviceType.Base => "基座",
-                    DeviceType.Pedal => "踏板",
-                    DeviceType.Wheel => "面盘",
-                    _ => "未知设备"
+                    DeviceType.Base => LocalizationService.Instance["Status.DeviceTypeBase"],
+                    DeviceType.Pedal => LocalizationService.Instance["Status.DeviceTypePedal"],
+                    DeviceType.Wheel => LocalizationService.Instance["Status.DeviceTypeWheel"],
+                    _ => LocalizationService.Instance["Firmware.UnknownDevice"]
                 };
 
                 // Try to get device info (firmware version) from the device.
                 // Skip for update-mode devices — they don't respond to normal commands.
-                string currentVersion = isUpdateMode ? "更新模式" : "未知";
+                string currentVersion = isUpdateMode ? "LocalizationService.Instance[\"Firmware.UpdateMode\"]" : LocalizationService.Instance["DeviceParam.Unknown"];
                 if (!isUpdateMode && App.FirmwareUpdater != null && App.ProtocolService != null)
                 {
                     var deviceInfo = await App.FirmwareUpdater.GetDeviceInfoAsync(usbDevice, deviceType);
@@ -1047,19 +984,19 @@ public partial class SettingsUserControl : UserControl
                     }
                     if (hasUpdate)
                     {
-                        status = $"v{matchedFirmware.Version} 新版本";
+                        status = string.Format(LocalizationService.Instance["Firmware.NewVersion"], matchedFirmware.Version);
                         buttonBg = updateGradient;
                         updateDesc = matchedFirmware.UpdateLog;
                     }
                     else
                     {
-                        status = "已是最新版本";
+                        status = LocalizationService.Instance["Firmware.AlreadyLatest"];
                         buttonBg = disabledBrush;
                     }
                 }
                 else
                 {
-                    status = isUpdateMode ? "无可用固件" : "已是最新版本";
+                    status = isUpdateMode ? LocalizationService.Instance["Firmware.NoFirmware"] : LocalizationService.Instance["Firmware.AlreadyLatest"];
                     buttonBg = disabledBrush;
                 }
 
@@ -1093,11 +1030,11 @@ public partial class SettingsUserControl : UserControl
             {
                 DeviceList.Add(new DeviceItem
                 {
-                    DeviceType = "提示",
-                    Model = "未检测到设备",
+                    DeviceType = LocalizationService.Instance["Settings.Prompt"],
+                    Model = LocalizationService.Instance["Firmware.NoDeviceDetected"],
                     SerialNumber = "-",
                     CurrentVersion = "-",
-                    Status = "请连接设备",
+                    Status = LocalizationService.Instance["Firmware.ConnectDevice"],
                     ButtonBackground = disabledBrush,
                     UpdateCommand = new RelayCommand(_ => { }),
                 });
@@ -1158,7 +1095,7 @@ public partial class SettingsUserControl : UserControl
             foreach (var device in updateModeDevices)
             {
                 var descriptor = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
-                var deviceName = descriptor?.ModelName ?? $"设备 (VID={device.Vid:X4})";
+                var deviceName = descriptor?.ModelName ?? LocalizationService.Instance["Settings.Device"];
                 var lookupVid = descriptor?.NormalMode.Vid ?? device.Vid;
                 var lookupPid = descriptor?.NormalMode.Pid ?? device.Pid;
                 var matched = App.FirmwareApi?.FindFirmwareForDevice(firmwareList, lookupVid, lookupPid);
@@ -1172,8 +1109,8 @@ public partial class SettingsUserControl : UserControl
                     {
                         Model = descriptor?.ModelName ?? deviceName,
                         SerialNumber = device.SerialNumber,
-                        CurrentVersion = "更新模式",
-                        Status = $"v{matched.Version} 新版本",
+                        CurrentVersion = "LocalizationService.Instance[\"Firmware.UpdateMode\"]",
+                        Status = string.Format(LocalizationService.Instance["Firmware.NewVersion"], matched.Version),
                         UsbDevice = device,
                         FirmwareInfo = matched,
                         ButtonBackground = new SolidColorBrush(Color.FromArgb(77, 238, 238, 238))
@@ -1189,7 +1126,7 @@ public partial class SettingsUserControl : UserControl
             if (updateList.Count == 0)
             {
                 var names = string.Join("、", missingFirmwareNames);
-                ShowBatchResultDialog($"没有找到{names}的可用固件，请稍后重试。");
+                ShowBatchResultDialog(string.Format(LocalizationService.Instance["Firmware.NoFirmwareAvailable"], names));
                 return;
             }
 
@@ -1201,7 +1138,7 @@ public partial class SettingsUserControl : UserControl
                 if (ct.IsCancellationRequested) break;
 
                 var item = updateList[i];
-                var modelName = item.Model ?? "未知设备";
+                var modelName = item.Model ?? LocalizationService.Instance["Firmware.UnknownDevice"];
                 if (updateList.Count > 1)
                     item.Model = $"{modelName} ({i + 1}/{updateList.Count})";
 
@@ -1225,15 +1162,15 @@ public partial class SettingsUserControl : UserControl
             {
                 var allNames = string.Join("、", updateList.Select(d => d.FirmwareInfo?.DeviceName ?? d.Model ?? ""));
                 if (failedNames.Count == 0)
-                    ShowBatchResultDialog($"{allNames}设备固件更新完成，设备可正常使用。");
+                    ShowBatchResultDialog(string.Format(LocalizationService.Instance["Firmware.UpdateSuccess"], allNames));
                 else
-                    ShowBatchResultDialog($"{allNames}设备固件更新完成，设备可正常使用。\n{string.Join("、", failedNames)} 更新失败。");
+                    ShowBatchResultDialog(string.Format(LocalizationService.Instance["Firmware.UpdatePartial"], allNames, string.Join("、", failedNames)));
             }
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[FirmwareUI] 批量更新异常: {ex.Message}");
-            ShowBatchResultDialog($"更新过程发生异常: {ex.Message}");
+            ShowBatchResultDialog(string.Format(LocalizationService.Instance["Firmware.UpdateError"], ex.Message));
         }
         finally
         {
@@ -1254,7 +1191,7 @@ public partial class SettingsUserControl : UserControl
         Dispatcher.Invoke(() =>
         {
             var dialog = mainWindow.GlobalDialog;
-            dialog.Title = "固 件 更 新";
+            dialog.Title = LocalizationService.Instance["Firmware.FirmwareUpdate"];
             dialog.ClearButtons();
 
             var messageBlock = new TextBlock
@@ -1270,7 +1207,7 @@ public partial class SettingsUserControl : UserControl
 
             var button = new Button
             {
-                Content = "确 定",
+                Content = LocalizationService.Instance["Common.Confirm"],
                 Width = 172,
                 Height = 32,
                 Cursor = Cursors.Hand,
@@ -1338,6 +1275,44 @@ public partial class SettingsUserControl : UserControl
         if (e.Key == Key.Tab)
         {
             e.Handled = false;
+        }
+    }
+
+    /// <summary>
+    /// UpdateButtonStyle 模板中 Grid 的 SizeChanged 事件处理。
+    /// 按钮宽度变化时重绘背景形状，并重置进度裁剪到新宽度。
+    /// <summary>
+    /// UpdateButtonStyle 模板中 Grid 的 SizeChanged 事件处理。
+    /// </summary>
+    private void UpdateButtonGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is Grid grid)
+            RedrawUpdateButtonShape(grid);
+    }
+
+    /// <summary>
+    /// 根据 Grid 实际宽度重绘背景 Path 的几何体，并重置渐变裁剪到满宽。
+    /// 进度动画运行时跳过裁剪重置，避免打断动画。
+    /// </summary>
+    private void RedrawUpdateButtonShape(Grid grid)
+    {
+        var w = grid.ActualWidth;
+        if (w <= 0) return;
+
+        var geom = $"M0,6 V27 H{w - 6:F4} L{w},21 V0 H6 Z";
+
+        if (grid.FindName("ButtonBackground") is System.Windows.Shapes.Path bg)
+        {
+            bg.Width = w;
+            bg.Data = Geometry.Parse(geom);
+        }
+        if (grid.FindName("ProgressBackground") is System.Windows.Shapes.Path pg)
+        {
+            pg.Width = w;
+            pg.Data = Geometry.Parse(geom);
+
+            if (!_isUpdating)
+                pg.Clip = Geometry.Parse($"M-100,0 L{w:F3},0 L{w:F3},21 L{w - 6:F3},27 L-100,27 Z");
         }
     }
 }

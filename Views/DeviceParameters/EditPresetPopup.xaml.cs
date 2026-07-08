@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using HITAPEX.Services;
 
 namespace HITAPEX.Views.DeviceParameters;
 
@@ -81,7 +82,7 @@ public partial class EditPresetPopup : UserControl
         BuildAllGamesList();
         BuildSelectedGamesList();
         UpdateSelectionSummary();
-        SetTitle("编 辑");
+        SetTitle(LocalizationService.Instance["Preset.Edit"]);
     }
 
     /// <summary>用于“另存为”场景：空白名称，给定已有名称列表用于重名校验</summary>
@@ -97,7 +98,7 @@ public partial class EditPresetPopup : UserControl
         BuildAllGamesList();
         BuildSelectedGamesList();
         UpdateSelectionSummary();
-        SetTitle("另 存 为");
+        SetTitle(LocalizationService.Instance["Preset.SaveAsTitle"]);
     }
 
     // ══════════════════════════════════════════
@@ -183,7 +184,7 @@ public partial class EditPresetPopup : UserControl
         {
             var emptyHint = new TextBlock
             {
-                Text = "暂未选择游戏",
+                Text = LocalizationService.Instance["Preset.NoGameSelected"],
                 Foreground = new SolidColorBrush(Color.FromArgb(0x44, 0xEE, 0xEE, 0xEE)),
                 FontSize = 14,
                 FontFamily = (FontFamily)FindResource("OrbitronFont"),
@@ -330,7 +331,7 @@ public partial class EditPresetPopup : UserControl
 
     private void UpdateSelectionSummary()
     {
-        GameCountText.Text = $"游戏（{_selectedGames.Count}/{s_allGames.Count}）";
+        GameCountText.Text = LocalizationService.Instance.Format("Preset.GameCount", _selectedGames.Count, s_allGames.Count);
 
         SelectAllCheckBox.IsChecked = _selectedGames.Count == s_allGames.Count
             ? true

@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="900">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -14,8 +15,8 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,30">
-                <TextBlock Text="帮助中心" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF"/>
-                <TextBlock Text="查找教程和常见问题解答" FontSize="16" Foreground="#8892A0" Margin="0,8,0,0"/>
+                <TextBlock Text="{lex:Loc Help.Title}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF"/>
+                <TextBlock Text="{lex:Loc Help.Subtitle}" FontSize="16" Foreground="#8892A0" Margin="0,8,0,0"/>
             </StackPanel>
 
             <Border Grid.Row="1" Background="#1E2A3A" CornerRadius="12" Padding="24,20" Margin="0,0,0,24">
@@ -25,16 +26,16 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
-                        <TextBlock Text="🔍 搜索帮助文档" FontSize="16" Foreground="#8892A0" VerticalAlignment="Center"/>
+                        <TextBlock Text="{lex:Loc Help.SearchPlaceholder}" FontSize="16" Foreground="#8892A0" VerticalAlignment="Center"/>
                     </StackPanel>
                     <Border Grid.Column="1" Background="#00D4FF" CornerRadius="6" Padding="16,8" Cursor="Hand">
-                        <TextBlock Text="搜索" Foreground="#0D1B2A" FontWeight="SemiBold"/>
+                        <TextBlock Text="{lex:Loc Help.Search}" Foreground="#0D1B2A" FontWeight="SemiBold"/>
                     </Border>
                 </Grid>
             </Border>
 
             <StackPanel Grid.Row="2">
-                <TextBlock Text="常见问题" FontSize="18" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,0,0,12"/>
+                <TextBlock Text="{lex:Loc Help.FAQ}" FontSize="18" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,0,0,12"/>
 
                 <Border Background="#1E2A3A" CornerRadius="12" Padding="20,16" Margin="0,0,0,8" Cursor="Hand">
                     <Grid>
@@ -42,7 +43,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="如何连接方向盘设备？" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="{lex:Loc Help.FaqConnect}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
                         <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
                     </Grid>
                 </Border>
@@ -53,7 +54,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="如何校准踏板灵敏度？" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="{lex:Loc Help.FaqCalibrate}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
                         <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
                     </Grid>
                 </Border>
@@ -64,7 +65,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="力反馈设置建议" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="{lex:Loc Help.FaqFFB}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
                         <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
                     </Grid>
                 </Border>
@@ -75,7 +76,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="如何调整画面设置以获得最佳性能？" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="{lex:Loc Help.FaqGraphics}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
                         <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
                     </Grid>
                 </Border>
@@ -86,7 +87,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="多人联机游戏指南" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
+                        <TextBlock Text="{lex:Loc Help.FaqMultiplayer}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
                         <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
                     </Grid>
                 </Border>

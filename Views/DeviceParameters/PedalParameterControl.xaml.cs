@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -8,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using HITAPEX.Models.Usb;
+using HITAPEX.Services;
 using HITAPEX.Services.Usb;
 using SharpVectors.Converters;
 
@@ -61,8 +63,9 @@ public partial class PedalParameterControl : UserControl
     private UsbDeviceInfo? _connectedPedalDevice;
     private UsbDeviceInfo? _baseDevice;
     private bool _isPedalViaBase;
-    private string _deviceModelName = "踏板";
-    private string _connectionStatusText = "已连接(基座)";
+    private string _deviceTypeName = LocalizationService.Instance["Status.DeviceTypePedal"];
+    private string _deviceModel = "";
+    private string _connectionStatusText = LocalizationService.Instance["DeviceParam.ConnectedBase"];
     private string _connectionStatusColor = "#179548";
     private string _firmwareVersion = "v 1.0.0";
     private bool _isSendingParameters;
@@ -120,6 +123,8 @@ public partial class PedalParameterControl : UserControl
         if (!_isInitialized)
         {
             _isInitialized = true;
+
+            LocalizationService.Instance.PropertyChanged += OnLanguageChanged;
 
             // 订阅 HID 踏板数据（保持常驻，不随 Unload 取消）
             SubscribeHidData();
@@ -665,12 +670,12 @@ public partial class PedalParameterControl : UserControl
         }
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "未 保 存";
+        dialog.Title = LocalizationService.Instance["Dialog.UnsavedTitle"];
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设已更改，是否保存？",
+            Text = LocalizationService.Instance["Dialog.UnsavedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -681,7 +686,7 @@ public partial class PedalParameterControl : UserControl
 
         if (_isAppliedPresetPersonal)
         {
-            dialog.AddButton("保 存", (_, _) =>
+            dialog.AddButton(LocalizationService.Instance["Common.Save"], (_, _) =>
             {
                 dialog.Hide();
                 TrySaveWithRetry(() => PerformSave(), () => onSaved?.Invoke());
@@ -689,14 +694,14 @@ public partial class PedalParameterControl : UserControl
         }
         else
         {
-            dialog.AddButton("另 存 为", (_, _) =>
+            dialog.AddButton(LocalizationService.Instance["Common.SaveAs"], (_, _) =>
             {
                 dialog.Hide();
                 SaveAsInternal(onSaved);
             }, isPrimary: true);
         }
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
             onCancelled?.Invoke();
@@ -737,13 +742,13 @@ public partial class PedalParameterControl : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "保 存 失 败";
+        dialog.Title = LocalizationService.Instance["Dialog.SaveFailed"];
         dialog.ShowIcon = true;
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设未能成功保存，请检查后重试。",
+            Text = LocalizationService.Instance["Dialog.SaveFailedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -752,13 +757,13 @@ public partial class PedalParameterControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("重 试", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Retry"], (_, _) =>
         {
             dialog.Hide();
             onRetry?.Invoke();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
@@ -774,12 +779,12 @@ public partial class PedalParameterControl : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "撤 回 更 改";
+        dialog.Title = LocalizationService.Instance["Dialog.RevertChanges"];
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "所有未保存的调整将被恢复为上一次保存的状态。",
+            Text = LocalizationService.Instance["Dialog.RevertChangesMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -788,13 +793,13 @@ public partial class PedalParameterControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("撤 回", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Undo"], (_, _) =>
         {
             dialog.Hide();
             DiscardChanges();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
@@ -807,7 +812,7 @@ public partial class PedalParameterControl : UserControl
         if (!_isAppliedPresetPersonal || !_isPresetModified) return;
         TrySaveWithRetry(() => PerformSave(), () =>
         {
-            ShowSuccessToast("保 存 成 功");
+            ShowSuccessToast(LocalizationService.Instance["Preset.SaveSuccess"]);
         });
     }
 
@@ -983,8 +988,8 @@ public partial class PedalParameterControl : UserControl
 
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "导出预设",
-            Filter = "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+            Title = LocalizationService.Instance["Preset.ExportPreset"],
+            Filter = LocalizationService.Instance["Preset.PresetFileFilter"],
             DefaultExt = ".json",
             FileName = _currentPresetName == "Default" ? "pedal_preset" : _currentPresetName
         };
@@ -999,7 +1004,7 @@ public partial class PedalParameterControl : UserControl
     {
         if (PerformExport(fileName))
         {
-            ShowSuccessToast("导 出 成 功");
+            ShowSuccessToast(LocalizationService.Instance["Preset.ExportSuccess"]);
             return;
         }
 
@@ -1033,13 +1038,13 @@ public partial class PedalParameterControl : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "导 出 失 败";
+        dialog.Title = LocalizationService.Instance["Preset.ExportFailed"];
         dialog.ShowIcon = true;
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设导出失败，请检查后重试。",
+            Text = LocalizationService.Instance["Preset.ExportFailedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -1048,13 +1053,13 @@ public partial class PedalParameterControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("重 试", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Retry"], (_, _) =>
         {
             dialog.Hide();
             onRetry?.Invoke();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
@@ -1125,9 +1130,9 @@ public partial class PedalParameterControl : UserControl
         {
             var newText = PresetNameText.Text;
             if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
-                newText = $"{_devicePresetName}_板载";
+                newText = $"{_devicePresetName}_{LocalizationService.Instance["DeviceParam.Onboard"]}";
             else if (isOnboard)
-                newText = "板载";
+                newText = LocalizationService.Instance["DeviceParam.Onboard"];
             else
                 newText = _currentPresetName;
 
@@ -1527,8 +1532,8 @@ public partial class PedalParameterControl : UserControl
             {
                 // 直连方式
                 var descriptor = DeviceRegistry.FindByVidPid(_connectedPedalDevice.Vid, _connectedPedalDevice.Pid);
-                _deviceModelName = descriptor?.ModelName ?? "踏板";
-                _connectionStatusText = "已连接(直连)";
+                _deviceModel = descriptor?.ModelName ?? "";
+                _connectionStatusText = LocalizationService.Instance["DeviceParam.ConnectedDirect"];
                 _connectionStatusColor = "#179548";
 
                 if (App.ProtocolService != null && App.FirmwareUpdater != null)
@@ -1563,8 +1568,8 @@ public partial class PedalParameterControl : UserControl
                     {
                         _isPedalViaBase = true;
                         _baseDevice = baseDevice;
-                        _deviceModelName = GetPedalModelFromConnectionStatus(baseInfo.PedalConnectionStatus);
-                        _connectionStatusText = "已连接(基座)";
+                        _deviceModel = GetPedalModelFromConnectionStatus(baseInfo.PedalConnectionStatus);
+                        _connectionStatusText = LocalizationService.Instance["DeviceParam.ConnectedBase"];
                         _connectionStatusColor = "#179548";
                         _firmwareVersion = baseInfo.PedalVersionString;
                         _pedalCount = baseInfo.PedalCount;
@@ -1695,8 +1700,8 @@ public partial class PedalParameterControl : UserControl
         _connectedPedalDevice = null;
         _baseDevice = null;
         _isPedalViaBase = false;
-        _deviceModelName = "踏板";
-        _connectionStatusText = "未连接";
+        _deviceModel = "";
+        _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
         _connectionStatusColor = "#C60E0E";
         _firmwareVersion = "---";
         _pedalCount = 1;
@@ -1736,7 +1741,7 @@ public partial class PedalParameterControl : UserControl
             0x02 => "A2踏板",
             0x03 => "A3踏板",
             0x04 => "A4踏板",
-            _ => "踏板"
+            _ => LocalizationService.Instance["Status.DeviceTypePedal"]
         };
     }
 
@@ -1953,13 +1958,15 @@ public partial class PedalParameterControl : UserControl
     private void UpdateConnectionStatusDisplay()
     {
         if (DeviceModelName != null)
-            DeviceModelName.Text = _deviceModelName;
+            DeviceModelName.Text = BuildDeviceDisplayName();
 
         if (ConnectionStatusText != null)
             ConnectionStatusText.Text = _connectionStatusText;
 
         if (FirmwareVersionText != null)
-            FirmwareVersionText.Text = _firmwareVersion;
+            FirmwareVersionText.Text = _firmwareVersion == "未知" ? LocalizationService.Instance["DeviceParam.Unknown"]
+                : _firmwareVersion == "---" ? LocalizationService.Instance["DeviceParam.UnknownVersion"]
+                : _firmwareVersion;
 
         // 更新连接状态图标颜色
         var color = (Color)ColorConverter.ConvertFromString(_connectionStatusColor);
@@ -2440,5 +2447,38 @@ public partial class PedalParameterControl : UserControl
             _calibrationDialog.UpdateBrakeProgress(rawBrake);
             _calibrationDialog.UpdateThrottleProgress(rawGas);
         }
+    }
+
+    private void ActionButton_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        if (w <= 0) return;
+        if (grid.Children.OfType<Canvas>().FirstOrDefault()?.Children.OfType<Path>().FirstOrDefault() is { } path)
+        {
+            path.Width = w;
+            path.Data = Geometry.Parse($"M{w},5 H11 L5,11 V42 H5.32 H{w - 6} L{w},36 V5 Z");
+        }
+    }
+
+    private void CalibrationButton_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        if (w <= 0) return;
+        CalibrationButtonBg.Width = w;
+        CalibrationButtonBg.Data = Geometry.Parse($"M6,0 H{w} V29 L{w - 6},35 H0 V6 Z");
+    }
+
+    private string BuildDeviceDisplayName()
+    {
+        _deviceTypeName = LocalizationService.Instance["Status.DeviceTypePedal"];
+        return string.IsNullOrEmpty(_deviceModel) ? _deviceTypeName : $"{_deviceTypeName} {_deviceModel}";
+    }
+
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == null && DeviceModelName != null)
+            DeviceModelName.Text = BuildDeviceDisplayName();
     }
 }

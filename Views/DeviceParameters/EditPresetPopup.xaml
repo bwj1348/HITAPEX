@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="700" d:DesignWidth="900">
 
@@ -224,7 +225,7 @@
                     </Grid.RowDefinitions>
 
                     <!-- 第一行：标题 -->
-                    <TextBlock x:Name="TitleText" Grid.Row="0" Text="编 辑"
+                    <TextBlock x:Name="TitleText" Grid.Row="0" Text="{lex:Loc Preset.Edit}"
                                FontSize="26" FontWeight="Bold"
                                Foreground="#EEEEEE"
                                HorizontalAlignment="Center"
@@ -259,7 +260,7 @@
                                      PreviewTextInput="PresetNameTextBox_PreviewTextInput"
                                      PreviewKeyDown="PresetNameTextBox_PreviewKeyDown"/>
                             <TextBlock x:Name="WatermarkText"
-                                       Text="请输入预设名称"
+                                       Text="{lex:Loc Preset.PresetNameHint}"
                                        Foreground="#44EEEEEE"
                                        FontSize="18"
                                        FontFamily="{StaticResource OrbitronFont}"
@@ -270,7 +271,7 @@
 
                         <!-- 重名提示 -->
                         <TextBlock x:Name="DuplicateNameText" Grid.Column="1"
-                                   Text="（与现有预设重名）"
+                                   Text="{lex:Loc Preset.DuplicateName}"
                                    Foreground="#C60E0E"
                                    FontSize="14"
                                    FontWeight="Bold"
@@ -332,14 +333,14 @@
                                     <!-- 顶部：游戏数量统计 + 全选按钮 -->
                                     <Grid Grid.Row="0" Margin="0,0,0,20">
                                         <TextBlock x:Name="GameCountText"
-                                                   Text="游戏 (0/0)"
+                                                   Text="{lex:Loc Preset.SelectedGames}"
                                                    Foreground="#EEEEEE"
                                                    FontSize="14" FontWeight="Bold"
                                                    FontFamily="{StaticResource OrbitronFont}"
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Left"/>
                                         <CheckBox x:Name="SelectAllCheckBox"
-                                                  Content="全选"
+                                                  Content="{lex:Loc Common.SelectAll}"
                                                   Style="{StaticResource SelectCheckBoxStyle}"
                                                   FontSize="18"
                                                   HorizontalAlignment="Right"
@@ -417,7 +418,7 @@
 
                                     <!-- 顶部：标题 + 清空全部按钮 -->
                                     <Grid Grid.Row="0" Margin="0,0,0,20">
-                                        <TextBlock Text="已选游戏"
+                                        <TextBlock Text="{lex:Loc Preset.SelectedGames}"
                                                    Foreground="#EEEEEE"
                                                    FontSize="18" FontWeight="Bold"
                                                    VerticalAlignment="Center"/>
@@ -445,7 +446,7 @@
                                                               StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
                                                     </Grid>
                                                 </Viewbox>
-                                                <TextBlock Text="清空全部" VerticalAlignment="Center" FontSize="18" Foreground="#EEEEEE" FontWeight="Bold"/>
+                                                <TextBlock Text="{lex:Loc Common.ClearAll}" VerticalAlignment="Center" FontSize="18" Foreground="#EEEEEE" FontWeight="Bold"/>
                                             </StackPanel>
                                         </Button>
                                     </Grid>
@@ -492,11 +493,11 @@
 
                     <!-- 第五行：操作按钮 -->
                     <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,0" HorizontalAlignment="Center">
-                        <Button x:Name="ConfirmButton" Content="确 定"
+                        <Button x:Name="ConfirmButton" Content="{lex:Loc Common.Confirm}"
                                 Style="{StaticResource ConfirmButtonStyle}"
                                 HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                 Click="ConfirmButton_Click" Margin="0,0,77,0"/>
-                        <Button x:Name="CancelButton" Content="取 消"
+                        <Button x:Name="CancelButton" Content="{lex:Loc Common.Cancel}"
                                 Style="{StaticResource CancelButtonStyle}"
                                 HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                 Click="CancelButton_Click"/>

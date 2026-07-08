@@ -6,6 +6,7 @@
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
              xmlns:controls="clr-namespace:HITAPEX.Controls"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="924" d:DesignWidth="1342"
              Loaded="GameUserControl_Loaded">
@@ -191,7 +192,7 @@
                             <Path x:Name="LaunchButtonPath" Data="M 12,0 L 300,0 L 288,47 L 0,47 Z" Stretch="Fill" Fill="#C60E0E" Opacity="0.8"/>
                             <Path x:Name="LaunchButtonPathNotInstalled" Data="M 12,0 L 300,0 L 288,47 L 0,47 Z" Stretch="Fill" Fill="#B5B5B5" Opacity="0.6" Visibility="Collapsed"/>
                             <svgc:SvgViewbox Source="/Assets/Group126547700.svg" Stretch="Fill"/>
-                            <TextBlock x:Name="LaunchButtonText" Text="启 动 游 戏" FontSize="30" FontWeight="Bold" Foreground="#EEEEEE" FontStyle="Italic" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="LaunchButtonText" Text="{lex:Loc Game.LaunchGame}" FontSize="30" FontWeight="Bold" Foreground="#EEEEEE" FontStyle="Italic" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Grid>
                     </Grid>
 
@@ -202,7 +203,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Orientation="Horizontal" Grid.Column="0">
-                            <RadioButton x:Name="SteamLaunchRadio" Content="从Steam启动" Foreground="#EEEEEE" FontSize="16" VerticalAlignment="Center" Margin="0,0,20,0" Checked="LaunchModeRadio_Changed" Cursor="Hand">
+                            <RadioButton x:Name="SteamLaunchRadio" Content="{lex:Loc Game.FromSteam}" Foreground="#EEEEEE" FontSize="16" VerticalAlignment="Center" Margin="0,0,20,0" Checked="LaunchModeRadio_Changed" Cursor="Hand">
                                 <RadioButton.Style>
                                     <Style TargetType="RadioButton">
                                         <Setter Property="Template">
@@ -226,7 +227,7 @@
                                     </Style>
                                 </RadioButton.Style>
                             </RadioButton>
-                            <RadioButton x:Name="CustomLaunchRadio" Content="自定义路径启动" Foreground="#EEEEEE" FontSize="16" VerticalAlignment="Center" Checked="LaunchModeRadio_Changed" Cursor="Hand">
+                            <RadioButton x:Name="CustomLaunchRadio" Content="{lex:Loc Game.CustomPath}" Foreground="#EEEEEE" FontSize="16" VerticalAlignment="Center" Checked="LaunchModeRadio_Changed" Cursor="Hand">
                                 <RadioButton.Style>
                                     <Style TargetType="RadioButton">
                                         <Setter Property="Template">
@@ -255,29 +256,38 @@
                         <StackPanel x:Name="CustomPathPanel" Grid.Column="1" Orientation="Horizontal" Visibility="Collapsed">
                             <svgc:SvgViewbox Source="/Assets/startuppath.svg" Width="17" Height="15" Margin="20,0,10,0" VerticalAlignment="Center"/>
                             <!-- <TextBlock x:Name="CustomPathText" Text="点击选择游戏路径..." FontSize="13" Foreground="#B3EEEEEE" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextDecorations="Underline" Cursor="Hand" MouseLeftButtonDown="BrowseCustomPath_Click" MaxWidth="300"/> -->
-                            <controls:SkipInkTextBlock x:Name="CustomPathText" Text="点击选择游戏路径..." FontSize="16" FontWeight="Regular" Foreground="#B3EEEEEE" UnderlineBrush="#B3EEEEEE" TextTrimming="CharacterEllipsis" Cursor="Hand" MouseLeftButtonDown="BrowseCustomPath_Click" MaxWidth="250"/>
+                            <controls:SkipInkTextBlock x:Name="CustomPathText" Text="{lex:Loc Game.SelectGamePath}" FontSize="16" FontWeight="Regular" Foreground="#B3EEEEEE" UnderlineBrush="#B3EEEEEE" TextTrimming="CharacterEllipsis" Cursor="Hand" MouseLeftButtonDown="BrowseCustomPath_Click" MaxWidth="250"/>
                         </StackPanel>
                     </Grid>
 
-                    <!-- 遥测配置按钮 -->
-                    <Grid x:Name="TelemetryConfigButton" Grid.Row="4" Margin="0,20,0,0" Cursor="Hand" MouseLeftButtonDown="TelemetryConfigButton_Click" Width="130" Height="27" HorizontalAlignment="Left" Visibility="Collapsed">
-                        <Path Data="M0 5.0625V27H123.81L130 21.9375V0H6.19048L0 5.0625Z" Stretch="Fill">
-                            <Path.Fill>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                    <GradientStop Color="#C60E0E" Offset="0"/>
-                                    <GradientStop Color="#600707" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Path.Fill>
-                        </Path>
-                        <TextBlock Text="遥 测 配 置" FontSize="16" FontWeight="Bold"
-                                   Foreground="#EEEEEE" HorizontalAlignment="Left"
-                                   VerticalAlignment="Center" Margin="15,0,0,0"/>
-                        <Path Data="M15.75,5.72996C15.75,8.10163 13.8274,10.0243 11.4557,10.0243C10.7304,10.0243 10.0471,9.84444 9.44797,9.52698L3.22495,15.75L0.75,13.2751L6.97302,7.05203C6.65556,6.45287 6.47574,5.76958 6.47574,5.0443C6.47574,2.67262 8.39837,0.75 10.77,0.75C11.4953,0.75 12.1786,0.929806 12.7778,1.24728L10.0543,3.97073L12.5293,6.44568L15.2527,3.72223C15.5702,4.32139 15.75,5.00469 15.75,5.72996Z"
-                              Stroke="#EEEEEE" StrokeThickness="1.5"
-                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                              StrokeLineJoin="Round" Stretch="Uniform"
-                              HorizontalAlignment="Right" VerticalAlignment="Center"
-                              Margin="0,0,15,0" Width="15" Height="15"/>
+                    <!-- 遥测配置按钮：内容决定宽度，后台 Path 由 code-behind 更新 -->
+                    <Grid x:Name="TelemetryConfigButton" Grid.Row="4" Margin="0,20,0,0" Cursor="Hand"
+                          MouseLeftButtonDown="TelemetryConfigButton_Click" Height="27" HorizontalAlignment="Left"
+                          Visibility="Collapsed">
+                        <Grid.Resources>
+                            <LinearGradientBrush x:Key="TelemetryButtonGradient" StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                <GradientStop Color="#600707" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Grid.Resources>
+
+                        <!-- Canvas 子元素不参与 Grid 布局测量，仅内容层决定宽度 -->
+                        <Canvas>
+                            <Path x:Name="TelemetryButtonBackground" Height="27"
+                                  Fill="{StaticResource TelemetryButtonGradient}"/>
+                        </Canvas>
+
+                        <DockPanel x:Name="TelemetryButtonContent" VerticalAlignment="Center"
+                                   SizeChanged="TelemetryButtonContent_SizeChanged">
+                            <Path DockPanel.Dock="Right"
+                                  Data="M15.75,5.72996C15.75,8.10163 13.8274,10.0243 11.4557,10.0243C10.7304,10.0243 10.0471,9.84444 9.44797,9.52698L3.22495,15.75L0.75,13.2751L6.97302,7.05203C6.65556,6.45287 6.47574,5.76958 6.47574,5.0443C6.47574,2.67262 8.39837,0.75 10.77,0.75C11.4953,0.75 12.1786,0.929806 12.7778,1.24728L10.0543,3.97073L12.5293,6.44568L15.2527,3.72223C15.5702,4.32139 15.75,5.00469 15.75,5.72996Z"
+                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" Stretch="Uniform"
+                                  Width="15" Height="15" Margin="10,0,15,0"/>
+                            <TextBlock Text="{lex:Loc Game.TelemetryConfig}" FontSize="16" FontWeight="Bold"
+                                       Foreground="#EEEEEE" VerticalAlignment="Center" Margin="15,0,0,0"/>
+                        </DockPanel>
                     </Grid>
                 </Grid>
             </Border>
@@ -310,14 +320,17 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="TabItem">
                                             <Grid x:Name="TabItemGrid" Margin="30,0,0,0" >
-                                                <Border x:Name="TabBorder" Background="Transparent" BorderThickness="0" Width="133" Height="39">
+                                                <Border x:Name="TabBorder" Background="Transparent" BorderThickness="0" MinWidth="133" Height="39" Padding="20,0" HorizontalAlignment="Center">
                                                     <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="0" TextBlock.FontSize="22" TextBlock.FontWeight="Medium" TextBlock.Foreground="#EEEEEE" TextBlock.FontStyle="Italic"/>
                                                 </Border>
-                                                <Grid x:Name="UnderlineGrid" Visibility="Collapsed" Margin="0,0,0,-2" VerticalAlignment="Bottom" HorizontalAlignment="Center">
-                                                    <Viewbox Width="133" Height="4" Stretch="Fill">
-                                                        <Path Data="M2.8291 0 L132.857 0 L130.028 4.014 L0 4.014 Z" Fill="#CCC60E0E" Opacity="0.8"/>
-                                                    </Viewbox>
-                                                </Grid>
+                                                <Border x:Name="UnderlineGrid" Visibility="Collapsed"
+                                                        Height="4" Background="#CCC60E0E" Opacity="0.8"
+                                                        HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                                        Width="{Binding ElementName=TabBorder, Path=ActualWidth}">
+                                                    <Border.RenderTransform>
+                                                        <SkewTransform AngleX="-30"/>
+                                                    </Border.RenderTransform>
+                                                </Border>
                                             </Grid>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsSelected" Value="True">
@@ -335,7 +348,7 @@
                         </TabControl.Resources>
 
 
-                        <TabItem Header="设 备 配 置">
+                        <TabItem Header="{lex:Loc Game.DeviceConfig}">
                             <Grid Margin="0,20,0,0">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
@@ -348,7 +361,7 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="自动应用预设" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Text="{lex:Loc Game.AutoApplyPreset}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                         <CheckBox x:Name="AutoApplyPresetCheckBox" IsChecked="True" Style="{StaticResource DualStateSvgToggleStyle}" Checked="AutoApplyPreset_Changed" Unchecked="AutoApplyPreset_Changed"/>
                                     </StackPanel>
                                 </Grid>
@@ -666,7 +679,7 @@
 
                                     <HeaderedContentControl Grid.Row="0" Grid.Column="0" Margin="0,0,0,20" 
                         Style="{StaticResource DevicePresetCardStyle}" 
-                        Header="基座预设" 
+                        Header="{lex:Loc Game.BasePreset}"
                         Tag="M4,12 L20,12 L20,22 L4,22 Z M8,4 L16,4 L16,12 L8,12 Z M0,14 L4,14 L4,20 L0,20 Z M20,14 L24,14 L24,20 L20,20 Z">
                                         <ComboBox x:Name="BasePresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
                                             <ComboBoxItem Content="Default-P1000"/>
@@ -681,7 +694,7 @@
 
                                     <HeaderedContentControl Grid.Row="0" Grid.Column="1" Margin="20,0,0,20" 
                         Style="{StaticResource DevicePresetCardStyle}" 
-                        Header="方向盘预设" 
+                        Header="{lex:Loc Game.WheelPreset}"
                         Tag="M12,0 C5.37,0 0,5.37 0,12 C0,18.63 5.37,24 12,24 C18.63,24 24,18.63 24,12 C24,5.37 18.63,0 12,0 Z M12,3 C16.97,3 21,7.03 21,12 C21,13.6 20.58,15.1 19.85,16.4 L14.5,13.5 L14.5,10.5 L9.5,10.5 L9.5,13.5 L4.15,16.4 C3.42,15.1 3,13.6 3,12 C3,7.03 7.03,3 12,3 Z">
                                         <ComboBox x:Name="WheelPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
                                             <ComboBoxItem Content="Default-P1000"/>
@@ -696,7 +709,7 @@
 
                                     <HeaderedContentControl Grid.Row="1" Grid.Column="0" Margin="0,0,0,20" 
                         Style="{StaticResource DevicePresetCardStyle}" 
-                        Header="脚踏板预设" 
+                        Header="{lex:Loc Game.PedalPreset}"
                         Tag="M4,20 L8,20 L10,6 L6,6 Z M12,20 L16,20 L18,6 L14,6 Z M20,20 L24,20 L26,4 L22,4 Z M2,20 L26,20 L26,22 L2,22 Z">
                                         <ComboBox x:Name="PedalPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
                                             <ComboBoxItem Content="Default-P1000"/>
@@ -711,19 +724,19 @@
 
                                     <HeaderedContentControl Grid.Row="1" Grid.Column="1" Margin="20,0,0,20" 
                         Style="{StaticResource DevicePresetCardStyle}" 
-                        Header="排挡预设" 
+                        Header="{lex:Loc Game.ShifterPreset}"
                         Tag="M12,0 C10.9,0 10,0.9 10,2 C10,3.1 10.9,4 12,4 C13.1,4 14,3.1 14,2 C14,0.9 13.1,0 12,0 Z M11,5 L13,5 L13,11 L19,11 L19,7 L17,7 L17,5 L21,5 L21,7 L19,7 L19,13 L13,13 L13,19 L19,19 L19,15 L17,15 L17,13 L21,13 L21,15 L19,15 L19,21 L13,21 L13,24 L11,24 L11,21 L5,21 L5,15 L7,15 L7,13 L3,13 L3,15 L5,15 L5,19 L11,19 L11,13 L5,13 L5,7 L7,7 L7,5 L3,5 L3,7 L5,7 L5,11 L11,11 Z">
                                         <ComboBox x:Name="ShifterPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
-                                            <ComboBoxItem Content="预设 1 - H档"/>
-                                            <ComboBoxItem Content="预设 2 - 序列档"/>
-                                            <ComboBoxItem Content="预设 3 - 自动档"/>
+                                            <ComboBoxItem Content="{lex:Loc Game.Preset1H}"/>
+                                            <ComboBoxItem Content="{lex:Loc Game.Preset2Seq}"/>
+                                            <ComboBoxItem Content="{lex:Loc Game.Preset3Auto}"/>
                                         </ComboBox>
                                     </HeaderedContentControl>
                                 </Grid>
                             </Grid>
                         </TabItem>
 
-                        <TabItem Header="遥 测 支 持">
+                        <TabItem Header="{lex:Loc Game.TelemetrySupport}">
                             <Grid Margin="0,20,0,0">
                                 <Grid Width="678" Height="378" HorizontalAlignment="Right">
                                     <Grid.Clip>
@@ -906,44 +919,44 @@
                                                     <RowDefinition Height="Auto"/>
                                                 </Grid.RowDefinitions>
 
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="转速" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{lex:Loc Telemetry.Rpm}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="车速" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{lex:Loc Telemetry.Speed}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="档位" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{lex:Loc Telemetry.Gear}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="刹车行程" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="不支持" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{lex:Loc Telemetry.BrakeTravel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="油门行程" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{lex:Loc Telemetry.ThrottleTravel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="离合行程" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{lex:Loc Telemetry.ClutchTravel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="6" Grid.Column="0" Text="当前圈速" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="6" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="6" Grid.Column="0" Text="{lex:Loc Telemetry.CurrentLapTime}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="7" Grid.Column="0" Text="上一圈速" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="7" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="7" Grid.Column="0" Text="{lex:Loc Telemetry.PreviousLapTime}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="8" Grid.Column="0" Text="最快圈速" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="8" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="8" Grid.Column="0" Text="{lex:Loc Telemetry.FastestLapTime}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="9" Grid.Column="0" Text="轮胎温度" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="9" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="9" Grid.Column="0" Text="{lex:Loc Telemetry.TireTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="9" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="10" Grid.Column="0" Text="轮胎气压" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="10" Grid.Column="1" Text="不支持" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="10" Grid.Column="0" Text="{lex:Loc Telemetry.TirePressure}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="10" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="11" Grid.Column="0" Text="刹车温度" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="11" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="11" Grid.Column="0" Text="{lex:Loc Telemetry.BrakeTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="11" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="12" Grid.Column="0" Text="燃油量" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="12" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="12" Grid.Column="0" Text="{lex:Loc Telemetry.FuelLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="12" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
                                             </Grid>
 
                                             <Grid Grid.Column="2">
@@ -967,44 +980,44 @@
                                                     <RowDefinition Height="Auto"/>
                                                 </Grid.RowDefinitions>
 
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="车手排名" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{lex:Loc Telemetry.DriverRanking}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
                                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="DRS" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="水温" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{lex:Loc Telemetry.WaterTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="油温" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="不支持" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{lex:Loc Telemetry.OilTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="涡轮压力" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{lex:Loc Telemetry.TurboPressure}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="牵引力控制档位" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{lex:Loc Telemetry.TcLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="6" Grid.Column="0" Text="维修区" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="6" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="6" Grid.Column="0" Text="{lex:Loc Telemetry.PitArea}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="7" Grid.Column="0" Text="刹车防抱死档位" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="7" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="7" Grid.Column="0" Text="{lex:Loc Telemetry.AbsLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="8" Grid.Column="0" Text="发动机动力档位" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="8" Grid.Column="1" Text="不支持" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="8" Grid.Column="0" Text="{lex:Loc Telemetry.EnginePowerLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="9" Grid.Column="0" Text="轮胎磨损度" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="9" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="9" Grid.Column="0" Text="{lex:Loc Telemetry.TireWear}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="9" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="10" Grid.Column="0" Text="当前圈速变化" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="10" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="10" Grid.Column="0" Text="{lex:Loc Telemetry.CurrentLapDelta}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="10" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="11" Grid.Column="0" Text="旗语" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="11" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="11" Grid.Column="0" Text="{lex:Loc Telemetry.Flags}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="11" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
 
-                                                <TextBlock Grid.Row="12" Grid.Column="0" Text="圈数" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="12" Grid.Column="1" Text="支持" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="12" Grid.Column="0" Text="{lex:Loc Telemetry.Laps}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
+                                                <TextBlock Grid.Row="12" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
                                             </Grid>
                                         </Grid>
                                     </ScrollViewer>
@@ -1037,20 +1050,20 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <RadioButton x:Name="FilterAllButton" 
-                                     Content="所有游戏" 
+                        <RadioButton x:Name="FilterAllButton"
+                                     Content="{lex:Loc Game.AllGames}"
                                      GroupName="GameFilter" 
                                      IsChecked="True"
                                      Style="{StaticResource FilterRadioButtonStyle}"
                                      Click="FilterButton_Click"/>
-                        <RadioButton x:Name="FilterInstalledButton" 
-                                     Content="已安装" 
+                        <RadioButton x:Name="FilterInstalledButton"
+                                     Content="{lex:Loc Game.Installed}"
                                      GroupName="GameFilter"
                                      Style="{StaticResource FilterRadioButtonStyle}"
                                      Click="FilterButton_Click"
                                      Margin="15,0,0,0"/>
-                        <RadioButton x:Name="FilterNotInstalledButton" 
-                                     Content="未安装" 
+                        <RadioButton x:Name="FilterNotInstalledButton"
+                                     Content="{lex:Loc Game.NotInstalled}"
                                      GroupName="GameFilter"
                                      Style="{StaticResource FilterRadioButtonStyle}"
                                      Click="FilterButton_Click"
@@ -1075,7 +1088,7 @@
                                                     </Path.Fill>
                                                 </Path>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <TextBlock Text="刷新游戏" FontSize="16" Foreground="#EEEEEE" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                    <TextBlock Text="{lex:Loc Game.RefreshGames}" FontSize="16" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                                     <Grid x:Name="RefreshIconGrid" Width="12" Height="12">
                                                         <svgc:SvgViewbox x:Name="RefreshIcon" Source="/Assets/Group126548457.svg" Width="12" Height="12"/>
                                                         <Path x:Name="LoadingSpinner" Data="M7 0 A7 7 0 0 1 14 7" Stroke="#EEEEEE" StrokeThickness="1.5" Fill="Transparent" Width="12" Height="12" Visibility="Collapsed" RenderTransformOrigin="0.5,0.5">
@@ -1328,7 +1341,7 @@
                                                                     <Setter.Value>
                                                                         <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="从置顶移除"/>
+                                                                                <TextBlock Text="{lex:Loc Home.RemoveFromPin}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>
@@ -1344,7 +1357,7 @@
                                                                     <Setter.Value>
                                                                         <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="添加到置顶"/>
+                                                                                <TextBlock Text="{lex:Loc Home.AddToPin}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>
@@ -1423,10 +1436,10 @@
                                                             <Style TargetType="TextBlock">
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding IsInstalled}" Value="True">
-                                                                        <Setter Property="Text" Value="启 动"/>
+                                                                        <Setter Property="Text" Value="{lex:Loc Common.Launch}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding IsInstalled}" Value="False">
-                                                                        <Setter Property="Text" Value="未 安 装"/>
+                                                                        <Setter Property="Text" Value="{lex:Loc Common.NotInstalled}"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -1466,7 +1479,7 @@
                                     </Style>
                                 </Path.Style>
                             </Path>
-                            <TextBlock Text="正在加载游戏列表..." FontSize="14" Foreground="#EEEEEE" Margin="0,12,0,0" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{lex:Loc Home.LoadingGames}" FontSize="14" Foreground="#EEEEEE" Margin="0,12,0,0" HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
                 </Grid>

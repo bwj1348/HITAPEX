@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows.Controls;
+using HITAPEX.Services;
 using HITAPEX.Views;
 
 namespace HITAPEX.ViewModels;
@@ -49,14 +51,27 @@ public class MainWindowViewModel : ViewModelBase
     {
         NavigationItems = new ObservableCollection<NavigationItem>
         {
-            new("Home", "/Assets/HomeIcon.svg", "首 页"),
-            new("Device", "/Assets/DeviceIcon.svg", "设 备"),
-            new("Game", "/Assets/GameIcon.svg", "游 戏"),
-            new("Help", "/Assets/HelpIcon.svg", "帮 助"),
-            new("Settings", "/Assets/SettingsIcon.svg", "设 置")
+            new("Home", "/Assets/HomeIcon.svg", "Nav.Home"),
+            new("Device", "/Assets/DeviceIcon.svg", "Nav.Device"),
+            new("Game", "/Assets/GameIcon.svg", "Nav.Game"),
+            new("Help", "/Assets/HelpIcon.svg", "Nav.Help"),
+            new("Settings", "/Assets/SettingsIcon.svg", "Nav.Settings")
         };
 
         SelectedNavigationItem = NavigationItems[0];
+
+        // 监听语言切换，动态刷新导航标签
+        LocalizationService.Instance.PropertyChanged += OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // 语言切换时刷新所有导航标签和窗口标题
+        foreach (var item in NavigationItems)
+        {
+            item.RefreshLabel();
+        }
+        Title = LocalizationService.Instance["Window.Title"];
     }
 
     private void UpdateCurrentView()
