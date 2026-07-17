@@ -1,73 +1,27 @@
-using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.IO;
 using HITAPEX.Models.Usb;
 
 namespace HITAPEX.Services.Usb;
 
+/// <summary>
+/// USB 设备通信日志记录器。
+/// 仅在 DEBUG 模式下通过 Debug.WriteLine 输出日志，Release 模式下完全不产生任何开销。
+/// </summary>
 public class DeviceLogger
 {
-    private readonly ConcurrentQueue<DeviceLogEntry> _logEntries = new();
-    private readonly string _logFilePath;
-    private readonly object _fileLock = new();
     private bool _isEnabled = true;
 
-    public event Action<DeviceLogEntry>? LogEntryAdded;
-
-    public int MaxInMemoryEntries { get; set; } = 1000;
-
-    public DeviceLogger(string logDirectory)
+    public DeviceLogger()
     {
-        Directory.CreateDirectory(logDirectory);
-        _logFilePath = Path.Combine(logDirectory, $"usb_device_{DateTime.Now:yyyyMMdd}.log");
     }
 
     public void Log(DeviceEventType eventType, string deviceKey, string message, string? detail = null, Exception? ex = null)
     {
         if (!_isEnabled) return;
 
-        var entry = new DeviceLogEntry
-        {
-            Timestamp = DateTime.Now,
-            EventType = eventType,
-            DeviceKey = deviceKey,
-            Message = message,
-            Detail = detail,
-            Exception = ex
-        };
-
-        _logEntries.Enqueue(entry);
-        while (_logEntries.Count > MaxInMemoryEntries)
-            _logEntries.TryDequeue(out _);
-
-        LogEntryAdded?.Invoke(entry);
-        WriteToFile(entry);
-        Debug.WriteLine(entry.ToString());
-    }
-
-    private void WriteToFile(DeviceLogEntry entry)
-    {
-        try
-        {
-            lock (_fileLock)
-            {
-                File.AppendAllText(_logFilePath, entry.ToString() + Environment.NewLine);
-            }
-        }
-        catch
-        {
-            // 日志写入失败不应影响主流程
-        }
-    }
-
-    public IReadOnlyList<DeviceLogEntry> GetRecentEntries(int count = 100)
-    {
-        return _logEntries.TakeLast(count).ToList().AsReadOnly();
-    }
-
-    public void Clear()
-    {
-        _logEntries.Clear();
+        var detailStr = detail != null ? $" | {detail}" : "";
+        var exStr = ex != null ? $" | Exception: {ex.Message}" : "";
+        Debug.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] [{eventType}] [{deviceKey}] {message}{detailStr}{exStr}");
     }
 
     public void SetEnabled(bool enabled)

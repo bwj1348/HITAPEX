@@ -24,9 +24,10 @@ public class FirmwareApiService
     /// </summary>
     public async Task<List<FirmwareVersionInfo>> GetFirmwareVersionsAsync(CancellationToken ct = default)
     {
-        Debug.WriteLine("[FirmwareApi] 请求固件版本列表...");
+        var locale = LocalizationService.Instance.CurrentLanguage == "en-US" ? "en" : "zh-Hans";
+        Debug.WriteLine($"[FirmwareApi] 请求固件版本列表 (locale={locale})...");
 
-        var result = await _apiClient.GetAsync<FirmwareApiResponse>("/api/firmware-versions?populate=*", ct);
+        var result = await _apiClient.GetAsync<FirmwareApiResponse>($"/api/firmware-versions?populate=*&locale={locale}", ct);
 
         if (result.IsSuccess && result.Data?.Data != null)
         {

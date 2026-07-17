@@ -1,0 +1,21 @@
+End User License Agreement
+Last Updated: July 2025
+
+Please read the following license agreement carefully. You must accept the terms of this agreement to continue installing and using this software.
+
+1. Grant of License
+This software is protected by copyright laws and international copyright treaties, as well as other intellectual property laws and treaties. This software is licensed, not sold.
+
+2. Restrictions
+You may not reverse engineer, decompile, or disassemble this software. You may not modify, adapt, translate, rent, lease, or lend the software, or create derivative works based upon the software.
+
+3. Disclaimer of Warranty
+This software is provided "AS IS", without warranty of any kind, express or implied. In no event shall the authors or copyright holders be liable for any claim, damages, or other liability arising from the use of this software.
+
+4. Termination
+This license will terminate automatically if you fail to comply with any of its terms. Upon termination, you must destroy all copies of this software.
+
+5. Governing Law
+This agreement shall be governed by and construed in accordance with the laws of the People's Republic of China.
+
+By installing, you acknowledge that you have read and agree to the terms of this license agreement. If you do not agree, please cancel the installation.

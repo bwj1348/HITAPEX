@@ -53,6 +53,8 @@ public partial class SettingsUserControl : UserControl
     private CancellationTokenSource? _updateCts;
     private bool _hasCheckedFirmware;
     private List<FirmwareVersionInfo> _cachedFirmwareList = new();
+    private ClientInstallerInfo? _latestInstaller;
+    private string? _installerPath;
     public ObservableCollection<DeviceItem> DeviceList { get; set; }
 
     public SettingsUserControl()
@@ -60,6 +62,39 @@ public partial class SettingsUserControl : UserControl
         InitializeComponent();
         SetupKeyboardNavigation();
         InitializeDeviceList();
+        LocalizationService.Instance.PropertyChanged += OnLocalizationChanged;
+    }
+
+    /// <summary>
+    /// 语言切换时清空缓存数据并重置更新状态，确保下次检查时获取正确语言的日志。
+    /// </summary>
+    private void OnLocalizationChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        // 语言切换时清空所有与语言相关的缓存数据
+        _latestInstaller = null;
+        _installerPath = null;
+        _cachedFirmwareList.Clear();
+        _isNewVersionDetected = false;
+        _isDownloaded = false;
+        _isUpdating = false;
+        _updateProgress = 0;
+
+        // 仅当控件已加载时才更新 UI（首次加载前不操作 UI 元素）
+        if (IsLoaded)
+        {
+            NewVersionPanel.Visibility = Visibility.Collapsed;
+            UpdateButtonText("Settings.CheckUpdate");
+            UpdateProgress(100, false);
+            UpdateLastCheckTimeDisplay();
+            UpdateFirmwareLastCheckTimeDisplay();
+
+            // 如果之前已检查过固件，重新构建列表以显示正确语言的标签
+            if (_hasCheckedFirmware)
+            {
+                _ = Dispatcher.BeginInvoke(new Func<Task>(CheckFirmwareUpdatesAsync),
+                    System.Windows.Threading.DispatcherPriority.Background);
+            }
+        }
     }
 
     private void InitializeDeviceList()
@@ -531,10 +566,54 @@ public partial class SettingsUserControl : UserControl
 
     private void SettingsUserControl_Loaded(object sender, RoutedEventArgs e)
     {
-        LoadSettings();
-        UpdateLastCheckTimeDisplay();
-        InitializeUpdateButton();
-        UpdateFirmwareLastCheckTimeDisplay();
+        if (_firstLoaded)
+        {
+            _firstLoaded = false;
+            LoadSettings();
+            UpdateLastCheckTimeDisplay();
+            InitializeUpdateButton();
+            UpdateFirmwareLastCheckTimeDisplay();
+        }
+        else
+        {
+            // 切换回来时恢复按钮当前状态
+            RestoreUpdateButtonState();
+        }
+    }
+
+    /// <summary>
+    /// 从内存字段恢复按钮 UI 状态（切换页面再回来时调用）。
+    /// </summary>
+    private void RestoreUpdateButtonState()
+    {
+        if (_isUpdating)
+        {
+            // 正在下载中，恢复当前进度
+            CheckUpdateButton.IsEnabled = false;
+            UpdateProgress(_updateProgress, false);
+            UpdateButtonTextRaw($"{_updateProgress}%");
+        }
+        else if (_isDownloaded)
+        {
+            // 已下载完成
+            CheckUpdateButton.IsEnabled = true;
+            UpdateButtonText("Settings.InstallNow");
+            UpdateProgress(100, false);
+            NewVersionPanel.Visibility = _isNewVersionDetected ? Visibility.Visible : Visibility.Collapsed;
+            if (_latestInstaller != null)
+                NewVersionText.Text = $"V {_latestInstaller.Version}";
+        }
+        else if (_isNewVersionDetected)
+        {
+            // 检测到新版本但尚未下载
+            CheckUpdateButton.IsEnabled = true;
+            UpdateButtonText("Settings.UpdateNow");
+            UpdateProgress(100, false);
+            NewVersionPanel.Visibility = Visibility.Visible;
+            if (_latestInstaller != null)
+                NewVersionText.Text = $"V {_latestInstaller.Version}";
+        }
+        // 其他情况保持初始状态即可
     }
 
     private void UpdateFirmwareLastCheckTimeDisplay()
@@ -740,37 +819,96 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    private bool _isDownloaded;
+    private bool _firstLoaded = true;
+    private bool _keepProgressHidden;
+
     private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isUpdating) return;
 
         if (!_isNewVersionDetected)
         {
+            // 阶段一：检查更新
             CheckUpdateButton.IsEnabled = false;
             UpdateButtonText("Settings.Checking");
 
             try
             {
-                await Task.Delay(1500);
+                _updateCts?.Cancel();
+                _updateCts = new CancellationTokenSource();
+                var ct = _updateCts.Token;
+
+                if (App.ClientInstallerApi != null)
+                {
+                    _latestInstaller = await App.ClientInstallerApi.GetLatestInstallerAsync(ct);
+                }
 
                 _lastCheckUpdateTime = DateTime.Now;
                 UpdateLastCheckTimeDisplay();
 
-                NewVersionPanel.Visibility = Visibility.Visible;
-                NewVersionText.Text = "V 1.1.1";
-                _isNewVersionDetected = true;
-                UpdateButtonText("Settings.UpdateNow");
+                if (_latestInstaller != null && !string.IsNullOrEmpty(_latestInstaller.Version))
+                {
+                    var currentVersion = Assembly.GetExecutingAssembly().GetName().Version;
+                    var latestVersion = _latestInstaller.ParsedVersion;
 
-                // 阶段一结束，确保按钮呈现完整红色（瞬间拉满）
-                UpdateProgress(100, false);
+                    if (latestVersion > (currentVersion ?? new Version(0, 0, 0, 0)))
+                    {
+                        // 有新版本
+                        NewVersionPanel.Visibility = Visibility.Visible;
+                        NewVersionText.Text = $"V {_latestInstaller.Version}";
+                        _isNewVersionDetected = true;
+                        UpdateButtonText("Settings.UpdateNow");
+
+                        // 阶段一结束，确保按钮呈现完整红色（瞬间拉满）
+                        UpdateProgress(100, false);
+                        CheckUpdateButton.IsEnabled = true;
+                    }
+                    else
+                    {
+                        // 已是最新版本，隐藏红色进度条，按钮不可点击，3秒后恢复
+                        _keepProgressHidden = true;
+                        UpdateButtonText("Settings.AlreadyLatest");
+                        UpdateProgress(0, false);
+                        await Task.Delay(3000, ct);
+                        _keepProgressHidden = false;
+                        UpdateButtonText("Settings.CheckUpdate");
+                        UpdateProgress(100, false);
+                        CheckUpdateButton.IsEnabled = true;
+                    }
+                }
+                else
+                {
+                    // API 请求失败或者没有数据，恢复初始状态
+                    UpdateButtonText("Settings.CheckUpdate");
+                    UpdateProgress(0, false);
+                    CheckUpdateButton.IsEnabled = true;
+                }
             }
-            finally
+            catch (OperationCanceledException)
             {
+                UpdateButtonText("Settings.CheckUpdate");
+                UpdateProgress(0, false);
+                CheckUpdateButton.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SettingsUI] 检查更新异常: {ex.Message}");
+                UpdateButtonText("Settings.CheckUpdate");
+                UpdateProgress(0, false);
                 CheckUpdateButton.IsEnabled = true;
             }
         }
+        else if (_isDownloaded && !string.IsNullOrEmpty(_installerPath))
+        {
+            // 手动点击安装
+            LaunchInstaller(_installerPath);
+        }
         else
         {
+            // 阶段二：下载并安装
+            if (_latestInstaller?.Installer == null) return;
+
             _isUpdating = true;
             CheckUpdateButton.IsEnabled = false;
             _updateProgress = 0;
@@ -778,24 +916,125 @@ public partial class SettingsUserControl : UserControl
             // 阶段二开始：瞬间将进度归零，为动画做准备
             UpdateProgress(0, false);
 
-            for (int i = 0; i <= 100; i += 2)
+            _updateCts?.Cancel();
+            _updateCts = new CancellationTokenSource();
+            var ct = _updateCts.Token;
+
+            try
             {
-                await Task.Delay(50);
-                _updateProgress = i;
-                // 启动带有平滑过渡的进度推进
-                UpdateProgress(i, true);
-                UpdateButtonTextRaw($"{i}%");
+                var progress = new Progress<int>(percent =>
+                {
+                    _updateProgress = percent;
+                    // 启动带有平滑过渡的进度推进
+                    UpdateProgress(percent, true);
+                    UpdateButtonTextRaw($"{percent}%");
+                });
+
+                if (App.ClientInstallerApi != null)
+                {
+                    _installerPath = await App.ClientInstallerApi.DownloadInstallerAsync(
+                        _latestInstaller.Installer.Url, progress, ct);
+                }
+
+                if (string.IsNullOrEmpty(_installerPath) || !File.Exists(_installerPath))
+                {
+                    // 下载失败，恢复按钮状态以便重试
+                    UpdateButtonText("Settings.UpdateNow");
+                    UpdateProgress(0, false);
+                    _isUpdating = false;
+                    CheckUpdateButton.IsEnabled = true;
+                    return;
+                }
+
+                // 确保最终精度完美贴合
+                UpdateProgress(100, true);
+
+                // 尝试自动启动安装程序
+                LaunchInstaller(_installerPath);
+
+                // 下载完成，按钮变为"点击安装"，以便用户手动安装
+                UpdateButtonText("Settings.InstallNow");
+                _isDownloaded = true;
+                _isUpdating = false;
+                CheckUpdateButton.IsEnabled = true;
             }
+            catch (OperationCanceledException)
+            {
+                UpdateButtonText("Settings.UpdateNow");
+                UpdateProgress(0, false);
+                _isUpdating = false;
+                CheckUpdateButton.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SettingsUI] 更新异常: {ex.Message}");
+                UpdateButtonText("Settings.UpdateNow");
+                UpdateProgress(0, false);
+                _isUpdating = false;
+                CheckUpdateButton.IsEnabled = true;
+            }
+        }
+    }
 
-            UpdateButtonText("Settings.Completed");
+    /// <summary>
+    /// 启动下载的安装程序。
+    /// </summary>
+    private void LaunchInstaller(string installerPath)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = installerPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsUI] 启动安装程序失败: {ex.Message}");
+        }
+    }
 
-            // 确保最终精度完美贴合 122px
-            UpdateProgress(100, true);
+    /// <summary>
+    /// 查看更新日志按钮点击 —— 弹出 ModalDialog 显示最新版本的更新日志。
+    /// </summary>
+    private void ViewUpdateLogButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_latestInstaller == null || string.IsNullOrEmpty(_latestInstaller.Log)) return;
 
-            await Task.Delay(1000);
-            UpdateButtonText("Firmware.UpdateNow");
-            _isUpdating = false;
-            CheckUpdateButton.IsEnabled = true;
+        var parentWindow = Window.GetWindow(this);
+        if (parentWindow is MainWindow mainWindow)
+        {
+            var dialog = mainWindow.GlobalDialog;
+            dialog.Title = LocalizationService.Instance["Settings.UpdateLogTitle"];
+            dialog.ShowCloseButton = true;
+            dialog.ClearButtons();
+
+            var scrollViewer = new ScrollViewer
+            {
+                MaxHeight = 200,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 10, 0, 0)
+            };
+
+            var logText = new TextBlock
+            {
+                Text = _latestInstaller.Log,
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 255, 255)),
+                FontSize = 22,
+                TextWrapping = TextWrapping.Wrap,
+                TextAlignment = TextAlignment.Left,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                VerticalAlignment = VerticalAlignment.Top,
+                LineHeight = 32,
+                Margin = new Thickness(0, 0, 0, 0)
+            };
+
+            scrollViewer.Content = logText;
+            dialog.DialogContent = scrollViewer;
+
+            dialog.Show();
         }
     }
 
@@ -889,7 +1128,24 @@ public partial class SettingsUserControl : UserControl
 
     private async void FirmwareCheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
+        UpdateFirmwareButtonText("Settings.Checking");
         await CheckFirmwareUpdatesAsync();
+    }
+
+    /// <summary>
+    /// 设置固件检查更新按钮文字，与软件更新按钮共用 UpdateButtonStyle 模板。
+    /// </summary>
+    private void UpdateFirmwareButtonText(string locKey)
+    {
+        if (FirmwareCheckUpdateButton.Template?.FindName("ButtonText", FirmwareCheckUpdateButton) is TextBlock buttonText)
+        {
+            buttonText.SetBinding(TextBlock.TextProperty, new Binding
+            {
+                Source = LocalizationService.Instance,
+                Path = new PropertyPath($"[{locKey}]"),
+                Mode = BindingMode.OneWay
+            });
+        }
     }
 
     private async Task CheckFirmwareUpdatesAsync()
@@ -1051,6 +1307,7 @@ public partial class SettingsUserControl : UserControl
         {
             _isFirmwareChecking = false;
             FirmwareCheckUpdateButton.IsEnabled = true;
+            UpdateFirmwareButtonText("Settings.CheckUpdate");
         }
     }
 
@@ -1311,7 +1568,7 @@ public partial class SettingsUserControl : UserControl
             pg.Width = w;
             pg.Data = Geometry.Parse(geom);
 
-            if (!_isUpdating)
+            if (!_isUpdating && !_keepProgressHidden)
                 pg.Clip = Geometry.Parse($"M-100,0 L{w:F3},0 L{w:F3},21 L{w - 6:F3},27 L-100,27 Z");
         }
     }

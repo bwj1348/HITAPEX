@@ -602,7 +602,6 @@
                                                        Text="{lex:Loc Settings.NotChecked}"
                                                        Foreground="#66EEEEEE"
                                                        FontSize="16"
-                                                       FontWeight="Bold"
                                                        FontFamily="{StaticResource OrbitronFont}"/>
                                         </StackPanel>
                                         <StackPanel x:Name="NewVersionPanel" 
@@ -622,6 +621,7 @@
                                                     FontSize="16"
                                                     FontWeight="Regular"
                                                     AutomationProperties.Name="{lex:Loc Settings.ViewUpdateLog}"
+                                                    Click="ViewUpdateLogButton_Click"
                                                     Margin="10,0,0,0"/>
                                         </StackPanel>
                                     </StackPanel>
@@ -826,8 +826,8 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="187"/>
                                             <ColumnDefinition Width="244"/>
-                                            <ColumnDefinition Width="327"/>
-                                            <ColumnDefinition Width="202"/>
+                                            <ColumnDefinition Width="307"/>
+                                            <ColumnDefinition Width="222"/>
                                             <ColumnDefinition Width="185"/>
                                             <ColumnDefinition Width="157"/>
                                         </Grid.ColumnDefinitions>

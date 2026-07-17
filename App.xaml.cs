@@ -1,7 +1,6 @@
 using System.Configuration;
 using System.Data;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using HITAPEX.Models.Usb;
 using HITAPEX.Services;
@@ -19,7 +18,8 @@ public partial class App : Application
     public static DeviceProtocolService? ProtocolService { get; private set; }
     public static FirmwareUpdateService? FirmwareUpdater { get; private set; }
     public static FirmwareApiService? FirmwareApi { get; private set; }
-    public static Services.PresetService? PresetService { get; private set; }
+    public static ClientInstallerApiService? ClientInstallerApi { get; private set; }
+    public static PresetService? PresetService { get; private set; }
     public static TelemetryService? TelemetryService { get; private set; }
     public static GameDataService? GameDataService { get; private set; }
 
@@ -108,6 +108,8 @@ public partial class App : Application
         TelemetryService = null;
         GameDataService?.Dispose();
         GameDataService = null;
+        ClientInstallerApi?.Dispose();
+        ClientInstallerApi = null;
         HidService?.Dispose();
         HidService = null;
         UsbManager?.Dispose();
@@ -117,8 +119,7 @@ public partial class App : Application
 
     private void InitializeUsbManager()
     {
-        var logDir = Path.Combine(AppContext.BaseDirectory, "logs", "usb");
-        UsbManager = new UsbSerialManager(logDir);
+        UsbManager = new UsbSerialManager();
 
         // 注册目标 VID/PID 对（从设备注册表统一管理）
         UsbManager.RegisterTargetDevices(DeviceRegistry.GetAllVidPids());
@@ -137,15 +138,11 @@ public partial class App : Application
         UsbManager.DeviceError += (device, error) =>
             Debug.WriteLine($"[USB] 设备错误 [{device.DeviceKey}]: {error}");
 
-        UsbManager.LogEntryAdded += entry =>
-        {
-            // 日志条目由 DeviceLogger 直接写入文件
-        };
-
         // 初始化协议服务和固件更新服务
         ProtocolService = new DeviceProtocolService(UsbManager);
         FirmwareUpdater = new FirmwareUpdateService(UsbManager, ProtocolService);
         FirmwareApi = new FirmwareApiService();
+        ClientInstallerApi = new ClientInstallerApiService();
         PresetService = new PresetService();
         TelemetryService = new TelemetryService();
         GameDataService = new GameDataService();

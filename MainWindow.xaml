@@ -8,7 +8,7 @@
         xmlns:lex="clr-namespace:HITAPEX.Helpers"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
-        Title="HITAPEX Racing Simulator"
+        Title="HITAPEX"
         Height="950" Width="1500"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -160,7 +160,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="HITAPEX V 1.0.0"
+                    <TextBlock x:Name="TitleVersionText"
                                FontFamily="{StaticResource OrbitronFont}"
                                Foreground="#FFFFFF"
                                FontSize="12"

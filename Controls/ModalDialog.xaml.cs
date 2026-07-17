@@ -16,8 +16,12 @@ public partial class ModalDialog : UserControl
             new PropertyMetadata(null, OnDialogContentChanged));
 
     public static readonly DependencyProperty ShowIconProperty =
-        DependencyProperty.Register(nameof(ShowIcon), typeof(bool), typeof(ModalDialog), 
+        DependencyProperty.Register(nameof(ShowIcon), typeof(bool), typeof(ModalDialog),
             new PropertyMetadata(false, OnShowIconChanged));
+
+    public static readonly DependencyProperty ShowCloseButtonProperty =
+        DependencyProperty.Register(nameof(ShowCloseButton), typeof(bool), typeof(ModalDialog),
+            new PropertyMetadata(false, OnShowCloseButtonChanged));
 
     public string Title
     {
@@ -35,6 +39,12 @@ public partial class ModalDialog : UserControl
     {
         get => (bool)GetValue(ShowIconProperty);
         set => SetValue(ShowIconProperty, value);
+    }
+
+    public bool ShowCloseButton
+    {
+        get => (bool)GetValue(ShowCloseButtonProperty);
+        set => SetValue(ShowCloseButtonProperty, value);
     }
 
     public ModalDialog()
@@ -75,6 +85,19 @@ public partial class ModalDialog : UserControl
         {
             dialog.TitleIcon.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
         }
+    }
+
+    private static void OnShowCloseButtonChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is ModalDialog dialog)
+        {
+            dialog.CloseButton.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Hide();
     }
 
     public void AddButton(string text, RoutedEventHandler clickHandler, bool isPrimary = false)
@@ -168,6 +191,7 @@ public partial class ModalDialog : UserControl
 
         // 弹窗关闭时，自动重置状态，防止污染下一次调用
         ShowIcon = false;
+        ShowCloseButton = false;
         Title = string.Empty;
         DialogContent = null;
         ClearButtons(); // 强烈建议在这里也清理一下按钮，防止下次调用时按钮重复叠加

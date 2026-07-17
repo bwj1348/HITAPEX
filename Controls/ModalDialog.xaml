@@ -57,24 +57,48 @@
                   Width="600"
                   Height="281"/>
             
+            <Button x:Name="CloseButton"
+                    Width="11" Height="11"
+                    Cursor="Hand"
+                    Margin="0,30,30,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    Panel.ZIndex="10"
+                    Click="CloseButton_Click"
+                    Visibility="Collapsed">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Path Stroke="#EEEEEE"
+                                  StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round"
+                                  Data="M8,8 L20,20 M20,8 L8,20"
+                                  Width="11" Height="11" Stretch="Fill"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
             <Grid Margin="30">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                
+
                 <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <svgc:SvgViewbox x:Name="TitleIcon"
-                                     Source="/Assets/Group4.svg" 
-                                     Width="20" 
+                                     Source="/Assets/Group4.svg"
+                                     Width="20"
                                      Height="20"
                                      Margin="0,0,11,0"
                                      Visibility="Collapsed"/>
-                    <TextBlock x:Name="TitleText" 
-                               FontSize="30" 
-                               FontWeight="Bold" 
-                               Foreground="#EEEEEE" 
+                    <TextBlock x:Name="TitleText"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               Foreground="#EEEEEE"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
                 </StackPanel>

@@ -7,7 +7,6 @@ public interface IUsbSerialManager : IDisposable
     event Action<UsbDeviceInfo>? DeviceConnected;
     event Action<UsbDeviceInfo>? DeviceDisconnected;
     event Action<UsbDeviceInfo, byte[]>? RawDataReceived;
-    event Action<DeviceLogEntry>? LogEntryAdded;
     event Action<UsbDeviceInfo, string>? DeviceError;
 
     IReadOnlyList<UsbDeviceInfo> ConnectedDevices { get; }
@@ -25,7 +24,4 @@ public interface IUsbSerialManager : IDisposable
     void DisconnectAll();
 
     bool SendToDevice(string deviceKey, byte[] data);
-
-    IReadOnlyList<DeviceLogEntry> GetRecentLogs(int count = 100);
-    void SetLoggingEnabled(bool enabled);
 }

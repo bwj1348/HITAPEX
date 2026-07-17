@@ -21,7 +21,6 @@ public class UsbSerialManager : IUsbSerialManager
     public event Action<UsbDeviceInfo>? DeviceConnected;
     public event Action<UsbDeviceInfo>? DeviceDisconnected;
     public event Action<UsbDeviceInfo, byte[]>? RawDataReceived;
-    public event Action<DeviceLogEntry>? LogEntryAdded;
     public event Action<UsbDeviceInfo, string>? DeviceError;
 
     public IReadOnlyList<UsbDeviceInfo> ConnectedDevices
@@ -37,10 +36,9 @@ public class UsbSerialManager : IUsbSerialManager
 
     public bool IsRunning => _isRunning;
 
-    public UsbSerialManager(string logDirectory)
+    public UsbSerialManager()
     {
-        _logger = new DeviceLogger(logDirectory);
-        _logger.LogEntryAdded += entry => LogEntryAdded?.Invoke(entry);
+        _logger = new DeviceLogger();
 
         _discovery = new UsbDeviceDiscovery(_logger);
         _discovery.DeviceArrived += OnDeviceArrived;
@@ -293,16 +291,6 @@ public class UsbSerialManager : IUsbSerialManager
         return false;
     }
 
-    public IReadOnlyList<DeviceLogEntry> GetRecentLogs(int count = 100)
-    {
-        return _logger.GetRecentEntries(count);
-    }
-
-    public void SetLoggingEnabled(bool enabled)
-    {
-        _logger.SetEnabled(enabled);
-    }
-
     public void Dispose()
     {
         if (_disposed) return;
@@ -310,6 +298,5 @@ public class UsbSerialManager : IUsbSerialManager
 
         Stop();
         _discovery.Dispose();
-        _logger.LogEntryAdded -= entry => LogEntryAdded?.Invoke(entry);
     }
 }
