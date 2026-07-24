@@ -8,28 +8,43 @@ using Microsoft.Win32.SafeHandles;
 namespace HITAPEX.Services.Usb;
 
 /// <summary>
-/// Windows HID 设备服务，独立于串口连接管理 HID 设备的数据读取。
+/// Windows HID 设备服务 —— IHidService 的实现，独立于串口连接管理 HID 设备的数据读取。
+/// 通过 setupapi.dll 枚举系统 HID 设备，为匹配的踏板/基座/面盘建立读取通道，
+/// 解析 HID 报告后通过事件向外抛出解码数据。
 /// </summary>
+/// <remarks>
+/// 线程模型：DevicePollLoop 每 2 秒扫描一次新设备；每个设备有独立的 ReadLoop 异步循环（5ms 间隔）。
+/// 与串口连接（UsbSerialManager）并行运行，互不干扰。
+/// HID 数据仅来自踏板(Pedal, reportId=0x01)、基座(Base, reportId=0x11)和面盘(Wheel, reportId=0x01)。
+/// </remarks>
 public class HidService : IHidService
 {
     private readonly ConcurrentDictionary<string, HidChannel> _channels = new();
     private CancellationTokenSource? _cts;
     private bool _disposed;
 
+    /// <summary>HID 设备连接事件</summary>
     public event Action<UsbDeviceInfo>? HDeviceConnected;
+    /// <summary>HID 设备断开事件</summary>
     public event Action<UsbDeviceInfo>? HDeviceDisconnected;
+    /// <summary>踏板 HID 数据到达事件</summary>
     public event Action<UsbDeviceInfo, HidPedalData>? PedalDataReceived;
+    /// <summary>基座 HID 数据到达事件</summary>
     public event Action<UsbDeviceInfo, HidBaseData>? BaseDataReceived;
+    /// <summary>面盘 HID 数据到达事件（面盘直连 USB 时）</summary>
     public event Action<UsbDeviceInfo, HidWheelData>? WheelDataReceived;
 
+    /// <summary>当前已连接的 HID 设备列表</summary>
     public IReadOnlyList<UsbDeviceInfo> ConnectedHidDevices =>
         _channels.Values
             .Where(c => c.State == DeviceConnectionState.Connected)
             .Select(c => c.DeviceInfo)
             .ToList().AsReadOnly();
 
+    /// <summary>是否正在运行</summary>
     public bool IsRunning => !_disposed && _cts != null && !_cts.IsCancellationRequested;
 
+    /// <summary>启动 HID 设备发现与轮询</summary>
     public void Start()
     {
         if (_disposed)
@@ -45,6 +60,7 @@ public class HidService : IHidService
         _ = Task.Run(() => DevicePollLoop(token), token);
     }
 
+    /// <summary>停止 HID 设备发现和所有读取通道</summary>
     public void Stop()
     {
         var cts = Interlocked.Exchange(ref _cts, null);
@@ -65,6 +81,7 @@ public class HidService : IHidService
         Task.Delay(1000).ContinueWith(_ => cts.Dispose(), TaskScheduler.Default);
     }
 
+    /// <summary>释放所有资源</summary>
     public void Dispose()
     {
         if (_disposed) return;
@@ -72,6 +89,9 @@ public class HidService : IHidService
         Stop();
     }
 
+    /// <summary>
+    /// 设备轮询循环 —— 每 2 秒扫描一次 HID 设备列表，自动连接新设备并检测断开的设备。
+    /// </summary>
     private void DevicePollLoop(CancellationToken token)
     {
         var knownDeviceKeys = new HashSet<string>();
@@ -165,6 +185,10 @@ public class HidService : IHidService
         }
     }
 
+    /// <summary>
+    /// 单个设备的异步读取循环 —— 持续调用 HidChannel.Read()，解析数据后触发对应事件。
+    /// 间隔 5ms，错误时将通道状态设为 Error 并退出。
+    /// </summary>
     private async Task ReadLoop(HidChannel channel, DeviceType deviceType, CancellationToken token)
     {
         while (!token.IsCancellationRequested &&
@@ -191,6 +215,12 @@ public class HidService : IHidService
         }
     }
 
+    /// <summary>
+    /// 根据设备类型和 HID 报告 ID 解析原始数据，触发对应的解码数据事件。
+    /// - 踏板(DeviceType.Pedal) + reportId=0x01 → HidPedalData → PedalDataReceived
+    /// - 基座(DeviceType.Base) + reportId=0x11 → HidBaseData → BaseDataReceived
+    /// - 面盘(DeviceType.Wheel) + reportId=0x01 → HidWheelData → WheelDataReceived
+    /// </summary>
     private void ProcessData(UsbDeviceInfo device, DeviceType deviceType, byte[] data)
     {
         if (data.Length == 0) return;
@@ -219,6 +249,10 @@ public class HidService : IHidService
         }
     }
 
+    /// <summary>
+    /// 枚举系统 HID 设备列表 —— 通过 SetupDi* API 遍历所有 HID GUID 的设备接口，
+    /// 过滤出注册表中匹配的 VID/PID 设备。
+    /// </summary>
     private static List<(int vid, int pid, string path)> DiscoverHidDevices()
     {
         var result = new List<(int vid, int pid, string path)>();
@@ -278,6 +312,7 @@ public class HidService : IHidService
         return result;
     }
 
+    /// <summary>通过设备路径打开 HID 设备句柄并读取 VID/PID 属性</summary>
     private static (int vid, int pid) GetVidPidFromDevice(string devicePath)
     {
         using var handle = HidNative.CreateFile(
@@ -295,22 +330,39 @@ public class HidService : IHidService
     }
 }
 
-/// <summary>单个 HID 设备的读取通道</summary>
+/// <summary>
+/// 单个 HID 设备的读取通道 —— 封装设备句柄的打开、HID 报告大小查询和同步读取。
+/// 使用 ArrayPool 减少内存分配。
+/// </summary>
 internal class HidChannel : IDisposable
 {
     private SafeFileHandle? _handle;
+    /// <summary>HID 输入报告字节长度（由 HidP_GetCaps 获取）</summary>
     private int _reportSize;
 
+    /// <summary>设备信息</summary>
     public UsbDeviceInfo DeviceInfo { get; }
+    /// <summary>设备路径（如 \\?\hid#vid_xxxx&pid_xxxx#...）</summary>
     public string DevicePath { get; }
+    /// <summary>当前连接状态</summary>
     public DeviceConnectionState State { get; set; } = DeviceConnectionState.Disconnected;
 
+    /// <summary>
+    /// 初始化 HID 通道。
+    /// </summary>
+    /// <param name="deviceInfo">设备信息</param>
+    /// <param name="devicePath">HID 设备路径</param>
     public HidChannel(UsbDeviceInfo deviceInfo, string devicePath)
     {
         DeviceInfo = deviceInfo;
         DevicePath = devicePath;
     }
 
+    /// <summary>
+    /// 打开 HID 设备句柄并查询输入报告长度。
+    /// 使用 GenericRead 权限和 FILE_SHARE_READ | FILE_SHARE_WRITE。
+    /// </summary>
+    /// <returns>是否成功打开</returns>
     public bool Connect()
     {
         try
@@ -348,6 +400,10 @@ internal class HidChannel : IDisposable
         }
     }
 
+    /// <summary>
+    /// 同步读取 HID 输入报告。使用 ArrayPool 租用缓冲区，读取完成后拷贝结果并归还。
+    /// </summary>
+    /// <returns>读取到的原始字节数组（失败或超时返回 null）</returns>
     public byte[]? Read()
     {
         if (_handle == null || State != DeviceConnectionState.Connected)
@@ -379,6 +435,7 @@ internal class HidChannel : IDisposable
         return null;
     }
 
+    /// <summary>释放 HID 设备句柄</summary>
     public void Dispose()
     {
         State = DeviceConnectionState.Disconnected;

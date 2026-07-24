@@ -9,14 +9,24 @@ using HITAPEX.Services;
 
 namespace HITAPEX.Views.DeviceParameters;
 
+/// <summary>
+/// 预设编辑弹出控件 —— 用于编辑预设名称、选择关联游戏（支持 A-Z 字母索引快速导航），
+/// 并可确认保存或取消编辑。
+/// </summary>
 public partial class EditPresetPopup : UserControl
 {
+    // ══════════════════════════════════════════
+    //  静态游戏数据（游戏缩写列表 + 全称映射 + 显示名生成）
+    // ══════════════════════════════════════════
+
+    /// <summary>所有游戏的缩写列表，在 UI 中展示的原始值</summary>
     private static readonly List<string> s_allGames =
     [
         "ACC", "AC EVO", "DR2.0", "EA WRC", "F1", "FH5", "FM",
         "GT4", "GTWC", "IGTC", "iR", "LMU"
     ];
 
+    /// <summary>游戏缩写 -> 完整名称的映射表</summary>
     private static readonly Dictionary<string, string> s_gameFullNames = new()
     {
         ["ACC"] = "Assetto Corsa Competizione",
@@ -33,6 +43,7 @@ public partial class EditPresetPopup : UserControl
         ["LMU"] = "Le Mans Ultimate"
     };
 
+    /// <summary>获取游戏的显示名称：全称 (缩写) 格式；若无全称则回退到缩写</summary>
     private static string GetGameDisplayName(string abbreviation)
     {
         return s_gameFullNames.TryGetValue(abbreviation, out var fullName)
@@ -40,31 +51,57 @@ public partial class EditPresetPopup : UserControl
             : abbreviation;
     }
 
+    // ══════════════════════════════════════════
+    //  实例字段
+    // ══════════════════════════════════════════
+
+    /// <summary>当前已选中的游戏集合（忽略大小写）</summary>
     private readonly HashSet<string> _selectedGames = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>首字母分组标题元素映射（letter -> 标题控件），用于滚动同步与快速跳转</summary>
     private readonly Dictionary<char, FrameworkElement> _groupHeaders = new();
+
+    /// <summary>右侧 A-Z 字母索引按钮列表</summary>
     private readonly List<Button> _letterButtons = new();
+
+    /// <summary>已有的预设名称列表，用于重名检测</summary>
     private List<string> _existingNames = [];
+
+    /// <summary>正在编辑的原始预设数据</summary>
     private PresetItem _originalPreset = new();
+
+    /// <summary>当前高亮的字母索引按钮</summary>
     private Button? _highlightedLetter;
+
+    /// <summary>抑制滚动同步的标志：当字母索引点击触发 ScrollToLetter 时设为 true，避免循环触发</summary>
     private bool _suppressScrollSync;
 
-    /// <summary>当前编辑弹窗对应的设备类型</summary>
+    /// <summary>当前编辑弹窗对应的设备类型，决定保存预设时的 DeviceType 字段</summary>
     public Models.Usb.DeviceType DeviceType { get; set; } = Models.Usb.DeviceType.Pedal;
 
+    /// <summary>编辑确认事件 —— 用户点击确认按钮且校验通过后触发</summary>
     public event EventHandler<PresetItem>? EditConfirmed;
+
+    /// <summary>编辑取消事件 —— 用户点击取消按钮或弹窗关闭时触发</summary>
     public event EventHandler? EditCancelled;
 
+    /// <summary>构造函数：初始化组件并构建右侧 A-Z 字母索引栏</summary>
     public EditPresetPopup()
     {
         InitializeComponent();
         BuildLetterIndex();
     }
 
+    /// <summary>设置弹窗标题文本</summary>
+    /// <param name="title">标题字符串</param>
     public void SetTitle(string title)
     {
         TitleText.Text = title;
     }
 
+    /// <summary>进入编辑模式：加载已有预设数据（名称、游戏列表），构建两侧游戏面板</summary>
+    /// <param name="preset">待编辑的预设对象</param>
+    /// <param name="existingNames">除自身外已有的预设名称列表，用于重名校验</param>
     public void BeginEdit(PresetItem preset, IEnumerable<string> existingNames)
     {
         _originalPreset = preset;
@@ -85,7 +122,8 @@ public partial class EditPresetPopup : UserControl
         SetTitle(LocalizationService.Instance["Preset.Edit"]);
     }
 
-    /// <summary>用于“另存为”场景：空白名称，给定已有名称列表用于重名校验</summary>
+    /// <summary>进入“另存为”模式：空白名称，给定已有名称列表用于重名校验</summary>
+    /// <param name="existingNames">已有的预设名称列表</param>
     public void BeginSaveAs(IEnumerable<string> existingNames)
     {
         _originalPreset = new PresetItem();
@@ -110,6 +148,7 @@ public partial class EditPresetPopup : UserControl
         AllGamesPanel.Children.Clear();
         _groupHeaders.Clear();
 
+        // 按游戏名称首字母分组（忽略大小写），每组内部按字母序排列
         var grouped = s_allGames
             .OrderBy(g => g, StringComparer.OrdinalIgnoreCase)
             .GroupBy(g => char.ToUpper(g[0]))
@@ -117,6 +156,7 @@ public partial class EditPresetPopup : UserControl
 
         foreach (var group in grouped)
         {
+            // 创建该首字母的分组标题并记录到字典中，供字母索引跳转使用
             var header = CreateGroupHeader(group.Key);
             _groupHeaders[group.Key] = header;
             AllGamesPanel.Children.Add(header);
@@ -129,6 +169,7 @@ public partial class EditPresetPopup : UserControl
         }
     }
 
+    /// <summary>创建首字母分组标题控件（A-Z 字母标签）</summary>
     private FrameworkElement CreateGroupHeader(char letter)
     {
         var border = new Border
@@ -150,6 +191,7 @@ public partial class EditPresetPopup : UserControl
         return border;
     }
 
+    /// <summary>创建“所有游戏”列表中的单个游戏复选框项</summary>
     private FrameworkElement CreateAllGameItem(string gameName, bool isSelected)
     {
         var checkBox = new CheckBox
@@ -176,6 +218,7 @@ public partial class EditPresetPopup : UserControl
     //  构建"已选游戏"列表
     // ══════════════════════════════════════════
 
+    /// <summary>构建“已选游戏”列表：若无选中则显示空提示，否则按字母序排列已选游戏</summary>
     private void BuildSelectedGamesList()
     {
         SelectedGamesPanel.Children.Clear();
@@ -201,6 +244,7 @@ public partial class EditPresetPopup : UserControl
         }
     }
 
+    /// <summary>创建“已选游戏”列表中的单项：显示游戏全称、装饰图标和移除按钮</summary>
     private FrameworkElement CreateSelectedGameItem(string gameName)
     {
         var accentGradient = (Brush)FindResource("AccentGradient");
@@ -293,6 +337,7 @@ public partial class EditPresetPopup : UserControl
         if (sender is Button btn && btn.Tag is string gameName)
         {
             _selectedGames.Remove(gameName);
+            // 刷新两侧列表和统计信息
             BuildAllGamesList();
             BuildSelectedGamesList();
             UpdateSelectionSummary();
@@ -308,11 +353,13 @@ public partial class EditPresetPopup : UserControl
             else
                 _selectedGames.Remove(gameName);
 
+            // 复选框状态变更时即时刷新已选列表
             BuildSelectedGamesList();
             UpdateSelectionSummary();
         }
     }
 
+    /// <summary>全选 / 取消全选：如果当前未全选则全选，否则清空</summary>
     private void SelectAllCheckBox_Click(object sender, RoutedEventArgs e)
     {
         var selectAll = _selectedGames.Count < s_allGames.Count;
@@ -329,10 +376,12 @@ public partial class EditPresetPopup : UserControl
         UpdateSelectionSummary();
     }
 
+    /// <summary>更新已选游戏计数文本和全选复选框的三态状态</summary>
     private void UpdateSelectionSummary()
     {
         GameCountText.Text = LocalizationService.Instance.Format("Preset.GameCount", _selectedGames.Count, s_allGames.Count);
 
+        // 三态复选框：全选 -> true，全不选 -> false，部分选 -> null（中间态）
         SelectAllCheckBox.IsChecked = _selectedGames.Count == s_allGames.Count
             ? true
             : _selectedGames.Count == 0
@@ -344,6 +393,7 @@ public partial class EditPresetPopup : UserControl
     //  A-Z 字母索引
     // ══════════════════════════════════════════
 
+    /// <summary>构建右侧 A-Z 字母索引按钮面板，每个字母一个按钮</summary>
     private void BuildLetterIndex()
     {
         LetterIndexPanel.Children.Clear();
@@ -369,10 +419,13 @@ public partial class EditPresetPopup : UserControl
             ScrollToLetter(letter);
     }
 
+    /// <summary>滚动到指定首字母的分组标题位置，并高亮对应字母按钮</summary>
+    /// <param name="letter">目标首字母</param>
     private void ScrollToLetter(char letter)
     {
         if (_groupHeaders.TryGetValue(letter, out var header))
         {
+            // 设置标志抑制滚动事件处理器中的高亮同步，避免循环触发
             _suppressScrollSync = true;
 
             // 计算 header 在面板中的位置并滚动到列表顶部
@@ -388,6 +441,7 @@ public partial class EditPresetPopup : UserControl
         }
     }
 
+    /// <summary>高亮指定字母的索引按钮（红色），同时取消上一个高亮</summary>
     private void HighlightLetterButton(char letter)
     {
         if (_highlightedLetter != null)
@@ -401,19 +455,26 @@ public partial class EditPresetPopup : UserControl
         }
     }
 
+    /// <summary>
+    /// 滚动事件处理器：当用户手动滚动游戏列表时，自动同步高亮当前可视区域
+    /// 中第一个出现的首字母分组所对应的字母索引按钮。
+    /// 通过查找第一个 Y 坐标 >= 当前滚动偏移量（留 4px 容差）的分组标题来实现。
+    /// </summary>
     private void AllGamesScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
+        // 若是字母索引点击触发的滚动（ScrollToLetter），则跳过本次同步避免循环
         if (_suppressScrollSync) return;
 
-        // Find the first visible group header
         var scrollViewer = (ScrollViewer)sender;
         double viewportTop = scrollViewer.VerticalOffset;
 
+        // 查找当前可视区域中第一个分组标题字母
         char? firstVisible = null;
         foreach (var kvp in _groupHeaders)
         {
             var transform = kvp.Value.TransformToVisual(AllGamesPanel);
             var pos = transform.Transform(new Point(0, 0));
+            // 4px 容差确保滚动到接近该标题时即触发高亮
             if (pos.Y >= viewportTop - 4)
             {
                 firstVisible = kvp.Key;
@@ -429,27 +490,39 @@ public partial class EditPresetPopup : UserControl
     //  预设名称输入处理
     // ══════════════════════════════════════════
 
+    /// <summary>名称输入框文本变更事件：更新字符计数、水印可见性和校验状态</summary>
     private void PresetNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         UpdateCharCount();
         UpdateWatermark();
+        // 每次文本变更时清除之前的重名提示，允许重新提交
         DuplicateNameText.Visibility = Visibility.Collapsed;
         ConfirmButton.IsEnabled = true;
     }
 
+    /// <summary>
+    /// 文本输入预览事件：限制名称最大 20 字符。
+    /// 拼音输入过程中放行所有字符（由 TextChanged 最终校验），避免打断中文输入。
+    /// </summary>
     private void PresetNameTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
     {
         // 拼音输入过程中不限制字符数，待确认输入后由 TextChanged 统一校验
         if (InputMethod.Current.ImeState == InputMethodState.On)
             return;
 
+        // 已达上限 20 字符时阻止进一步输入
         if (PresetNameTextBox.Text.Length >= 20)
             e.Handled = true;
     }
 
+    /// <summary>
+    /// 按键预览事件：限制名称最大 20 字符。
+    /// 放行 Back/Delete/方向键/Tab/Enter/Home/End 等编辑键和导航键，
+    /// 放行 IME 输入过程中的所有按键，其余按键在达到上限时拦截。
+    /// </summary>
     private void PresetNameTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        // 放行编辑键和导航键
+        // 放行编辑键和导航键，确保用户可正常删除、移动光标
         if (e.Key is Key.Back or Key.Delete or Key.Left or Key.Right or Key.Tab
             or Key.Enter or Key.Home or Key.End)
             return;
@@ -458,16 +531,19 @@ public partial class EditPresetPopup : UserControl
         if (e.Key == Key.ImeProcessed || InputMethod.Current.ImeState == InputMethodState.On)
             return;
 
+        // 已达上限 20 字符时阻止进一步按键输入
         if (PresetNameTextBox.Text.Length >= 20)
             e.Handled = true;
     }
 
+    /// <summary>更新字符计数显示，格式为 {当前}/{上限}（上限 20）</summary>
     private void UpdateCharCount()
     {
         var count = PresetNameTextBox.Text.Length;
         CharCountText.Text = $"{count}/20";
     }
 
+    /// <summary>更新输入框中水印文本的可见性：有内容时隐藏，空时显示</summary>
     private void UpdateWatermark()
     {
         WatermarkText.Visibility = string.IsNullOrEmpty(PresetNameTextBox.Text)
@@ -475,6 +551,7 @@ public partial class EditPresetPopup : UserControl
             : Visibility.Collapsed;
     }
 
+    /// <summary>清空名称输入框并聚焦，方便用户重新输入</summary>
     private void ClearNameButton_Click(object sender, RoutedEventArgs e)
     {
         PresetNameTextBox.Text = string.Empty;
@@ -482,9 +559,10 @@ public partial class EditPresetPopup : UserControl
     }
 
     // ══════════════════════════════════════════
-    //  操作按钮
+    //  操作按钮（清空已选、确认、取消）
     // ══════════════════════════════════════════
 
+    /// <summary>一键清空所有已选游戏</summary>
     private void ClearAllSelected_Click(object sender, RoutedEventArgs e)
     {
         _selectedGames.Clear();
@@ -493,11 +571,17 @@ public partial class EditPresetPopup : UserControl
         UpdateSelectionSummary();
     }
 
+    /// <summary>
+    /// 确认按钮点击：校验名称非空、无重名后，构造 PresetItem 并触发 EditConfirmed 事件。
+    /// 若存在重名则显示提示文案并禁用确认按钮。
+    /// </summary>
     private void ConfirmButton_Click(object sender, RoutedEventArgs e)
     {
         var name = PresetNameTextBox.Text.Trim();
+        // 空白名称不允许提交
         if (string.IsNullOrEmpty(name)) return;
 
+        // 重名校验（忽略大小写）
         if (_existingNames.Any(n => string.Equals(n, name, StringComparison.OrdinalIgnoreCase)))
         {
             DuplicateNameText.Visibility = Visibility.Visible;
@@ -516,10 +600,12 @@ public partial class EditPresetPopup : UserControl
             DeviceType = DeviceType
         };
 
+        // 触发确认事件并关闭弹窗
         EditConfirmed?.Invoke(this, edited);
         Hide();
     }
 
+    /// <summary>取消按钮点击：触发取消事件并关闭弹窗</summary>
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         EditCancelled?.Invoke(this, EventArgs.Empty);
@@ -530,19 +616,26 @@ public partial class EditPresetPopup : UserControl
     //  显示 / 隐藏 + 动画
     // ══════════════════════════════════════════
 
+    /// <summary>显示弹窗：播放淡入+缩放动画，聚焦名称输入框并将光标移至末尾</summary>
     public void Show()
     {
         Visibility = Visibility.Visible;
         AnimateIn();
+        // 聚焦输入框并移动光标到文本末尾，方便用户直接编辑
         PresetNameTextBox.Focus();
         PresetNameTextBox.CaretIndex = PresetNameTextBox.Text.Length;
     }
 
+    /// <summary>隐藏弹窗：播放淡出+缩放动画，动画完成后设为 Collapsed</summary>
     public void Hide()
     {
         AnimateOut(() => Visibility = Visibility.Collapsed);
     }
 
+    /// <summary>
+    /// 弹窗进入动画：遮罩层淡入 + 面板淡入 + 从 0.94x 缩放到 1x。
+    /// 动画期间禁用面板命中测试，动画结束后恢复正常。
+    /// </summary>
     private void AnimateIn()
     {
         OverlayBackground.Opacity = 0;
@@ -569,6 +662,7 @@ public partial class EditPresetPopup : UserControl
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
 
+        // 动画完成后清除缓存模式，恢复命中测试
         scaleX.Completed += (_, _) =>
         {
             PopupPanel.CacheMode = null;
@@ -581,6 +675,11 @@ public partial class EditPresetPopup : UserControl
         PopupPanel.RenderTransform.BeginAnimation(ScaleTransform.ScaleYProperty, scaleY);
     }
 
+    /// <summary>
+    /// 弹窗退出动画：遮罩层淡出 + 面板淡出 + 从 1x 缩小到 0.94x。
+    /// 动画期间启用 BitmapCache 提升性能，完成后执行回调（设为 Collapsed）。
+    /// </summary>
+    /// <param name="onCompleted">动画完成后的回调，通常用于设置 Visibility = Collapsed</param>
     private void AnimateOut(Action onCompleted)
     {
         if (PopupPanel.RenderTransform is not ScaleTransform st)

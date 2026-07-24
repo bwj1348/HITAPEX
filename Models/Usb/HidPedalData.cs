@@ -5,22 +5,42 @@ namespace HITAPEX.Models.Usb;
 /// </summary>
 public class HidPedalData
 {
+    /// <summary>HID 报告 ID</summary>
     public byte ReportId { get; init; }
+
+    /// <summary>X 轴数据（保留通道）</summary>
     public ushort X { get; init; }
+
+    /// <summary>Y 轴数据（保留通道）</summary>
     public ushort Y { get; init; }
+
+    /// <summary>油门轴数据 0-65535</summary>
     public ushort Gas { get; init; }
+
+    /// <summary>刹车轴数据 0-65535</summary>
     public ushort Brake { get; init; }
+
+    /// <summary>离合轴数据 0-65535</summary>
     public ushort Clutch { get; init; }
+
+    /// <summary>RZ 轴数据（保留通道）</summary>
     public ushort Rz { get; init; }
+
+    /// <summary>用户自定义轴数据（8 个通道）</summary>
     public ushort[] User { get; init; } = new ushort[8];
 
     /// <summary>油门位置百分比 0-100</summary>
     public double GasPercent => Gas / 65535.0 * 100.0;
+
     /// <summary>刹车位置百分比 0-100</summary>
     public double BrakePercent => Brake / 65535.0 * 100.0;
+
     /// <summary>离合位置百分比 0-100</summary>
     public double ClutchPercent => Clutch / 65535.0 * 100.0;
 
+    /// <summary>从原始 HID 数据包解析踏板数据</summary>
+    /// <param name="data">HID 原始数据缓冲区</param>
+    /// <returns>解析成功返回 HidPedalData 实例，失败返回 null</returns>
     public static HidPedalData? Parse(byte[] data)
     {
         if (data == null || data.Length < 29 || data[0] != 0x01)

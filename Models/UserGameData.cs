@@ -15,6 +15,8 @@ public class UserGameData
 /// <summary>用户数据中的启动模式（用于 JSON 序列化）</summary>
 public enum LaunchModeUdf
 {
+    /// <summary>通过 Steam 启动</summary>
     Steam,
+    /// <summary>通过自定义路径启动</summary>
     CustomPath
 }

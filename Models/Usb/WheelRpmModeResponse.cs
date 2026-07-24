@@ -18,13 +18,13 @@ public class WheelRpmModeResponse
     /// <summary>转速灯爆闪速度 (0-5)</summary>
     public byte StrobeSpeed { get; set; }
 
-    /// <summary>转速灯爆闪自定义颜色R分量</summary>
+    /// <summary>转速灯爆闪自定义颜色R分量 (0-255)</summary>
     public byte StrobeColorR { get; set; }
 
-    /// <summary>转速灯爆闪自定义颜色G分量</summary>
+    /// <summary>转速灯爆闪自定义颜色G分量 (0-255)</summary>
     public byte StrobeColorG { get; set; }
 
-    /// <summary>转速灯爆闪自定义颜色B分量</summary>
+    /// <summary>转速灯爆闪自定义颜色B分量 (0-255)</summary>
     public byte StrobeColorB { get; set; }
 
     /// <summary>爆闪触发值 (0-100)</summary>

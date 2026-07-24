@@ -5,40 +5,81 @@ using HITAPEX.Models.Usb;
 
 namespace HITAPEX.Services.Usb;
 
+/// <summary>
+/// 固件更新流程阶段枚举。
+/// </summary>
 public enum FirmwareUpdatePhase
 {
+    /// <summary>空闲，未开始更新</summary>
     Idle,
+    /// <summary>检查设备当前处于正常模式还是更新模式</summary>
     CheckingMode,
+    /// <summary>发送切换命令，使设备从正常模式进入更新模式</summary>
     SwitchingToUpdateMode,
+    /// <summary>等待设备以更新模式重新连接</summary>
     WaitingForUpdateModeDevice,
+    /// <summary>发送更新开始命令</summary>
     StartingUpdate,
+    /// <summary>传输固件数据包</summary>
     TransferringData,
+    /// <summary>发送更新完成命令，设备执行固件写入和校验</summary>
     CompletingUpdate,
+    /// <summary>等待设备重启到正常模式</summary>
     WaitingForNormalModeDevice,
+    /// <summary>更新成功完成</summary>
     Success,
+    /// <summary>更新失败</summary>
     Failed,
+    /// <summary>更新被取消</summary>
     Cancelled
 }
 
+/// <summary>
+/// 固件更新进度信息。
+/// </summary>
 public class FirmwareUpdateProgress
 {
+    /// <summary>当前更新阶段</summary>
     public FirmwareUpdatePhase Phase { get; set; } = FirmwareUpdatePhase.Idle;
+    /// <summary>状态描述文本（用于 UI 显示）</summary>
     public string StatusMessage { get; set; } = "";
+    /// <summary>当前传输的数据包序号</summary>
     public int CurrentPacket { get; set; }
+    /// <summary>总数据包数</summary>
     public int TotalPackets { get; set; }
+    /// <summary>传输进度百分比（0-100）</summary>
     public int ProgressPercent => TotalPackets > 0 ? (int)(CurrentPacket * 100L / TotalPackets) : 0;
+    /// <summary>错误信息（失败时设置）</summary>
     public string? ErrorMessage { get; set; }
+    /// <summary>设备唯一标识</summary>
     public string DeviceKey { get; set; } = "";
+    /// <summary>设备显示名称</summary>
     public string DeviceName { get; set; } = "";
 }
 
+/// <summary>
+/// 固件更新结果。
+/// </summary>
 public class FirmwareUpdateResult
 {
+    /// <summary>更新是否成功</summary>
     public bool Success { get; set; }
+    /// <summary>失败时的错误信息</summary>
     public string? ErrorMessage { get; set; }
+    /// <summary>新固件版本号</summary>
     public string NewVersion { get; set; } = "";
 }
 
+/// <summary>
+/// 固件更新服务 —— 执行完整的设备固件更新流程。
+/// 流程包括：模式检测 → 切换到更新模式 → 等待重连 → 发送开始命令 →
+/// 传输数据包 → 发送完成命令 → 设备重启。
+/// </summary>
+/// <remarks>
+/// 协议参考：docs/乘游直驱方向盘与PC软件usb通信协议 v0.1.md 第6节"固件更新帧说明"。
+/// 支持设备类型：基座（WheelDeviceCommand=0x7913）、踏板（PedalDeviceCommand=0x7A14）。
+/// 数据包大小：MaxFirmwareChunkSize=54 字节，连续 10 次超时自动中止。
+/// </remarks>
 public class FirmwareUpdateService
 {
     private readonly IUsbSerialManager _manager;
@@ -64,7 +105,9 @@ public class FirmwareUpdateService
         }
     }
 
+    /// <summary>固件更新进度变化事件</summary>
     public event Action<FirmwareUpdateProgress>? ProgressChanged;
+    /// <summary>调试日志事件（用于 UI 日志面板）</summary>
     public event Action<string>? DebugLog;
 
     // 协议命令码 — 固件更新专用，由 FirmwareUpdateService 管理
@@ -77,6 +120,11 @@ public class FirmwareUpdateService
     public const int MainChipCore1Command = 0x5634;
     public const int MainChipCore2Command = 0x7812;
 
+    /// <summary>
+    /// 初始化固件更新服务。
+    /// </summary>
+    /// <param name="manager">USB 串口管理器，用于设备通信</param>
+    /// <param name="protocol">设备协议服务，用于构建/解析命令帧</param>
     public FirmwareUpdateService(IUsbSerialManager manager, DeviceProtocolService protocol)
     {
         _manager = manager;

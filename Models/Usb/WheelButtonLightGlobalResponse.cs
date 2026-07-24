@@ -9,12 +9,12 @@ public class WheelButtonLightGlobalResponse
     /// <summary>按键灯全局亮度 (0-100)</summary>
     public byte Brightness { get; set; }
 
-    /// <summary>按键灯统一颜色R分量</summary>
+    /// <summary>按键灯统一颜色R分量 (0-255)</summary>
     public byte ColorR { get; set; }
 
-    /// <summary>按键灯统一颜色G分量</summary>
+    /// <summary>按键灯统一颜色G分量 (0-255)</summary>
     public byte ColorG { get; set; }
 
-    /// <summary>按键灯统一颜色B分量</summary>
+    /// <summary>按键灯统一颜色B分量 (0-255)</summary>
     public byte ColorB { get; set; }
 }

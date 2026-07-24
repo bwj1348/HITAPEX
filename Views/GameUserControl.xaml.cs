@@ -28,8 +28,17 @@ public enum GameFilterType
     NotInstalled
 }
 
+/// <summary>
+/// 游戏库/启动器页面的主视图控件。
+/// 提供可筛选的游戏卡片列表，支持启动游戏、置顶（Pin）动画、
+/// 遥测配置、自定义滚动条以及悬停（Hover）平移动画等功能。
+/// </summary>
 public partial class GameUserControl : UserControl
 {
+    // ═══════════════════════════════════════════════════
+    // 私有字段
+    // ═══════════════════════════════════════════════════
+
     private ObservableCollection<GameItem>? _allGameList;
     private ObservableCollection<GameItem>? _filteredGameList;
     private bool _isInitialized;
@@ -64,6 +73,14 @@ public partial class GameUserControl : UserControl
         UpdateScrollbarThumb();
     }
 
+    // ═══════════════════════════════════════════════════
+    // 游戏列表管理 — 初始化、数据加载、筛选与选择
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 初始化游戏列表：绑定数据服务事件，创建集合并从服务加载游戏数据。
+    /// 加载完成后自动选中第一个游戏项。
+    /// </summary>
     private async void InitializeGameList()
     {
         _gameDataService = App.GameDataService;
@@ -81,6 +98,10 @@ public partial class GameUserControl : UserControl
             SelectGame(_filteredGameList[0]);
     }
 
+    /// <summary>
+    /// 异步加载游戏数据，填充安装状态，处理网络异常并回退到缓存数据。
+    /// 加载完成后自动应用当前筛选条件。
+    /// </summary>
     private async Task LoadGamesAsync(bool forceRefresh = false)
     {
         if (_gameDataService == null || _isLoading) return;
@@ -121,30 +142,44 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 游戏数据状态变更回调：当数据从缓存/网络加载完成后，刷新 UI。
+    /// </summary>
     private async void OnGameDataStateChanged(GameDataState state)
     {
         if (state == GameDataState.Loaded)
             await Dispatcher.InvokeAsync(async () => await LoadGamesAsync());
     }
 
+    /// <summary>
+    /// 显示加载遮罩层。
+    /// </summary>
     private void ShowLoadingState()
     {
         if (LoadingOverlay != null)
             LoadingOverlay.Visibility = Visibility.Visible;
     }
 
+    /// <summary>
+    /// 隐藏加载遮罩层。
+    /// </summary>
     private void HideLoadingState()
     {
         if (LoadingOverlay != null)
             LoadingOverlay.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>
+    /// 根据指定筛选类型过滤游戏列表，并按排序规则重新排列。
+    /// 排序优先级：置顶（Pinned） &gt; 已安装（Installed） &gt; 最近启动时间 &gt; 名称。
+    /// </summary>
     private void ApplyFilter(GameFilterType filter)
     {
         if (_allGameList == null || _filteredGameList == null) return;
 
         _filteredGameList.Clear();
 
+        // 根据筛选类型选取子集
         var filtered = filter switch
         {
             GameFilterType.Installed => _allGameList.Where(g => g.IsInstalled),
@@ -152,6 +187,7 @@ public partial class GameUserControl : UserControl
             _ => _allGameList
         };
 
+        // 排序：置顶优先 → 已安装次之 → 最近启动时间 → 名称字母序
         var sortedFiltered = filtered
             .OrderByDescending(g => g.IsPinned)
             .ThenByDescending(g => g.IsInstalled)
@@ -166,10 +202,15 @@ public partial class GameUserControl : UserControl
         GameListItemsControl.ItemsSource = _filteredGameList;
         _currentFilter = filter;
 
+        // 筛选后重置滚动条位置到最左侧
         GameScrollViewer.ScrollToHorizontalOffset(0);
         Dispatcher.BeginInvoke(() => UpdateScrollbarThumb(), DispatcherPriority.Loaded);
     }
 
+    /// <summary>
+    /// 选中指定游戏，更新标题、背景图、描述文本，
+    /// 根据缓存的启动模式恢复单选按钮状态和启动按钮文字。
+    /// </summary>
     private void SelectGame(GameItem game)
     {
         _selectedGame = game;
@@ -230,6 +271,10 @@ public partial class GameUserControl : UserControl
         });
     }
 
+    /// <summary>
+    /// 底部筛选单选按钮点击：切换"全部"/"已安装"/"未安装"视图。
+    /// 筛选后自动选中列表第一项。
+    /// </summary>
     private void FilterButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is RadioButton radioButton)
@@ -248,6 +293,9 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 刷新按钮点击：重新检测 Steam 已安装状态，保持当前选中项不变。
+    /// </summary>
     private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isLoading || _gameDataService == null || _allGameList == null) return;
@@ -273,6 +321,14 @@ public partial class GameUserControl : UserControl
         HideLoadingState();
     }
 
+    // ═══════════════════════════════════════════════════
+    // 遥测配置 Toast 提示 — 成功/失败两种样式
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 遥测配置按钮点击：对当前选中的游戏应用遥测配置。
+    /// 成功则显示绿色勾号 Toast，失败则显示红色警告 Toast。
+    /// </summary>
     private void TelemetryConfigButton_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -290,11 +346,16 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 显示遥测配置成功的 Toast 提示（绿色勾号图标，1 秒后自动消失）。
+    /// 通过代码动态创建 Grid 布局，包含背景层、边框层和图标+文字的横向堆叠内容。
+    /// </summary>
     private void ShowTelemetryConfigSuccessToast()
     {
         var rootPanel = (Window.GetWindow(this)?.Content as Panel);
         if (rootPanel == null) return;
 
+        // 创建 Toast 容器 Grid，居中显示于父窗口
         var toast = new Grid
         {
             Width = 360,
@@ -302,8 +363,9 @@ public partial class GameUserControl : UserControl
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-        Panel.SetZIndex(toast, 2000);
+        Panel.SetZIndex(toast, 2000); // 置于所有 UI 元素之上
 
+        // 深灰色梯形背景
         toast.Children.Add(new System.Windows.Shapes.Path
         {
             Data = Geometry.Parse("M360 0H9L0 9V100H351L360 91V0Z"),
@@ -311,12 +373,14 @@ public partial class GameUserControl : UserControl
             Stretch = Stretch.Fill
         });
 
+        // SVG 装饰图标
         toast.Children.Add(new SharpVectors.Converters.SvgViewbox
         {
             Source = new Uri("/Assets/Group126548867.svg", UriKind.Relative),
             Stretch = Stretch.Fill
         });
 
+        // 内边框
         toast.Children.Add(new System.Windows.Shapes.Path
         {
             Width = 340,
@@ -327,6 +391,7 @@ public partial class GameUserControl : UserControl
             Stretch = Stretch.Fill
         });
 
+        // 内容层：图标 + 文字
         var contentPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -334,7 +399,7 @@ public partial class GameUserControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        // 绿色勾号图标
+        // 绿色勾号图标（表示成功）
         var iconCanvas = new Canvas { Width = 22, Height = 22 };
         iconCanvas.Children.Add(new System.Windows.Shapes.Path
         {
@@ -368,8 +433,9 @@ public partial class GameUserControl : UserControl
         });
 
         toast.Children.Add(contentPanel);
-        rootPanel.Children.Add(toast);
+        rootPanel.Children.Add(toast); // 将 Toast 挂载到父窗口的根面板
 
+        // 1 秒后自动移除 Toast
         var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         timer.Tick += (_, _) =>
         {
@@ -380,11 +446,16 @@ public partial class GameUserControl : UserControl
         timer.Start();
     }
 
+    /// <summary>
+    /// 显示遥测配置失败的 Toast 提示（红色警告图标，1 秒后自动消失）。
+    /// 结构与成功提示相同，仅图标和文字不同。
+    /// </summary>
     private void ShowTelemetryConfigFailToast()
     {
         var rootPanel = (Window.GetWindow(this)?.Content as Panel);
         if (rootPanel == null) return;
 
+        // 创建 Toast 容器 Grid，居中显示于父窗口
         var toast = new Grid
         {
             Width = 360,
@@ -392,8 +463,9 @@ public partial class GameUserControl : UserControl
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center
         };
-        Panel.SetZIndex(toast, 2000);
+        Panel.SetZIndex(toast, 2000); // 置于所有 UI 元素之上
 
+        // 深灰色梯形背景
         toast.Children.Add(new System.Windows.Shapes.Path
         {
             Data = Geometry.Parse("M360 0H9L0 9V100H351L360 91V0Z"),
@@ -401,12 +473,14 @@ public partial class GameUserControl : UserControl
             Stretch = Stretch.Fill
         });
 
+        // SVG 装饰图标
         toast.Children.Add(new SharpVectors.Converters.SvgViewbox
         {
             Source = new Uri("/Assets/Group126548867.svg", UriKind.Relative),
             Stretch = Stretch.Fill
         });
 
+        // 内边框
         toast.Children.Add(new System.Windows.Shapes.Path
         {
             Width = 340,
@@ -417,6 +491,7 @@ public partial class GameUserControl : UserControl
             Stretch = Stretch.Fill
         });
 
+        // 内容层：图标 + 文字
         var contentPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -424,7 +499,7 @@ public partial class GameUserControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        // 红色警告图标
+        // 红色警告图标（表示失败）
         var iconCanvas = new Canvas { Width = 22, Height = 22 };
         iconCanvas.Children.Add(new System.Windows.Shapes.Path
         {
@@ -475,6 +550,14 @@ public partial class GameUserControl : UserControl
         timer.Start();
     }
 
+    // ═══════════════════════════════════════════════════
+    // 启动游戏及自定义路径
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 右侧详情面板的"启动游戏"按钮点击：根据当前选中的游戏和启动模式执行启动，
+    /// 启动成功则保存用户数据，失败则弹出错误对话框。
+    /// </summary>
     private void LaunchGameButton_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -491,6 +574,10 @@ public partial class GameUserControl : UserControl
         ShowLaunchErrorDialog();
     }
 
+    /// <summary>
+    /// 启动模式单选按钮变化：切换 Steam 启动与自定义路径启动模式。
+    /// 切换时自动保存用户偏好到本地数据。
+    /// </summary>
     private void LaunchModeRadio_Changed(object sender, RoutedEventArgs e)
     {
         if (CustomPathPanel == null || _selectedGame == null) return;
@@ -517,6 +604,10 @@ public partial class GameUserControl : UserControl
         _gameDataService?.SaveUserData(_selectedGame);
     }
 
+    /// <summary>
+    /// 浏览并选择自定义游戏启动文件（.exe）。
+    /// 选择后更新路径显示；若文件存在但游戏原标记为未安装则自动标记为已安装并刷新筛选。
+    /// </summary>
     private void BrowseCustomPath_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -544,6 +635,9 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 自动应用预设复选状态变化处理（当前占位，逻辑待实现）。
+    /// </summary>
     private void AutoApplyPreset_Changed(object sender, RoutedEventArgs e)
     {
         if (AutoApplyPresetCheckBox == null) return;
@@ -551,6 +645,9 @@ public partial class GameUserControl : UserControl
         var isAutoApply = AutoApplyPresetCheckBox.IsChecked == true;
     }
 
+    /// <summary>
+    /// 显示启动失败对话框，提供"重试"和"取消"两个操作按钮。
+    /// </summary>
     private void ShowLaunchErrorDialog()
     {
         if (Window.GetWindow(this) is MainWindow mainWindow)
@@ -593,6 +690,14 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    // ═══════════════════════════════════════════════════
+    // 置顶（Pin）动画 — FLIP 技术实现卡片位置平滑过渡
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 置顶按钮点击：切换游戏的置顶状态。
+    /// 同一时间只能有一个游戏被置顶；取消置顶时卡片滑回对应的排位位置。
+    /// </summary>
     private void PinButton_Click(object sender, MouseButtonEventArgs e)
     {
         if (_isPinning || _filteredGameList == null) return;
@@ -643,6 +748,11 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 使用 FLIP（First, Last, Invert, Play）动画技术将列表项从 fromIndex 移动到 toIndex。
+    /// 先记录所有受影响卡片的旧位置（First），移动数据源后读取新位置（Last），
+    /// 计算位移差值（Invert），最后通过 TranslateTransform 动画平滑过渡到目标位置（Play）。
+    /// </summary>
     private void AnimateMoveToPosition(int fromIndex, int toIndex)
     {
         if (_filteredGameList == null || fromIndex == toIndex)
@@ -651,6 +761,7 @@ public partial class GameUserControl : UserControl
             return;
         }
 
+        // FLIP 第一步 — First：记录所有受影响卡片在移动前的当前位置
         var positionMap = new Dictionary<int, double>();
         int minIndex = Math.Min(fromIndex, toIndex);
         int maxIndex = Math.Max(fromIndex, toIndex);
@@ -665,6 +776,7 @@ public partial class GameUserControl : UserControl
             }
         }
 
+        // FLIP 第二步 — Last：移动数据源中的元素，强制布局更新以获取新位置
         var movingItem = _filteredGameList[fromIndex];
         _filteredGameList.Move(fromIndex, toIndex);
         GameListItemsControl.UpdateLayout();
@@ -673,20 +785,24 @@ public partial class GameUserControl : UserControl
         var duration = new Duration(TimeSpan.FromMilliseconds(450));
         var easing = new CubicEase { EasingMode = EasingMode.EaseInOut };
 
+        // FLIP 第三步/第四步 — Invert + Play：计算新旧位置差值作为动画起始值，通过动画驱动回到 0
         for (int i = minIndex; i <= maxIndex; i++)
         {
             var container = GameListItemsControl.ItemContainerGenerator.ContainerFromItem(_filteredGameList[i]) as FrameworkElement;
 
+            // getIndexInMap 将移动后的索引映射回原来的位置以查找旧的 X 坐标
             if (container != null && positionMap.TryGetValue(getIndexInMap(i, fromIndex, toIndex), out double oldX))
             {
                 var newPos = container.TransformToAncestor(GameListItemsControl).Transform(new Point(0, 0));
-                double deltaX = oldX - newPos.X;
+                double deltaX = oldX - newPos.X; // 计算需要补偿的位移差值（Invert）
 
+                // 使用 TranslateTransform 做位移动画（仅影响渲染，不触发布局重排）
                 if (container.RenderTransform is not TranslateTransform)
                 {
                     container.RenderTransform = new TranslateTransform();
                 }
 
+                // 被移动的卡片提高 Z 层级，确保它在动画期间显示于其他卡片之上
                 Panel.SetZIndex(container, (_filteredGameList[i] == movingItem) ? 999 : 0);
 
                 var anim = new DoubleAnimation
@@ -732,6 +848,9 @@ public partial class GameUserControl : UserControl
         storyboard.Begin();
     }
 
+    /// <summary>
+    /// 卡片上的启动按钮点击：先选中对应游戏，再执行启动逻辑。
+    /// </summary>
     private void LaunchButton_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -751,6 +870,14 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    // ═══════════════════════════════════════════════════
+    // 自定义滚动条 — 鼠标滚轮、拖拽、拇指尺寸计算
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 自定义鼠标滚轮行为：将垂直滚轮操作转换为水平滚动，
+    /// 除以 3 以降低滚动灵敏度。
+    /// </summary>
     private void GameScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if (sender is ScrollViewer scrollViewer)
@@ -760,11 +887,19 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 滚动内容变化时同步更新自定义滚动条拇指的位置和大小。
+    /// </summary>
     private void GameScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         UpdateScrollbarThumb();
     }
 
+    /// <summary>
+    /// 根据滚动区域的 Viewport/Extent 比例计算并更新自定义滚动条拇指的宽度和位置。
+    /// 拇指宽度 = (可视区域宽度 / 内容总宽度) × 轨道宽度，最小为 10px。
+    /// 拇指位置 = (当前偏移 / 最大可滚动距离) × 轨道可用移动空间。
+    /// </summary>
     private void UpdateScrollbarThumb()
     {
         if (GameScrollViewer == null || ScrollbarThumb == null || ScrollbarTrack == null) return;
@@ -773,6 +908,7 @@ public partial class GameUserControl : UserControl
         var extentWidth = GameScrollViewer.ExtentWidth;
         var horizontalOffset = GameScrollViewer.HorizontalOffset;
 
+        // 内容未超出可视区域时，拇指撑满轨道并重置位置
         if (extentWidth <= viewportWidth)
         {
             ScrollbarThumb.Width = ScrollbarTrack.ActualWidth;
@@ -780,12 +916,15 @@ public partial class GameUserControl : UserControl
             return;
         }
 
+        // 拇指宽度 = 可视比例 × 轨道宽度，不低于 10px 以保证可操作
         var thumbWidth = Math.Max(10, (viewportWidth / extentWidth) * ScrollbarTrack.ActualWidth);
         ScrollbarThumb.Width = thumbWidth;
 
+        // 拇指位置 = 滚动偏移 / 最大偏移 × 轨道可用空间
         var maxOffset = extentWidth - viewportWidth;
         var thumbPosition = (horizontalOffset / maxOffset) * (ScrollbarTrack.ActualWidth - thumbWidth);
 
+        // 通过 RenderTransform 中的 TranslateTransform 控制拇指水平位置
         if (ScrollbarThumb.RenderTransform is TransformGroup transformGroup)
         {
             foreach (var transform in transformGroup.Children)
@@ -799,6 +938,9 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 将自定义滚动条拇指位置重置到轨道最左侧（X=0）。
+    /// </summary>
     private void ResetThumbPosition()
     {
         if (ScrollbarThumb?.RenderTransform is TransformGroup transformGroup)
@@ -814,6 +956,9 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 滚动条拇指按下：开始拖拽，捕获鼠标并记录起始位置。
+    /// </summary>
     private void ScrollbarThumb_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         _isDraggingThumb = true;
@@ -822,6 +967,9 @@ public partial class GameUserControl : UserControl
         e.Handled = true;
     }
 
+    /// <summary>
+    /// 滚动条拇指拖拽移动：根据鼠标位移量按比例换算为内容滚动偏移。
+    /// </summary>
     private void ScrollbarThumb_MouseMove(object sender, MouseEventArgs e)
     {
         if (!_isDraggingThumb || GameScrollViewer == null || ScrollbarTrack == null) return;
@@ -845,6 +993,9 @@ public partial class GameUserControl : UserControl
         e.Handled = true;
     }
 
+    /// <summary>
+    /// 滚动条拇指释放：结束拖拽状态，释放鼠标捕获。
+    /// </summary>
     private void ScrollbarThumb_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (_isDraggingThumb)
@@ -855,12 +1006,20 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    // ═══════════════════════════════════════════════════
+    // 遥测数据模拟 — 监听遥测服务事件并定时刷新状态
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 启动遥测数据模拟：订阅遥测服务的启动/停止/发包事件，
+    /// 并启动 500ms 定时器用于周期性刷新 UI 状态。
+    /// </summary>
     private void StartTelemetrySimulation()
     {
         var telemetryService = App.TelemetryService;
         if (telemetryService == null) return;
 
-        // 监听遥测事件
+        // 订阅遥测启动事件
         telemetryService.OnStarted += gameId =>
         {
             Dispatcher.BeginInvoke(() =>
@@ -869,6 +1028,7 @@ public partial class GameUserControl : UserControl
             });
         };
 
+        // 订阅遥测停止事件，重置发包计数
         telemetryService.OnStopped += () =>
         {
             Dispatcher.BeginInvoke(() =>
@@ -878,16 +1038,17 @@ public partial class GameUserControl : UserControl
             });
         };
 
+        // 订阅遥测发包事件
+        // OnPacketsDispatched 在后台线程中触发，需要通过 Dispatcher 调度到 UI 线程更新计数
         telemetryService.OnPacketsDispatched += _ =>
         {
-            // 在后台线程中递增发包计数，需要调度到 UI 线程更新显示
             Dispatcher.BeginInvoke(() =>
             {
                 _packetCount++;
             });
         };
 
-        // 启动遥测状态刷新定时器
+        // 启动遥测状态刷新定时器，每 500ms 触发一次
         _telemetryAnimationTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(500)
@@ -899,11 +1060,21 @@ public partial class GameUserControl : UserControl
         _telemetryAnimationTimer.Start();
     }
 
+    /// <summary>
+    /// 遥测动画定时器 Tick 事件处理（已废弃，保留用于兼容）。
+    /// </summary>
     private void TelemetryAnimationTimer_Tick(object? sender, EventArgs e)
     {
         // 此方法不再使用，遥测数据由 TelemetryService 后台线程驱动
     }
 
+    // ═══════════════════════════════════════════════════
+    // 悬停（Hover）效果 — 鼠标进入/移出时平移后续卡片
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 卡片点击：选中对应的游戏。
+    /// </summary>
     private void CardRoot_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
@@ -912,6 +1083,10 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 鼠标进入卡片区域：将该卡片之后的所有卡片向右平移 8.12 像素，
+    /// 产生视觉上的"推开"效果。
+    /// </summary>
     private void CardRoot_MouseEnter(object sender, MouseEventArgs e)
     {
         if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
@@ -925,6 +1100,9 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 鼠标离开卡片区域：将后续所有卡片平移恢复到 0，即收回"推开"效果。
+    /// </summary>
     private void CardRoot_MouseLeave(object sender, MouseEventArgs e)
     {
         if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
@@ -938,6 +1116,13 @@ public partial class GameUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 将指定索引之后的所有卡片通过 GPU 友好的 TranslateTransform 动画水平平移。
+    /// 使用 RenderTransform 而非 LayoutTransform，因此变换仅影响渲染结果，
+    /// 不触发 WPF 布局系统的 Measure/Arrange 重排，性能开销极低。
+    /// </summary>
+    /// <param name="startIndex">起始卡片索引（不含此卡片本身）</param>
+    /// <param name="offsetX">目标水平位移（像素），0 表示恢复原位</param>
     private void ShiftRightSiblings(int startIndex, double offsetX)
     {
         if (GameListItemsControl == null || _filteredGameList == null) return;
@@ -945,13 +1130,13 @@ public partial class GameUserControl : UserControl
         var duration = new Duration(TimeSpan.FromSeconds(0.3));
         var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
 
-        // 从当前卡片的下一个索引开始遍历
+        // 从当前卡片的下一个索引开始遍历（鼠标悬停的卡片本身不移动）
         for (int i = startIndex + 1; i < _filteredGameList.Count; i++)
         {
-            // 获取生成的实际 UI 容器
+            // 获取 ItemsControl 生成的 UI 容器元素
             if (GameListItemsControl.ItemContainerGenerator.ContainerFromIndex(i) is UIElement container)
             {
-                // 确保容器拥有 TranslateTransform
+                // 确保容器拥有 TranslateTransform 以支持位移动画
                 if (container.RenderTransform is not TranslateTransform)
                 {
                     container.RenderTransform = new TranslateTransform();
@@ -965,11 +1150,15 @@ public partial class GameUserControl : UserControl
                     EasingFunction = easing
                 };
 
-                // 执行动画（基于 GPU，零重排）
+                // 基于 GPU 加速的渲染变换动画，零布局重排
                 transform.BeginAnimation(TranslateTransform.XProperty, anim);
             }
         }
     }
+
+    // ═══════════════════════════════════════════════════
+    // 本地化与 UI 适配 — 语言切换、遥测按钮形状重绘
+    // ═══════════════════════════════════════════════════
 
     /// <summary>
     /// 语言切换时更新游戏介绍文本和适配按钮。

@@ -15,6 +15,12 @@ using SharpVectors.Converters;
 
 namespace HITAPEX.Views.DeviceParameters;
 
+/// <summary>
+/// 踏板参数配置视图，管理离合器/刹车/油门的参数设置。
+/// 功能包括：贝塞尔曲线交互式编辑（拖拽控制点调节曲率）、死区滑块调节、
+/// HID 实时踏板位置显示（原始值/处理后值双条对比）、预设管理（加载/保存/另存为/导出）、
+/// USB 设备通信（直连踏板或通过基座连接）、校准弹窗、方向反向开关等。
+/// </summary>
 public partial class PedalParameterControl : UserControl
 {
     // ────────── 离合器状态 ──────────
@@ -976,6 +982,7 @@ public partial class PedalParameterControl : UserControl
         {
             if (rootPanel.Children.Contains(editPopup))
                 rootPanel.Children.Remove(editPopup);
+            onSaved?.Invoke();
         };
 
         editPopup.BeginSaveAs(existingNames);
@@ -1509,7 +1516,11 @@ public partial class PedalParameterControl : UserControl
     //  USB 设备通信
     // ════════════════════════════════════════════════════════════════
 
-    /// <summary>供外部调用的设备信息刷新入口</summary>
+    /// <summary>
+    /// 设备信息刷新入口（页面每次加载时调用，外部也可主动调用）。
+    /// 优先查找直连的踏板 USB 设备；若未找到则检查是否通过基座中转连接。
+    /// 随后获取固件版本、踏板数量、设备参数和预设名称，并尝试将设备参数匹配到本地预设。
+    /// </summary>
     public async Task RefreshDeviceInfoAsync()
     {
         try
@@ -1850,7 +1861,12 @@ public partial class PedalParameterControl : UserControl
         }
     }
 
-    /// <summary>将协议解析的踏板参数应用到 UI 控件</summary>
+    /// <summary>
+    /// 将协议解析的踏板参数应用到 UI 控件。
+    /// 协议字段使用字节值（范围 0-100），通过 PointFromProtocol 转换为
+    /// 画布坐标（X: 0-345, Y: 266-0 倒置，即协议值越大画布位置越高）
+    /// 后构建 PointCollection 并应用到曲线渲染。
+    /// </summary>
     private void ApplyPedalParameters(PedalParametersResponse p)
     {
         _isApplyingParameters = true;
@@ -2004,13 +2020,13 @@ public partial class PedalParameterControl : UserControl
     /// <summary>构建并发送踏板参数命令到已连接的踏板设备</summary>
     private void SendPedalParameters()
     {
+        // 用户主动修改参数时标记已更改（需在设备连接检查前执行，确保离线状态下也能标记）
+        OnParameterModified();
+
         // 通过基座连接的踏板使用基座设备作为通信目标
         var targetDevice = _connectedPedalDevice ?? (_isPedalViaBase ? _baseDevice : null);
         if (targetDevice == null || _isSendingParameters || _isApplyingParameters)
             return;
-
-        // 用户主动修改参数时标记已更改
-        OnParameterModified();
 
         try
         {
@@ -2149,7 +2165,11 @@ public partial class PedalParameterControl : UserControl
         _latestProcessedBrake = ApplyCurveTransform(_brakeCurvePointsCache, _brakeCurveSlopesCache, data.BrakePercent);
         _latestProcessedGas = ApplyCurveTransform(_throttleCurvePointsCache, _throttleCurveSlopesCache, data.GasPercent);
 
-        // Render 优先级 + 防抖：同一渲染帧内只入队一次回调
+        // Render 优先级 + 防抖：同一渲染帧内只入队一次回调。
+        // Interlocked.Exchange 作为线程安全门（thread-safe gate）：
+        // 原子地将 _pendingUiUpdate 设为 1 并返回旧值，仅当旧值为 0
+        //（无待处理更新）时才执行 Dispatcher.BeginInvoke 入队。
+        // 防止 HID 数据高频到达（~1000Hz）时 Dispatcher 队列堆积导致 UI 线程卡顿。
         if (Interlocked.Exchange(ref _pendingUiUpdate, 1) == 0)
         {
             Dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
@@ -2234,7 +2254,11 @@ public partial class PedalParameterControl : UserControl
         return positionPercent;
     }
 
-    /// <summary>用 Point[] 缓存做曲线变换，可从任何线程安全调用</summary>
+    /// <summary>
+    /// 用预缓存的 Point[] 和斜率数组做曲线变换（三次 Hermite 插值），
+    /// 可从任何线程安全调用。供后台 HID 数据线程使用，避免跨线程访问
+    /// UI 绑定的 PointCollection（后者无线程亲和性保证）。
+    /// </summary>
     private static double ApplyCurveTransform(Point[] points, double[] slopes, double positionPercent)
     {
         if (points == null || points.Length < 2)
@@ -2350,6 +2374,10 @@ public partial class PedalParameterControl : UserControl
         BuildCurveCache(_throttleCurvePoints, ref _throttleCurvePointsCache, ref _throttleCurveSlopesCache);
     }
 
+    // ════════════════════════════════════════════════════════════════
+    //  校准弹窗
+    // ════════════════════════════════════════════════════════════════
+
     private void CalibrationButton_Click(object sender, MouseButtonEventArgs e)
     {
         if (Window.GetWindow(this) is not MainWindow mainWindow) return;
@@ -2397,6 +2425,10 @@ public partial class PedalParameterControl : UserControl
         var cmd = DeviceProtocolService.BuildPedalCalibrationCommand(clutch, brake, throttle);
         App.UsbManager?.SendToDevice(targetDevice.DeviceKey, cmd);
     }
+
+    // ════════════════════════════════════════════════════════════════
+    //  踏板位置显示更新（原始值/处理后值双条进度条 + 百分比文本）
+    // ════════════════════════════════════════════════════════════════
 
     private void UpdatePedalPositionDisplay(
         double rawClutch, double processedClutch,

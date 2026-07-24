@@ -5,6 +5,19 @@ using HITAPEX.Models.Usb;
 
 namespace HITAPEX.Services.Usb;
 
+/// <summary>
+/// 设备协议服务 —— 构建和解析 USB 串口通信协议中的各种命令帧和响应帧。
+/// 涵盖设备信息查询（0x81xx）、参数设置/获取（0x21xx）、固件更新（0x80xx）、
+/// 面盘转速灯/按键灯配置、踏板校准、预设名称读写等协议。
+/// 同时提供命令-响应配对机制，支持异步等待设备应答。
+/// </summary>
+/// <remarks>
+/// 协议参考：docs/乘游直驱方向盘与PC软件usb通信协议 v0.1.md
+/// 帧大小：固定 64 字节（FrameSize=64）
+/// 命令/响应配对：通过 _pendingCommands 字典匹配设备 Key → TaskCompletionSource，
+/// SendCommandAsync 发送后等待响应，或超时返回 null。
+/// 多包预设名称：通过 _presetNameCollections 收集多包响应后拼接为完整 UTF-8 字符串。
+/// </remarks>
 public class DeviceProtocolService
 {
     private readonly IUsbSerialManager _manager;
@@ -23,12 +36,20 @@ public class DeviceProtocolService
     private const int PresetNameMaxBytes = 512;
     private const int PresetNameChunkSize = 56;
 
+    /// <summary>
+    /// 初始化设备协议服务。
+    /// </summary>
+    /// <param name="manager">USB 串口管理器，用于发送命令和接收响应</param>
     public DeviceProtocolService(IUsbSerialManager manager)
     {
         _manager = manager;
         _manager.RawDataReceived += OnRawDataReceived;
     }
 
+    /// <summary>
+    /// 原始数据接收回调 —— 优先检查是否属于多包预设名称收集，
+    /// 否则匹配 _pendingCommands 中的待处理命令-响应对。
+    /// </summary>
     private void OnRawDataReceived(UsbDeviceInfo device, byte[] data)
     {
         // 原始数据日志量极大，调试时取消注释

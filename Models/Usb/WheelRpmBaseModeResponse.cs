@@ -12,6 +12,7 @@ public class WheelRpmBaseModeResponse
     /// <summary>12个LED灯颜色，每个灯3字节RGB。索引0-11对应LED1-LED12</summary>
     public byte[][] LedColors { get; set; } = new byte[12][];
 
+    /// <summary>初始化 12 个 LED 的颜色数组</summary>
     public WheelRpmBaseModeResponse()
     {
         for (int i = 0; i < 12; i++)

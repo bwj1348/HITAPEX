@@ -6,96 +6,126 @@ using System.Text.Json.Serialization;
 namespace HITAPEX.Models.Usb;
 
 /// <summary>面盘参数完整快照，用于预设存取与修改比对</summary>
+/// <remarks>
+/// 包含面盘全局设置、14个可调按键参数、转速灯配置和拨片设置。
+/// 通过 ParametersEqual 方法逐字段比对，用于检测设备下发参数是否与本地预设一致。
+/// </remarks>
 public class WheelPresetSnapshot
 {
     // ── 全局设置 ──
-    [JsonPropertyName("keyColorEnabled")]//是否启用全局按键颜色
+    /// <summary>是否启用全局按键颜色</summary>
+    [JsonPropertyName("keyColorEnabled")]
     public bool KeyColorEnabled { get; set; } = true;
 
-    [JsonPropertyName("globalKeyColor")]//全局按键颜色索引 (0=红,1=橙,2=黄,3=绿,4=青,5=蓝,6=紫,7=白)
+    /// <summary>全局按键颜色索引 (0=红,1=橙,2=黄,3=绿,4=青,5=蓝,6=紫,7=白)</summary>
+    [JsonPropertyName("globalKeyColor")]
     public int GlobalKeyColor { get; set; }
 
-    [JsonPropertyName("showKeyNumber")]//是否显示按键编号
+    /// <summary>是否显示按键编号</summary>
+    [JsonPropertyName("showKeyNumber")]
     public bool ShowKeyNumber { get; set; } = true;
 
-    [JsonPropertyName("keyBrightness")]//按键灯亮度
+    /// <summary>按键灯亮度 (0-100)</summary>
+    [JsonPropertyName("keyBrightness")]
     public int KeyBrightness { get; set; } = 80;
 
-    [JsonPropertyName("rpmBrightness")]//转速灯亮度
+    /// <summary>转速灯亮度 (0-100)</summary>
+    [JsonPropertyName("rpmBrightness")]
     public int RpmBrightness { get; set; } = 80;
 
     /// <summary>睡眠灯光时间下拉索引 (0=5分钟,1=10分钟,2=15分钟,3=30分钟,4=60分钟,5=从不)</summary>
     [JsonPropertyName("sleepLightDuration")]
     public int SleepLightDuration { get; set; }
 
-    [JsonPropertyName("standbyLightEffect")]//待机灯效
+    /// <summary>待机灯效类型</summary>
+    [JsonPropertyName("standbyLightEffect")]
     public int StandbyLightEffect { get; set; }
 
-    [JsonPropertyName("globalFlashSpeed")]//待机灯效闪烁速度
+    /// <summary>待机灯效闪烁速度（档位）</summary>
+    [JsonPropertyName("globalFlashSpeed")]
     public int GlobalFlashSpeed { get; set; }
 
     // ── 14个可调圆形按键参数（B1,B2,B3,B6,B7,B8,B9,B11,B12,B13,B16,B17,B18,B19） ──
-    [JsonPropertyName("buttonColors")]//按键灯颜色索引 (0=红,1=橙,2=黄,3=绿,4=青,5=蓝,6=紫,7=白，8=无)
+    /// <summary>按键灯颜色索引 (0=红,1=橙,2=黄,3=绿,4=青,5=蓝,6=紫,7=白，8=无)</summary>
+    [JsonPropertyName("buttonColors")]
     public int[] ButtonColors { get; set; } = Enumerable.Repeat(0, 14).ToArray();
 
-    [JsonPropertyName("buttonTelemetryEnabled")]//是否启用遥测功能
+    /// <summary>是否启用遥测功能</summary>
+    [JsonPropertyName("buttonTelemetryEnabled")]
     public bool[] ButtonTelemetryEnabled { get; set; } = new bool[14];
 
-    [JsonPropertyName("buttonTelemetryLightEffect")]//遥测灯效 (0=常亮,1=闪烁)
+    /// <summary>遥测灯效 (0=常亮,1=闪烁)</summary>
+    [JsonPropertyName("buttonTelemetryLightEffect")]
     public int[] ButtonTelemetryLightEffect { get; set; } = Enumerable.Repeat(0, 14).ToArray();
 
-    [JsonPropertyName("buttonTelemetryFunc")]//遥测功能类型索引
+    /// <summary>遥测功能类型索引</summary>
+    [JsonPropertyName("buttonTelemetryFunc")]
     public int[] ButtonTelemetryFunc { get; set; } = Enumerable.Repeat(0, 14).ToArray();
 
-    [JsonPropertyName("buttonTelemetryTriggerColor")]//按键灯触发遥测颜色索引
+    /// <summary>按键灯触发遥测颜色索引</summary>
+    [JsonPropertyName("buttonTelemetryTriggerColor")]
     public int[] ButtonTelemetryTriggerColor { get; set; } = Enumerable.Repeat(0, 14).ToArray();
 
-    [JsonPropertyName("buttonSpeeds")]//触发遥测时闪烁速度档位
+    /// <summary>触发遥测时闪烁速度档位</summary>
+    [JsonPropertyName("buttonSpeeds")]
     public int[] ButtonSpeeds { get; set; } = Enumerable.Repeat(0, 14).ToArray();
 
     // ── 转速灯 ──
-    [JsonPropertyName("rpmColors")]//12个转速灯颜色索引 (0=红,1=橙,2=黄,3=绿,4=青,5=蓝,6=紫,7=白，8=无)
+    /// <summary>12个转速灯颜色索引 (0=红,1=橙,2=黄,3=绿,4=青,5=蓝,6=紫,7=白，8=无)</summary>
+    [JsonPropertyName("rpmColors")]
     public int[] RpmColors { get; set; } = new int[12];
 
-    [JsonPropertyName("rpmValues")]//触发转速灯时的转速百分比
+    /// <summary>触发转速灯时的转速百分比 (0-100)</summary>
+    [JsonPropertyName("rpmValues")]
     public double[] RpmValues { get; set; } = Enumerable.Repeat(0.0, 12).ToArray();
 
-    [JsonPropertyName("rpmCapValue")]//触发爆闪的转速百分比
+    /// <summary>触发爆闪的转速百分比 (0-100)</summary>
+    [JsonPropertyName("rpmCapValue")]
     public double RpmCapValue { get; set; } = 100;
 
-    [JsonPropertyName("rpmCurveType")]//曲线类型
+    /// <summary>曲线类型</summary>
+    [JsonPropertyName("rpmCurveType")]
     public int RpmCurveType { get; set; }
 
-    [JsonPropertyName("rpmDisplayMode")]//转速灯显示模式 （0=百分比,1=转速）
+    /// <summary>转速灯显示模式 (0=百分比, 1=转速)</summary>
+    [JsonPropertyName("rpmDisplayMode")]
     public int RpmDisplayMode { get; set; }
 
-    [JsonPropertyName("rpmLightMode")]//单个转速灯灯光模式
+    /// <summary>单个转速灯灯光模式</summary>
+    [JsonPropertyName("rpmLightMode")]
     public int RpmLightMode { get; set; }
 
-    [JsonPropertyName("rpmStrobeMode")]//单个转速灯爆闪灯光颜色模式
+    /// <summary>单个转速灯爆闪灯光颜色模式</summary>
+    [JsonPropertyName("rpmStrobeMode")]
     public int RpmStrobeMode { get; set; }
 
     /// <summary>爆闪颜色索引，12灯统一 (0=红,1=橙,2=黄,3=绿,4=青,5=蓝,6=紫,7=白)</summary>
     [JsonPropertyName("rpmStrobeColor")]
     public int RpmStrobeColor { get; set; }
 
-    [JsonPropertyName("rpmSpeed")]//触发爆闪时闪烁速度档位
+    /// <summary>触发爆闪时闪烁速度档位</summary>
+    [JsonPropertyName("rpmSpeed")]
     public int RpmSpeed { get; set; }
 
-    [JsonPropertyName("rpmBaseLightMode")]//单个转速灯基础灯光模式
+    /// <summary>单个转速灯基础灯光模式</summary>
+    [JsonPropertyName("rpmBaseLightMode")]
     public int RpmBaseLightMode { get; set; }
 
-    [JsonPropertyName("rpmBaseLightSpeed")]//单个转速灯基础灯光闪烁速度档位
+    /// <summary>单个转速灯基础灯光闪烁速度档位</summary>
+    [JsonPropertyName("rpmBaseLightSpeed")]
     public int RpmBaseLightSpeed { get; set; }
 
-    [JsonPropertyName("rpmTelemetryEnabled")]//是否启用转速灯遥测模式
+    /// <summary>是否启用转速灯遥测模式</summary>
+    [JsonPropertyName("rpmTelemetryEnabled")]
     public bool RpmTelemetryEnabled { get; set; }
 
     // ── 拨片 ──
-    [JsonPropertyName("clutchMode")]//离合拨片模式 （0=合成轴，1=独立轴，2=按键）
+    /// <summary>离合拨片模式 (0=合成轴, 1=独立轴, 2=按键)</summary>
+    [JsonPropertyName("clutchMode")]
     public int ClutchMode { get; set; }
 
-    [JsonPropertyName("clutchPointValue")]//合成轴模式下离合点位置
+    /// <summary>合成轴模式下离合点位置 (0-100)</summary>
+    [JsonPropertyName("clutchPointValue")]
     public double ClutchPointValue { get; set; } = 50;
 
     /// <summary>
@@ -105,6 +135,8 @@ public class WheelPresetSnapshot
     ///   - ShowKeyNumber: 按键编号显隐开关，纯 UI 概念，设备不会存储
     /// 注意：GlobalKeyColor 始终比较（0x2106协议始终返回设备存储的统一颜色，与当前模式无关）
     /// </summary>
+    /// <param name="other">要比较的另一面盘预设快照</param>
+    /// <returns>所有字段均一致返回 true，否则返回 false</returns>
     public bool ParametersEqual(WheelPresetSnapshot other)
     {
         var diffs = new List<string>();
@@ -126,6 +158,7 @@ public class WheelPresetSnapshot
             }
         }
 
+        // ── 全局设置 ──
         Check("KeyColorEnabled", KeyColorEnabled, other.KeyColorEnabled);
         // GlobalKeyColor: 0x2106 协议始终存储统一颜色，无条件比较
         Check("GlobalKeyColor", GlobalKeyColor, other.GlobalKeyColor);
@@ -135,12 +168,16 @@ public class WheelPresetSnapshot
         Check("SleepLightDuration", SleepLightDuration, other.SleepLightDuration);
         Check("StandbyLightEffect", StandbyLightEffect, other.StandbyLightEffect);
         Check("GlobalFlashSpeed", GlobalFlashSpeed, other.GlobalFlashSpeed);
+
+        // ── 14个可调按键 ──
         CheckSeq("ButtonColors", ButtonColors, other.ButtonColors);
         CheckSeq("ButtonTelemetryEnabled", ButtonTelemetryEnabled, other.ButtonTelemetryEnabled);
         CheckSeq("ButtonTelemetryLightEffect", ButtonTelemetryLightEffect, other.ButtonTelemetryLightEffect);
         CheckSeq("ButtonTelemetryFunc", ButtonTelemetryFunc, other.ButtonTelemetryFunc);
         CheckSeq("ButtonTelemetryTriggerColor", ButtonTelemetryTriggerColor, other.ButtonTelemetryTriggerColor);
         CheckSeq("ButtonSpeeds", ButtonSpeeds, other.ButtonSpeeds);
+
+        // ── 转速灯 ──
         CheckSeq("RpmColors", RpmColors, other.RpmColors);
         CheckSeq("RpmValues", RpmValues, other.RpmValues);
         Check("RpmCapValue", RpmCapValue, other.RpmCapValue);
@@ -153,6 +190,8 @@ public class WheelPresetSnapshot
         Check("RpmBaseLightMode", RpmBaseLightMode, other.RpmBaseLightMode);
         Check("RpmBaseLightSpeed", RpmBaseLightSpeed, other.RpmBaseLightSpeed);
         Check("RpmTelemetryEnabled", RpmTelemetryEnabled, other.RpmTelemetryEnabled);
+
+        // ── 拨片 ──
         Check("ClutchMode", ClutchMode, other.ClutchMode);
         Check("ClutchPointValue", ClutchPointValue, other.ClutchPointValue);
 

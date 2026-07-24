@@ -17,35 +17,48 @@ public class UsbDeviceDiscovery : IDisposable
     public event Action<UsbDeviceInfo>? DeviceArrived;
     public event Action<UsbDeviceInfo>? DeviceRemoved;
 
+    /// <summary>
+    /// 初始化设备发现服务。
+    /// </summary>
+    /// <param name="logger">设备日志记录器</param>
     public UsbDeviceDiscovery(DeviceLogger logger)
     {
         _logger = logger;
     }
 
+    /// <summary>注册一个目标设备 VID/PID</summary>
     public void AddTargetDevice(VidPidPair pair)
     {
         _targetDevices.Add(pair);
         _logger.Log(DeviceEventType.DiscoveryStarted, "", $"添加目标设备: {pair}");
     }
 
+    /// <summary>批量注册目标设备 VID/PID</summary>
     public void AddTargetDevices(IEnumerable<VidPidPair> pairs)
     {
         foreach (var pair in pairs)
             AddTargetDevice(pair);
     }
 
+    /// <summary>注销一个目标设备 VID/PID</summary>
     public void RemoveTargetDevice(VidPidPair pair)
     {
         _targetDevices.Remove(pair);
     }
 
+    /// <summary>清空所有已注册的目标设备</summary>
     public void ClearTargetDevices()
     {
         _targetDevices.Clear();
     }
 
+    /// <summary>获取当前注册的所有目标设备 VID/PID 列表</summary>
     public IReadOnlyCollection<VidPidPair> GetTargetDevices() => _targetDevices.ToList().AsReadOnly();
 
+    /// <summary>
+    /// 扫描 WMI Win32_PnPEntity 中 PNPClass='Ports' 的设备，
+    /// 按注册的 VID/PID 过滤，返回匹配的串口设备列表。
+    /// </summary>
     public IReadOnlyList<UsbDeviceInfo> DiscoverDevices()
     {
         var found = new List<UsbDeviceInfo>();
@@ -103,6 +116,11 @@ public class UsbDeviceDiscovery : IDisposable
         return found;
     }
 
+    /// <summary>
+    /// 启动设备热插拔监控。优先使用 WMI 事件（__InstanceCreationEvent / __InstanceDeletionEvent），
+    /// 不支持时降级为轮询模式（每 pollIntervalMs 毫秒扫描一次）。
+    /// </summary>
+    /// <param name="pollIntervalMs">轮询模式下的扫描间隔（毫秒，默认 2000）</param>
     public void StartHotplugMonitoring(int pollIntervalMs = 2000)
     {
         StopHotplugMonitoring();
@@ -135,6 +153,9 @@ public class UsbDeviceDiscovery : IDisposable
         }
     }
 
+    /// <summary>
+    /// WMI 事件不可用时降级为轮询模式 —— 定期扫描设备列表并比较差异来检测插拔事件。
+    /// </summary>
     private void StartPollingFallback(int intervalMs)
     {
         _pollCts = new CancellationTokenSource();
@@ -169,6 +190,7 @@ public class UsbDeviceDiscovery : IDisposable
         }, _pollCts.Token);
     }
 
+    /// <summary>停止热插拔监控（包括 WMI 事件和轮询模式）</summary>
     public void StopHotplugMonitoring()
     {
         _arrivalWatcher?.Stop();
@@ -184,6 +206,10 @@ public class UsbDeviceDiscovery : IDisposable
         _pollCts = null;
     }
 
+    /// <summary>
+    /// WMI 设备插入事件处理 —— 校验 VID/PID 匹配后提取串口号并触发 DeviceArrived 事件。
+    /// 延迟 500ms 以确保 Windows 驱动完全加载。
+    /// </summary>
     private void OnDeviceArrived(object sender, EventArrivedEventArgs e)
     {
         try
@@ -227,6 +253,7 @@ public class UsbDeviceDiscovery : IDisposable
         }
     }
 
+    /// <summary>WMI 设备拔出事件处理 —— 校验 VID/PID 匹配后触发 DeviceRemoved 事件。</summary>
     private void OnDeviceRemoved(object sender, EventArrivedEventArgs e)
     {
         try
@@ -261,6 +288,7 @@ public class UsbDeviceDiscovery : IDisposable
         }
     }
 
+    /// <summary>从 PNPDeviceID 字符串中提取 VID/PID 十六进制值。</summary>
     private static bool TryParseVidPid(string pnpDeviceId, out int vid, out int pid)
     {
         vid = 0;
@@ -283,6 +311,7 @@ public class UsbDeviceDiscovery : IDisposable
                int.TryParse(pidStr, System.Globalization.NumberStyles.HexNumber, null, out pid);
     }
 
+    /// <summary>从设备名称中提取 COM 端口号（如 "USB Serial Device (COM3)" → "COM3"）。</summary>
     private static string ExtractComPort(string name)
     {
         if (string.IsNullOrEmpty(name))

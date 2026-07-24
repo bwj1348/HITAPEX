@@ -102,7 +102,7 @@ public class ClientInstallerApiService
         }
     }
 
-    public void Dispose()
+public void Dispose()
     {
         _apiClient.Dispose();
     }

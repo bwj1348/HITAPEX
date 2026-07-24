@@ -1,5 +1,17 @@
 # TelemetrySDK DLL 接口文档
 
+> **当前版本**: `v2.0.0`  |  **最后更新**: 2026-06-28  |  **兼容性**: ⚠️ **破坏性变更**（详见下方修订历史）
+> 客户端从 v1.x 升级到 v2.0 **必须迁移代码**，迁移指南见同目录 `Update_Notes_v2.0.md`
+
+## 📝 修订历史
+
+| 版本 | 日期 | 类型 | 主要内容 |
+|------|------|------|---------|
+| **v2.0.0** | 2026-06-28 | ⚠️ **破坏性变更** | ① **结构体重排**：`NormalizedData` 在 `raceFlag` 之后新增第三批 17 个字段（clutch / 圈速×5 / 胎温内中外核 ×4 / 胎压 / 胎磨 / 刹车温度 / 排名 / 水温 / 油温 / 涡轮），`validFlags` 偏移由 136B 移至 288B，`_reserved` 由 376B 缩至 224B；② **ValidFlags 扩展**：新增 bit 28-44（共 17 位）；③ **`tyreWear` 值域变更**：从 `0-1` 浮点改为 `0-100` 递增百分比；④ **新增数据健康层**：`SanitizeNormalizedData` 在 SDK 内部对超界 / NaN / Inf 值自动置 0（不再返回 `-1` 哨兵）；⑤ **滑移数据**：从"待定"转为正式版。**C# 端必须迁移**，详见 `Update_Notes_v2.0.md` |
+| v1.0.0 | 2026-06-12 | 初始版本 | 首次发布：5 个 C 接口、31 款游戏支持、第一二批参数（bit 0-27） |
+
+---
+
 ## 📋 文档概述
 
 本文档为 `TelemetrySDK.dll` 的完整接口说明文档，面向C#开发者提供P/Invoke调用指南。
@@ -12,7 +24,7 @@
 - **导出方式**: `__declspec(dllexport)` + `extern "C"`
 
 **主要功能**
-- 支持 31 款赛车/模拟驾驶游戏的遥测数据获取
+- 支持 31 款赛车/模拟驾驶游戏的遥测数据获取（其中 WRC 8/9/10 协议数据极有限，仅速度+转速+档位）
 - 统一的数据输出格式（`NormalizedData`），便于上层应用处理
 - 字段有效性掩码（`validFlags`），按位判断各字段是否有效
 - 基于共享内存和UDP通信的高性能数据采集
@@ -35,7 +47,7 @@
 | 3059520 | `GAME_F1_2025` | F1 25 | UDP (20777) | F125Adapter | |
 | 1293830 | `GAME_FORZA_HORIZON_4` | Forza Horizon 4 | UDP (1024) | FH45Adapter | FH4/FH5共用 |
 | 1551360 | `GAME_FORZA_HORIZON_5` | Forza Horizon 5 | UDP (1024) | FH45Adapter | FH4/FH5共用 |
-| 2483190 | `GAME_FORZA_HORIZON_6` | Forza Horizon 6 | UDP (20440) | FH45Adapter | 端口与FH4/5不同 |
+| 2483190 | `GAME_FORZA_HORIZON_6` | Forza Horizon 6 | UDP (1024) | FH45Adapter | 端口与FH4/5不同 |
 | 2440510 | `GAME_FORZA_MOTORSPORT` | Forza Motorsport 2023 | UDP (1024) | FM2023Adapter | |
 | 421020 | `GAME_DIRT_4` | DiRT 4 | UDP (20777) | DiRTAdapter | DiRT系列共用 |
 | 690790 | `GAME_DIRT_RALLY_2` | DiRT Rally 2.0 | UDP (20777) | DiRTAdapter | DiRT系列共用 |
@@ -194,7 +206,9 @@ public static extern ulong GetSupportedFlags();
 
 ### NormalizedData 结构体
 这是所有游戏统一的输出数据格式。使用1字节对齐（`Pack=1`）确保P/Invoke互操作正确。
-**结构体固定大小为 512 字节**，其中当前已用字段占 136 字节，末尾预留 376 字节供后续扩展。
+**结构体固定大小为 512 字节**，当前已用 288 字节（v2.0 新增 17 字段后），末尾预留 224 字节供后续扩展。
+
+> **⚠️ v2.0 破坏性变更**：字段顺序相比 v1.x 调整——`raceFlag` 之后新增第三批 17 字段，`validFlags` 字段位置由 v1.x 的 136B 偏移处**移至 288B 偏移处**。C# 端必须同步更新结构体定义，否则 P/Invoke 内存错位、读到垃圾数据。
 
 **C++ 定义**:
 ```cpp
@@ -244,11 +258,49 @@ struct NormalizedData {
     // ---- 赛事旗语系统 (不支持时填充默认值) ----
     int raceFlag;     // 当前旗帜状态（FlagType枚举值）
 
-    // ---- 字段有效性掩码（每位对应一个字段，置1表示该字段有有效数据）----
+    // ============ v2.0 新增：第三批参数（bit 28-44） ============
+
+    // ---- 离合系统 ----
+    float clutch;                // 离合踏板行程 0.0-1.0
+
+    // ---- 圈速计时 ----
+    int currentLap;              // 当前圈数（1起计，第1圈=1）
+    int totalLaps;               // 赛事设定的总圈数
+    float currentLapTime;        // 当前圈已用时间（秒）
+    float lastLapTime;           // 上一圈用时（秒）
+    float bestLapTime;           // 个人最佳圈时（秒）
+
+    // ---- 胎面温度（数组顺序：0=FL, 1=FR, 2=RL, 3=RR，单位：摄氏度）----
+    float tyreTempInner[4];      // 胎面内侧温度(I)
+    float tyreTempMiddle[4];     // 胎面中间温度(M)
+    float tyreTempOuter[4];      // 胎面外侧温度(O)
+    float tyreCoreTemp[4];       // 轮胎核心温度
+
+    // ---- 轮胎压力（数组顺序同上，单位：kPa）----
+    float tyrePressure[4];       // 轮胎压力
+
+    // ---- 轮胎磨损（数组顺序同上）----
+    float tyreWear[4];           // 轮胎磨损百分比 0-100（0=全新, 100=完全磨损，**统一为递增方向**）
+
+    // ---- 刹车温度（数组顺序同上，单位：摄氏度）----
+    float brakeTemp[4];          // 刹车温度
+
+    // ---- 赛事排名 ----
+    int position;                // 当前车手排名（1起计）
+
+    // ---- 发动机温度 ----
+    float waterTemp;             // 冷却水温度（摄氏度）
+    float oilTemp;               // 机油温度（摄氏度）
+
+    // ---- 涡轮增压 ----
+    float turboPressure;         // 涡轮增压压力（bar）
+
+    // ============ 字段有效性掩码 ============
+    // 字段位置已由 v1.x 的 136B 偏移处移到此处（288B 偏移）
     uint64_t validFlags;   // 详见 ValidFlags 常量定义
 
-    // ---- 预留空间：结构体固定512字节，当前已用136字节，剩余376字节供后续扩展 ----
-    unsigned char _reserved[376];
+    // ---- 预留空间：结构体固定512字节，当前已用288字节，剩余224字节供后续扩展 ----
+    unsigned char _reserved[224];
 };
 #pragma pack(pop)
 ```
@@ -313,20 +365,66 @@ public struct NormalizedData
     // ---- 赛事旗语系统 ----
     public int raceFlag;              // 当前旗帜状态（FlagType枚举值）
 
-    // ---- 字段有效性掩码（详见 ValidFlags 常量定义）----
+    // ============ v2.0 新增：第三批参数（bit 28-44） ============
+
+    // ---- 离合系统 ----
+    public float clutch;              // 离合踏板行程 0.0-1.0
+
+    // ---- 圈速计时 ----
+    public int currentLap;            // 当前圈数（1起计）
+    public int totalLaps;             // 赛事设定的总圈数
+    public float currentLapTime;      // 当前圈已用时间（秒）
+    public float lastLapTime;         // 上一圈用时（秒）
+    public float bestLapTime;         // 个人最佳圈时（秒）
+
+    // ---- 胎面温度（0=FL, 1=FR, 2=RL, 3=RR，单位：摄氏度）----
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+    public float[] tyreTempInner;     // 胎面内侧温度(I)
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+    public float[] tyreTempMiddle;    // 胎面中间温度(M)
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+    public float[] tyreTempOuter;     // 胎面外侧温度(O)
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+    public float[] tyreCoreTemp;      // 轮胎核心温度
+
+    // ---- 轮胎压力（同上，单位：kPa）----
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+    public float[] tyrePressure;      // 轮胎压力
+
+    // ---- 轮胎磨损（同上，0-100 递增百分比）----
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+    public float[] tyreWear;          // 轮胎磨损 0-100（0=全新, 100=完全磨损）
+
+    // ---- 刹车温度（同上，单位：摄氏度）----
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+    public float[] brakeTemp;         // 刹车温度
+
+    // ---- 赛事排名 ----
+    public int position;              // 当前车手排名（1起计）
+
+    // ---- 发动机温度 ----
+    public float waterTemp;           // 冷却水温度（摄氏度）
+    public float oilTemp;             // 机油温度（摄氏度）
+
+    // ---- 涡轮增压 ----
+    public float turboPressure;       // 涡轮增压压力（bar）
+
+    // ============ 字段有效性掩码（位置已移到此处，288B 偏移）============
     public ulong validFlags;
 
-    // ---- 预留空间：结构体固定512字节，供后续扩展 ----
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 376)]
+    // ---- 预留空间：结构体固定512字节，当前已用288字节，剩余224字节 ----
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 224)]
     public byte[] _reserved;
 }
 ```
 
 **字段说明**:
 - `validFlags` 字段由 SDK 自动设置，调用方通过按位与（`&`）判断对应字段是否有效
-- 返回 `-1.0`（float）或 `-1`（int）的字段表示该游戏不支持该数据通道
+- ⚠️ **v2.0 行为变化**：SDK 内部新增 `SanitizeNormalizedData` 边界校验层——不支持的字段、超界值、NaN/Inf 一律**置 0**，不再返回 `-1` 哨兵。**判断字段是否有效必须用 `validFlags`，不要用 `value == -1`**
+- 不支持的字段（`validFlags` 对应位未置 1）数值为 0，调用方应通过 `validFlags` 掩码判断
 - 轮胎数据数组索引约定：`[0]=FL(前左)`, `[1]=FR(前右)`, `[2]=RL(后左)`, `[3]=RR(后右)`
-- **滑移数据（slipRatio / slipAngle / combinedSlip）尚处于待定状态**：各游戏对滑移的定义、单位、精度差异较大，当前输出的滑移值仅供参考，后续版本将统一标准化
+- ⚠️ **v2.0 行为变化**：`tyreWear[4]` 值域由 `0-1` 浮点改为 `0-100` 递增百分比（0=全新，100=完全磨损）。原客户端代码若曾做 `*100` 显示，**必须去掉 `*100`**
+- 单位约定（全 SI 标准单位）：速度 km/h · 温度 °C · 压力 kPa · 涡轮 bar · 圈时 秒 · 燃油 升 · 踏板/转向 0-1 归一化
 
 ---
 
@@ -386,6 +484,25 @@ public enum FlagType
 #define VALID_FUEL               (1ULL << 25)  // fuelRemaining
 #define VALID_FUEL_PCT           (1ULL << 26)  // fuelRemainingPct
 #define VALID_RACE_FLAG          (1ULL << 27)  // raceFlag
+
+// 第三批参数（bit 28-44，v2.0 新增）
+#define VALID_CLUTCH             (1ULL << 28)  // clutch
+#define VALID_CURRENT_LAP_NUM    (1ULL << 29)  // currentLap
+#define VALID_TOTAL_LAPS         (1ULL << 30)  // totalLaps
+#define VALID_CURRENT_LAP        (1ULL << 31)  // currentLapTime
+#define VALID_LAST_LAP           (1ULL << 32)  // lastLapTime
+#define VALID_BEST_LAP           (1ULL << 33)  // bestLapTime
+#define VALID_TYRE_TEMP_INNER    (1ULL << 34)  // tyreTempInner[4]
+#define VALID_TYRE_TEMP_MIDDLE   (1ULL << 35)  // tyreTempMiddle[4]
+#define VALID_TYRE_TEMP_OUTER    (1ULL << 36)  // tyreTempOuter[4]
+#define VALID_TYRE_CORE_TEMP     (1ULL << 37)  // tyreCoreTemp[4]
+#define VALID_TYRE_PRESSURE      (1ULL << 38)  // tyrePressure[4]
+#define VALID_TYRE_WEAR          (1ULL << 39)  // tyreWear[4]
+#define VALID_BRAKE_TEMP         (1ULL << 40)  // brakeTemp[4]
+#define VALID_POSITION           (1ULL << 41)  // position
+#define VALID_WATER_TEMP         (1ULL << 42)  // waterTemp
+#define VALID_OIL_TEMP           (1ULL << 43)  // oilTemp
+#define VALID_TURBO_PRESSURE     (1ULL << 44)  // turboPressure
 ```
 
 **C# 常量定义**（`TelemetryAPI.cs`）:
@@ -419,18 +536,37 @@ public static class ValidFlags
     public const ulong TcCut          = 1UL << 24;  // tcCutLevel
     public const ulong Fuel           = 1UL << 25;  // fuelRemaining
     public const ulong FuelPct        = 1UL << 26;  // fuelRemainingPct
-    public const ulong RaceFlag      = 1UL << 27;  // raceFlag
+    public const ulong RaceFlag       = 1UL << 27;  // raceFlag
+
+    // 第三批参数（bit 28-44，v2.0 新增）
+    public const ulong Clutch           = 1UL << 28;  // clutch
+    public const ulong CurrentLapNum    = 1UL << 29;  // currentLap
+    public const ulong TotalLaps        = 1UL << 30;  // totalLaps
+    public const ulong CurrentLapTime   = 1UL << 31;  // currentLapTime
+    public const ulong LastLap          = 1UL << 32;  // lastLapTime
+    public const ulong BestLap          = 1UL << 33;  // bestLapTime
+    public const ulong TyreTempInner    = 1UL << 34;  // tyreTempInner[4]
+    public const ulong TyreTempMiddle   = 1UL << 35;  // tyreTempMiddle[4]
+    public const ulong TyreTempOuter    = 1UL << 36;  // tyreTempOuter[4]
+    public const ulong TyreCoreTemp     = 1UL << 37;  // tyreCoreTemp[4]
+    public const ulong TyrePressure     = 1UL << 38;  // tyrePressure[4]
+    public const ulong TyreWear         = 1UL << 39;  // tyreWear[4]
+    public const ulong BrakeTemp        = 1UL << 40;  // brakeTemp[4]
+    public const ulong Position         = 1UL << 41;  // position
+    public const ulong WaterTemp        = 1UL << 42;  // waterTemp
+    public const ulong OilTemp          = 1UL << 43;  // oilTemp
+    public const ulong TurboPressure    = 1UL << 44;  // turboPressure
 }
 ```
 
-**各游戏支持的字段速查**:
+**各游戏支持的字段速查（基础 + 辅助字段，bit 0-27）**:
 
 | 游戏 | 速度 | 转速 | 最大转速 | 档位 | 油门 | 刹车 | 转向 | 旗语 | 其他支持字段 |
 |------|:----:|:----:|:-------:|:----:|:----:|:----:|:----:|:----:|------|
-| AC | Y | Y | Y | Y | Y | Y | Y | Y | DRS, ERS全套, combinedSlip, fuel |
-| ACC | Y | Y | Y | Y | Y | Y | Y | Y | TC/ABS档位, 滑移全套, 发动机全套, fuel |
+| AC | Y | Y | Y | Y | Y | Y | Y | Y | DRS, ERS全套, combinedSlip, TC/ABS触发, fuel |
+| ACC | Y | Y | Y | Y | Y | Y | Y | Y | TC/ABS全套, 滑移全套, 发动机全套, fuel |
 | AC Rally | Y | Y | - | Y | Y | Y | Y | - | 滑移全套, 发动机运行/点火 |
-| AC EVO | Y | Y | Y | Y | Y | Y | Y | Y | DRS, ERS全套, TC/ABS档位, 发动机运行/点火, fuel |
+| AC EVO | Y | Y | Y | Y | Y | Y | Y | Y | DRS, ERS全套, TC/ABS全套, 发动机运行/点火, fuel |
 | F1 22/23 | Y | Y | Y | Y | Y | Y | Y | Y | DRS, TC/ABS档位, combinedSlip, ERS三件, 发动机全套, fuel |
 | F1 24 | Y | Y | Y | Y | Y | Y | Y | Y | DRS, TC/ABS档位, ERS三件, 发动机全套, fuel |
 | F1 25 | Y | Y | Y | Y | Y | Y | Y | Y | DRS, TC/ABS档位, 滑移全套, ERS三件, 发动机全套, fuel |
@@ -438,18 +574,111 @@ public static class ValidFlags
 | RF2/LMU | Y | Y | Y | Y | Y | Y | Y | Y | TC/ABS触发, 发动机运行/点火, fuel, ERS电量+激活 |
 | DiRT 4/DR2 | Y | Y | Y | Y | Y | Y | Y | - | 仅基础七项 |
 | EA WRC | Y | Y | Y | Y | Y | Y | Y | - | ABS触发 |
-| iRacing | Y | Y | Y | Y | Y | Y | Y | Y | TC/ABS触发+档位, slipRatio, 发动机运行/点火, fuel, ERS电量+激活 |
-| R3E | Y | Y | Y | Y | Y | Y | Y | Y | DRS, TC/ABS触发+档位, 发动机全套, fuel |
-| AMS2 | Y | Y | Y | Y | Y | Y | Y | Y | DRS, TC/ABS触发+档位, 发动机运行/点火, fuel, ERS三件 |
+| iRacing | Y | Y | Y | Y | Y | Y | Y | Y | TC/ABS全套, slipRatio, 发动机运行/点火, fuel, ERS电量+激活 |
+| R3E | Y | Y | Y | Y | Y | Y | Y | Y | DRS, TC/ABS全套, 发动机全套, fuel |
+| AMS2 | Y | Y | Y | Y | Y | Y | Y | Y | DRS, TC/ABS全套, 发动机运行/点火, fuel, ERS三件 |
 | PCARS2 | Y | Y | Y | Y | Y | Y | Y | Y | ABS触发, 发动机运行/点火, fuel, ERS电量+激活 |
 | PCARS3 | Y | Y | Y | Y | Y | Y | Y | - | ABS触发, 发动机运行/点火 |
 | RBR | Y | Y | - | Y | Y | Y | Y | - | 发动机运行/点火 |
-| ETS2/ATS | Y | Y | Y | Y | Y | Y | Y | - | fuel, 发动机运行/点火 |
-| LFS/BeamNG | Y | Y | - | Y | Y | Y | - | - | fuelPct, 发动机运行/点火 |
-| WRC 8/9/10 | Y | Y | Y | Y | - | - | - | - | 仅速度+转速+档位 |
+| ETS2/ATS | Y | Y | Y | Y | Y | Y | Y | - | pitLimiter, fuel, 发动机运行/点火 |
+| LFS | Y | Y | - | Y | Y | Y | - | - | fuelPct, 发动机运行/点火 |
+| BeamNG | Y | Y | - | Y | Y | Y | - | - | fuelPct, 发动机运行/点火 |
+| WRC 8/9/10 | Y | Y | Y | Y | - | - | - | - | 仅速度+转速+档位（数据极有限） |
 | WRC Gen | Y | Y | Y | Y | Y | Y | - | - | combinedSlip, 发动机运行/点火 |
 
-> 完整掩码见 `include/Core/GameSupportTable.h` 源码
+> **说明**：`TC/ABS全套` = 触发(Active)+档位(Level)+削减(Cut)；`ERS全套` = 电量+部署+激活+回收；`ERS三件` = 电量+部署+激活；`滑移全套` = slipRatio+slipAngle+combinedSlip；`发动机全套` = 运行+点火+动力档位。第三批 17 字段见下方矩阵。
+
+**第三批参数支持矩阵（bit 28-44，v2.0 新增）**：
+
+> `Y` = 该游戏支持此字段（`GameSupportTable.h` 已声明 `VALID_*` 位，适配器实测投递）；`-` = 不支持。
+
+**表 A — 离合 + 圈速计时（bit 28-33）**
+
+| 游戏 | clutch | currentLap | totalLaps | currentLapTime | lastLapTime | bestLapTime |
+|------|:------:|:----------:|:---------:|:--------------:|:-----------:|:-----------:|
+| AC | Y | Y | Y | Y | Y | Y |
+| ACC | Y | Y | - | Y | Y | Y |
+| AC Rally | Y | - | - | - | - | - |
+| AC EVO | Y | Y | - | Y | Y | Y |
+| F1 22/23 | Y | Y | Y | Y | Y | Y |
+| F1 24 | Y | Y | Y | Y | Y | Y |
+| F1 25 | Y | Y | Y | Y | Y | Y |
+| FM/FH4/5/6 | Y | Y | - | Y | Y | Y |
+| RF2/LMU | Y | Y | - | Y | Y | Y |
+| DiRT 4/DR2 | Y | Y | Y | Y | Y | - |
+| EA WRC | Y | - | - | - | - | - |
+| iRacing | Y | Y | Y | Y | Y | Y |
+| R3E | Y | Y | Y | Y | Y | Y |
+| AMS2 | Y | Y | Y | Y | Y | Y |
+| PCARS2 | Y | Y | Y | Y | Y | Y |
+| PCARS3 | Y | Y | Y | Y | Y | Y |
+| RBR | Y | - | - | - | - | - |
+| ETS2/ATS | Y | - | - | - | - | - |
+| LFS | Y | - | - | - | - | - |
+| BeamNG | Y | - | - | - | - | - |
+| WRC 8/9/10 | - | - | - | - | - | - |
+| WRC Gen | Y | Y | Y | Y | - | - |
+
+**表 B — 轮胎与刹车温度（bit 34-40）**
+
+| 游戏 | tyreTempInner | tyreTempMiddle | tyreTempOuter | tyreCoreTemp | tyrePressure | tyreWear | brakeTemp |
+|------|:------------:|:--------------:|:-------------:|:------------:|:------------:|:--------:|:---------:|
+| AC | Y | Y | Y | Y | Y | Y | Y |
+| ACC | - | - | - | Y | Y | Y | Y |
+| AC Rally | - | - | - | Y | Y | - | Y |
+| AC EVO | - | - | - | Y | Y | - | Y |
+| F1 22/23 | Y | Y | Y | Y | Y | Y | Y |
+| F1 24 | Y | Y | Y | Y | Y | Y | Y |
+| F1 25 | Y | Y | Y | Y | Y | Y | Y |
+| FM/FH4/5/6 | - | - | - | Y | - | - | - |
+| RF2/LMU | Y | Y | Y | Y | Y | Y | Y |
+| DiRT 4/DR2 | - | - | - | - | - | - | Y |
+| EA WRC | - | - | - | - | - | - | Y |
+| iRacing | Y | Y | Y | - | Y | - | - |
+| R3E | Y | Y | Y | - | Y | Y | Y |
+| AMS2 | Y | Y | Y | Y | Y | Y | Y |
+| PCARS2 | Y | Y | Y | - | - | Y | Y |
+| PCARS3 | Y | Y | Y | - | - | - | Y |
+| RBR | Y | Y | Y | Y | Y | Y | Y |
+| ETS2/ATS | - | - | - | - | - | - | Y |
+| LFS | - | - | - | - | - | - | - |
+| BeamNG | - | - | - | - | - | - | - |
+| WRC 8/9/10 | - | - | - | - | - | - | - |
+| WRC Gen | - | - | - | - | Y | - | Y |
+
+**表 C — 排名与温度（bit 41-44）**
+
+| 游戏 | position | waterTemp | oilTemp | turboPressure |
+|------|:--------:|:---------:|:-------:|:-------------:|
+| AC | Y | - | - | Y |
+| ACC | Y | Y | - | Y |
+| AC Rally | - | Y | - | - |
+| AC EVO | Y | Y | Y | Y |
+| F1 22/23 | Y | Y | - | - |
+| F1 24 | Y | Y | - | - |
+| F1 25 | Y | Y | - | - |
+| FM/FH4/5/6 | Y | - | - | Y |
+| RF2/LMU | Y | Y | Y | - |
+| DiRT 4/DR2 | Y | - | - | - |
+| EA WRC | - | - | - | - |
+| iRacing | - | Y | Y | Y |
+| R3E | Y | Y | Y | Y |
+| AMS2 | Y | Y | Y | Y |
+| PCARS2 | Y | Y | Y | - |
+| PCARS3 | Y | Y | Y | - |
+| RBR | - | Y | - | - |
+| ETS2/ATS | - | Y | Y | - |
+| LFS | - | - | - | Y |
+| BeamNG | - | - | Y | Y |
+| WRC 8/9/10 | - | - | - | - |
+| WRC Gen | Y | - | - | - |
+
+> **特殊说明**：
+> - **F1 系列 / RBR**：协议层只有胎面整体单一标量温度，SDK 降级复制到 `tyreTempInner/Middle/Outer` 三层（三点同值，非真实三层分布），核心温度走独立字段。客户端做胎压/倾角调校分析时请勿将三层值当作真实分布。
+> - **iRacing**：无 `tyreCoreTemp` / `tyreWear` / `brakeTemp` / `position`（协议层不投递）。
+> - **AC Rally**：拉力赛制下圈时/排名/涡轮等字段协议层不投递，仅 5/17。
+> - **WRC 8/9/10**：协议数据极有限，仅基础速度+转速+档位。
+> - 完整掩码以运行时 `GetSupportedFlags()` 返回值为准，源码见 `include/Core/GameSupportTable.h`。
 
 ---
 
@@ -634,11 +863,35 @@ public static class TelemetryAPI
         // 旗语系统
         public int raceFlag;
 
-        // 字段有效性掩码
+        // ---- v2.0 新增：第三批参数（bit 28-44） ----
+        // 离合 + 圈速计时
+        public float clutch;
+        public int currentLap;
+        public int totalLaps;
+        public float currentLapTime;
+        public float lastLapTime;
+        public float bestLapTime;
+
+        // 胎温（内/中/外/核心）+ 胎压 + 胎磨 + 刹车温度
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] public float[] tyreTempInner;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] public float[] tyreTempMiddle;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] public float[] tyreTempOuter;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] public float[] tyreCoreTemp;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] public float[] tyrePressure;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] public float[] tyreWear;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)] public float[] brakeTemp;
+
+        // 排名 + 发动机温度 + 涡轮
+        public int position;
+        public float waterTemp;
+        public float oilTemp;
+        public float turboPressure;
+
+        // 字段有效性掩码（v2.0 移至 288B 偏移处）
         public ulong validFlags;
 
-        // 预留空间（结构体固定512字节）
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 376)]
+        // 预留空间（结构体固定512字节，当前已用288字节，剩余224字节）
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 224)]
         public byte[] _reserved;
     }
 
@@ -781,7 +1034,7 @@ if (TelemetryAPI.IsDataValid(data))
 - 游戏未运行时，`GetTelemetryData` 返回 false
 - 某些游戏在菜单界面时数据可能无效
 - 建议添加数据合理性检查（如 `rpm > 0` 或 `speed > 0` 表示在赛道上）
-- 不支持的数据通道返回 `-1.0` 或 `-1`
+- ⚠️ **v2.0 行为变化**：SDK 内部 `SanitizeNormalizedData` 层对不支持/超界/NaN/Inf 的字段**置 0**，不再返回 `-1` 哨兵。**判断字段是否有效必须用 `validFlags` 掩码，不要用 `value == -1`**
 - 通过 `validFlags` 掩码按位检查各字段是否有效（详见 ValidFlags 常量）
 - `validFlags` 可通过 `GetTelemetryData` 每帧获取，也可通过 `GetSupportedFlags()` 一次性查询
 
@@ -794,8 +1047,8 @@ if (TelemetryAPI.IsDataValid(data))
 - 所有跨语言数据结构使用 `#pragma pack(push, 1)` 强制1字节对齐
 - C#端使用 `[StructLayout(LayoutKind.Sequential, Pack = 1)]` 匹配
 - `bool` 字段在C#中使用 `[MarshalAs(UnmanagedType.U1)]` 确保为1字节
-- `NormalizedData` 结构体固定 512 字节，末尾 `_reserved[384]` 为预留扩展空间
-- 后续新增字段时，在 `validFlags` 之后、`_reserved` 之前插入，同时减小 `_reserved` 大小
+- `NormalizedData` 结构体固定 512 字节，当前已用 288 字节，末尾 `_reserved[224]` 为预留扩展空间
+- 后续新增数据字段时减小 `_reserved` 大小，具体扩展策略与字段物理顺序约定见 `NormalizedData.h` 源码与 `TelemetryAPI.h` 的 `VALID_*` 位定义
 
 ### 6. 游戏特定注意事项
 | 游戏 | 注意事项 |
@@ -952,12 +1205,12 @@ TelemetrySDK_API_Documentation.md  // 本文档
 
 ## 📝 版本信息
 
-- **当前版本**: 0.1.0
-- **最后更新**: 2026-06-12
+- **当前版本**: 2.0.0
+- **最后更新**: 2026-06-29
 - **C++标准**: C++17
 - **编译器**: MSVC 2022
 - **目标平台**: Windows x64
-- **支持游戏数**: 31 款
+- **支持游戏数**: 31 款（枚举值数；其中 WRC 8/9/10 协议数据极有限，仅速度+转速+档位）
 - **导出API数**: 5 个（StartTelemetry / GetTelemetryData / StopTelemetry / GetSDKVersion / GetSupportedFlags）
 
 ---

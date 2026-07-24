@@ -17,73 +17,126 @@ using HITAPEX.Services.Data.Api;
 
 namespace HITAPEX.Views;
 
+/// <summary>
+/// 首页仪表盘用户控件，包含以下核心模块：
+/// 1. 顶部 Banner 轮播图 —— 支持自动/手动切换，带指示器圆点导航
+/// 2. 游戏快速启动列表 —— 支持置顶（FLIP 动画）、滚动条拖拽、鼠标悬浮位移效果
+/// 3. 力反馈弧形仪表 —— 模拟方向盘力度反馈数值的圆弧形仪表盘
+/// 4. 温度仪表 —— 15 段色块组成的温度指示器，颜色随温度梯度变化
+/// 5. 方向盘角度显示 —— 34 段圆环形排列的刻度段，模拟方向盘旋转角度
+/// 6. 踏板位置显示 —— 离合器/刹车/油门三通道柱状高度比例显示
+/// </summary>
 public partial class HomeUserControl : UserControl
 {
+    // ═══════════════════════════════════════════════════════════════
+    // 常量定义
+    // ═══════════════════════════════════════════════════════════════
+
+    // —— Banner 轮播常量 ——
     private const int SlideCount = 3;
     private const int AutoPlayInterval = 5000;
     private const double AnimationDuration = 0.5;
 
     private List<BannerItem>? _banners;
     private Image[]? _slideImages;
-    
+
+    // —— 力反馈弧形仪表（Force Feedback Gauge）常量 ——
+    // 圆心坐标 (71.5, 71.5)，半径 60，起始角度 135°（左下），覆盖 270° 弧长
+    // 角度计算：以圆心为中心，Math.Cos(rad) 获取 X 偏移，Math.Sin(rad) 获取 Y 偏移
+    // WPF 坐标系 Y 轴向下，因此正弦正值向下
     private const double GaugeCenterX = 71.5;
     private const double GaugeCenterY = 71.5;
     private const double GaugeRadius = 60;
     private const double GaugeStartAngle = 135;
     private const double GaugeTotalAngle = 270;
-    
+
+    // —— 温度仪表常量 ——
+    // 15 个色块，每块代表 6°C（总刻度 90°C），实际模拟范围 0~120°C
     private const int TemperatureBlockCount = 15;
     private const double TemperaturePerBlock = 6.0;
     private const double MaxTemperature = 90.0;
     
+    // ═══════════════════════════════════════════════════════════════
+    // 字段 — Banner 轮播
+    // ═══════════════════════════════════════════════════════════════
     private int _currentSlide = 0;
     private bool _isInitialized;
     private DispatcherTimer? _autoPlayTimer;
     private Border[]? _indicators;
     private Border[]? _slides;
     private bool _isAnimating = false;
-    
+
+    // ═══════════════════════════════════════════════════════════════
+    // 字段 — 游戏列表
+    // ═══════════════════════════════════════════════════════════════
+    // _isPinning 防抖锁，避免置顶动画期间触发二次点击
     private ObservableCollection<GameItem>? _gameList;
     private bool _isPinning = false;
     private GameDataService? _gameDataService;
     private CancellationTokenSource? _loadGamesCts;
     private bool _isLoadingGames;
-    
+
+    // ═══════════════════════════════════════════════════════════════
+    // 字段 — 力反馈仪表
+    // ═══════════════════════════════════════════════════════════════
     private double _forceFeedbackValue = 75;
     private DispatcherTimer? _forceFeedbackAnimationTimer;
     private Random? _random;
-    
+
+    // ═══════════════════════════════════════════════════════════════
+    // 字段 — 温度仪表
+    // ═══════════════════════════════════════════════════════════════
     private Path[]? _temperatureBlocks;
     private double _temperatureValue = 0;
     private DispatcherTimer? _temperatureAnimationTimer;
     private bool _temperatureIncreasing = true;
     
+    // —— 方向盘常量 ——
+    // 34 段刻度围绕圆心排列（360°/34 ≈ 10.59° 间隔），模拟 ±900° 转向范围
+    // 顶部一段使用粗刻度（27.52 宽），上半部分为红色区域，下半部分为暗红色区域
     private const int SteeringWheelSegmentCount = 34;
     private const double SteeringWheelRadius = 60;
     private const double SteeringWheelSegmentWidth = 16.51;
     private const double SteeringWheelSegmentHeight = 5.5;
     private const double MaxSteeringAngle = 900;
-    
+
+    // —— 踏板常量 ——
+    // 踏板总高度 135px，顶/底边距确保填充区域始终可见
+    private const double PedalHeight = 135;
+    private const double PedalTopMargin = 4;
+    private const double PedalBottomMargin = 5;
+
+    // ═══════════════════════════════════════════════════════════════
+    // 字段 — 方向盘
+    // ═══════════════════════════════════════════════════════════════
     private Rectangle[]? _steeringWheelSegments;
     private double _steeringAngle = 0;
     private DispatcherTimer? _steeringAnimationTimer;
     private bool _steeringIncreasing = true;
-    
-    private const double PedalHeight = 135;
-    private const double PedalTopMargin = 4;
-    private const double PedalBottomMargin = 5;
-    
+
+    // ═══════════════════════════════════════════════════════════════
+    // 字段 — 踏板模拟
+    // ═══════════════════════════════════════════════════════════════
     private double _clutchValue = 0;
     private double _brakeValue = 0;
     private double _throttleValue = 0;
     private DispatcherTimer? _pedalAnimationTimer;
     private Random? _pedalRandom;
 
+    // ═══════════════════════════════════════════════════════════════
+    // 构造函数 & 初始化入口
+    // ═══════════════════════════════════════════════════════════════
+
     public HomeUserControl()
     {
         InitializeComponent();
     }
 
+    /// <summary>
+    /// 页面加载入口，初始化所有子模块：
+    /// Banner 轮播、力反馈仪表、温度仪表、方向盘、踏板模拟、游戏列表
+    /// 使用 _isInitialized 标志确保只初始化一次
+    /// </summary>
     private void HomeUserControl_Loaded(object sender, RoutedEventArgs e)
     {
         if (_isInitialized) return;
@@ -111,6 +164,14 @@ public partial class HomeUserControl : UserControl
         _ = LoadBannersAsync();
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 游戏列表 — 数据加载与初始化
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 初始化游戏列表数据源，注册 GameDataService 状态变更监听，
+    /// 异步加载游戏数据，并在布局完成后更新滚动条尺寸
+    /// </summary>
     private async void InitializeGameList()
     {
         _gameDataService = App.GameDataService;
@@ -125,6 +186,10 @@ public partial class HomeUserControl : UserControl
         Dispatcher.BeginInvoke(() => UpdateScrollbarThumb(), DispatcherPriority.Loaded);
     }
 
+    /// <summary>
+    /// 异步加载游戏列表，按置顶状态、安装状态、最近启动时间排序
+    /// 网络失败时回退到本地缓存数据
+    /// </summary>
     private async Task LoadGamesAsync(bool forceRefresh = false)
     {
         if (_gameDataService == null || _isLoadingGames) return;
@@ -197,6 +262,18 @@ public partial class HomeUserControl : UserControl
             GameLoadingOverlay.Visibility = Visibility.Collapsed;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 游戏列表 — 置顶动画（FLIP 模式）
+    // ═══════════════════════════════════════════════════════════════
+    // 采用 FLIP（First-Last-Invert-Play）动画模式：
+    //   1. First  — 记录移动前所有受影响元素的绝对 X 坐标
+    //   2. Last   — 瞬间执行 ObservableCollection.Move 并强制 WPF 重排
+    //   3. Invert — 计算位移差值 deltaX，设置 RenderTransform 为逆向偏移
+    //   4. Play   — 播放从 deltaX→0 的补间动画，实现平滑过渡
+    // 防抖保护：_isPinning 标志防止动画期间二次触发
+    // 关键修复：动画 From 显式指定 deltaX，避免属性锁定；
+    //           Completed 中调用 BeginAnimation(null) 彻底解锁 TranslateTransform.X
+
     private void PinButton_Click(object sender, MouseButtonEventArgs e)
     {
         if (_isPinning || _gameList == null) return;
@@ -247,6 +324,10 @@ public partial class HomeUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 执行 FLIP 动画：在 ObservableCollection.Move 前后记录坐标，计算差值后播放位移动画
+    /// 通过 RenderTransform 的 TranslateTransform 实现平滑过渡，完成后解锁动画属性
+    /// </summary>
     private void AnimateMoveToPosition(int fromIndex, int toIndex)
     {
         if (_gameList == null || fromIndex == toIndex)
@@ -343,6 +424,15 @@ public partial class HomeUserControl : UserControl
         storyboard.Begin();
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 游戏列表 — 自定义滚动条
+    // ═══════════════════════════════════════════════════════════════
+    // 游戏列表使用水平 ScrollViewer，底部配有自定义拖拽滚动条
+    // 滚动条 thumb 尺寸按 viewport/extent 比例缩放，通过 TranslateTransform 定位
+
+    /// <summary>
+    /// 鼠标滚轮滚动事件：将滚轮 delta 映射为水平滚动偏移
+    /// </summary>
     private void GameScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
         if (sender is ScrollViewer scrollViewer)
@@ -357,6 +447,9 @@ public partial class HomeUserControl : UserControl
         UpdateScrollbarThumb();
     }
 
+    /// <summary>
+    /// 根据 ScrollViewer 的视口/内容比例更新自定义滚动条 thumb 的宽度和 X 偏移位置
+    /// </summary>
     private void UpdateScrollbarThumb()
     {
         if (GameScrollViewer == null || ScrollbarThumb == null || ScrollbarTrack == null) return;
@@ -450,6 +543,18 @@ public partial class HomeUserControl : UserControl
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 温度仪表 — 15 色块 + 渐变色彩
+    // ═══════════════════════════════════════════════════════════════
+    // 温度以 15 个 Path 色块呈现，每块代表 6°C（满量程 90°C，模拟 0~120°C）
+    // 颜色渐变分三段：
+    //   块 0~1   → 绿色 (34,197,94)
+    //   块 2~8   → 绿到橙过渡（线性插值）
+    //   块 9~14  → 橙到红过渡（234,179,8 → 185,28,28）
+
+    /// <summary>
+    /// 初始化温度仪表：收集 15 个色块引用并刷新初始显示
+    /// </summary>
     private void InitializeTemperatureGauge()
     {
         _temperatureBlocks = new[] { TempBlock0, TempBlock1, TempBlock2, TempBlock3, TempBlock4, 
@@ -458,6 +563,9 @@ public partial class HomeUserControl : UserControl
         UpdateTemperatureDisplay(_temperatureValue);
     }
 
+    /// <summary>
+    /// 启动温度模拟计时器（50ms 间隔），在 0~120°C 之间来回变化
+    /// </summary>
     private void StartTemperatureSimulation()
     {
         _temperatureAnimationTimer = new DispatcherTimer
@@ -491,6 +599,9 @@ public partial class HomeUserControl : UserControl
         UpdateTemperatureDisplay(_temperatureValue);
     }
 
+    /// <summary>
+    /// 外部调用接口：设置温度值并刷新显示（值会被 Clamp 到 0~120）
+    /// </summary>
     public void SetTemperature(double value)
     {
         _temperatureValue = Math.Clamp(value, 0, 120);
@@ -521,6 +632,10 @@ public partial class HomeUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 获取指定色块的渐变颜色：块 0~1 绿色，块 2~8 绿→橙，块 9~14 橙→红
+    /// 使用线性插值实现三区段颜色平滑过渡
+    /// </summary>
     private SolidColorBrush GetTemperatureBlockColor(int blockIndex)
     {
         Color color;
@@ -549,12 +664,26 @@ public partial class HomeUserControl : UserControl
         return new SolidColorBrush(color);
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 力反馈弧形仪表
+    // ═══════════════════════════════════════════════════════════════
+    // 圆弧形仪表盘，从 135°（左下）起始，覆盖 270° 弧长
+    // 坐标计算：X = centerX + radius * cos(rad)，Y = centerY + radius * sin(rad)
+    // WPF 中 Y 轴向下为正，因此 startAngle=135° 指向左下，顺时针方向覆盖
+    // IsLargeArc 标志：当弧角 > 180° 时设为 true
+
+    /// <summary>
+    /// 初始化力反馈仪表：绘制背景弧线并设置初始值
+    /// </summary>
     private void InitializeForceFeedbackGauge()
     {
         DrawBackgroundArc();
         UpdateForceFeedbackArc(_forceFeedbackValue);
     }
 
+    /// <summary>
+    /// 绘制背景弧线（灰色底弧），计算起始/终止点的直角坐标放置 PathSegment
+    /// </summary>
     private void DrawBackgroundArc()
     {
         if (BackgroundArcSegment == null || BackgroundArcFigure == null) return;
@@ -573,6 +702,9 @@ public partial class HomeUserControl : UserControl
         BackgroundArcSegment.IsLargeArc = GaugeTotalAngle > 180;
     }
 
+    /// <summary>
+    /// 启动力反馈模拟计时器（100ms 间隔），在 0~100 范围内随机波动
+    /// </summary>
     private void StartForceFeedbackSimulation()
     {
         _random = new Random();
@@ -592,6 +724,9 @@ public partial class HomeUserControl : UserControl
         UpdateForceFeedbackArc(newValue);
     }
 
+    /// <summary>
+    /// 外部调用接口：设置力反馈值并刷新弧形显示（值会被 Clamp 到 0~100）
+    /// </summary>
     public void SetForceFeedbackValue(double value)
     {
         _forceFeedbackValue = Math.Clamp(value, 0, 100);
@@ -622,6 +757,14 @@ public partial class HomeUserControl : UserControl
         
         ForceFeedbackText.Text = value.ToString("F1");
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Banner 轮播
+    // ═══════════════════════════════════════════════════════════════
+    // 3 张 Slide 使用 Canvas.Left 定位并排排列，通过双动画实现滑动切换效果
+    // 切换逻辑：当前页向左滑出，目标页从右侧滑入（向前）或左侧滑入（向后）
+    // CubicEase EaseOut 缓动函数提供自然减速效果
+    // 自动播放周期 5s，手动切换后重置计时器
 
     private void CarouselContainer_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -845,6 +988,19 @@ public partial class HomeUserControl : UserControl
         _autoPlayTimer?.Start();
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 方向盘 — 34 段圆环刻度
+    // ═══════════════════════════════════════════════════════════════
+    // 在 Canvas 上以圆心为中心，34 个 Rectangle 以弧度排列成圆形刻度盘
+    // 角度计算：angleRad = i * 360° / 34 转为弧度，使用 cos/sin 计算 X/Y 偏移
+    // 顶部标记段（i=0 和 i=17）使用更宽的 27.52px 刻度
+    // 段 0~17 为红色（198,14,14），段 18~33 为暗红色（91,35,36）
+    // 每个段通过 RotateTransform 绕自身中心旋转，实现切向排列
+    // 方向旋转度数由 SteeringWheelRotate.Angle 控制，模拟 ±900° 转向
+
+    /// <summary>
+    /// 初始化方向盘：动态创建 34 个 Rectangle 刻度段，以圆形分布排列在 Canvas 上
+    /// </summary>
     private void InitializeSteeringWheel()
     {
         if (SteeringWheelCanvas == null) return;
@@ -903,6 +1059,9 @@ public partial class HomeUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 启动方向盘模拟计时器（50ms 间隔），在 ±900° 之间来回旋转
+    /// </summary>
     private void StartSteeringSimulation()
     {
         _steeringAnimationTimer = new DispatcherTimer
@@ -936,6 +1095,9 @@ public partial class HomeUserControl : UserControl
         UpdateSteeringWheel(_steeringAngle);
     }
 
+    /// <summary>
+    /// 外部调用接口：设置方向盘角度值（限制在 ±900° 范围内）
+    /// </summary>
     public void SetSteeringAngle(double angle)
     {
         _steeringAngle = Math.Clamp(angle, -MaxSteeringAngle, MaxSteeringAngle);
@@ -951,6 +1113,16 @@ public partial class HomeUserControl : UserControl
         SteeringWheelRotate.Angle = angle;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 踏板位置显示 — 离合器 / 刹车 / 油门
+    // ═══════════════════════════════════════════════════════════════
+    // 三个 Rectangle Fill 控件，高度按 0~100% 比例映射到 PedalBottomMargin ~ PedalHeight
+    // 即 Clamp(pedalBottomMargin + (pedalHeight - pedalBottomMargin) * value/100)
+    // 模拟计时器以随机漫步 + 10% 跳变概率驱动三个踏板值的动画
+
+    /// <summary>
+    /// 启动踏板模拟计时器（100ms 间隔），随机模拟三踏板数值变化
+    /// </summary>
     private void StartPedalSimulation()
     {
         _pedalRandom = new Random();
@@ -987,6 +1159,9 @@ public partial class HomeUserControl : UserControl
         return newValue;
     }
 
+    /// <summary>
+    /// 外部调用接口：同时设置离合器、刹车、油门三个踏板值（均 Clamp 到 0~100）
+    /// </summary>
     public void SetPedalValues(double clutch, double brake, double throttle)
     {
         _clutchValue = Math.Clamp(clutch, 0, 100);
@@ -1012,6 +1187,14 @@ public partial class HomeUserControl : UserControl
         ThrottleFill.Height = throttleHeight;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // 游戏列表 — 启动游戏与悬浮位移
+    // ═══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 游戏启动按钮：根据 LaunchMode 使用 Steam 或自定义路径启动游戏
+    /// 失败时弹出全局错误对话框
+    /// </summary>
     private void LaunchButton_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -1065,6 +1248,9 @@ public partial class HomeUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 鼠标进入游戏卡片时，将其右侧所有兄弟元素向右偏移 8.12px，形成悬浮展开效果
+    /// </summary>
     private void CardRoot_MouseEnter(object sender, MouseEventArgs e)
     {
         if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
@@ -1077,6 +1263,9 @@ public partial class HomeUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 鼠标离开游戏卡片时，将右侧兄弟元素复位到偏移量 0
+    /// </summary>
     private void CardRoot_MouseLeave(object sender, MouseEventArgs e)
     {
         if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)

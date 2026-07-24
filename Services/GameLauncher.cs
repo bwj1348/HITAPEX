@@ -5,12 +5,21 @@ using HITAPEX.Models;
 
 namespace HITAPEX.Services;
 
+/// <summary>
+/// 游戏启动模式枚举。
+/// </summary>
 public enum LaunchMode
 {
+    /// <summary>通过 Steam 协议启动（steam://run/{SteamId}）</summary>
     Steam,
+    /// <summary>通过用户指定的自定义可执行文件路径启动</summary>
     CustomPath
 }
 
+/// <summary>
+/// 游戏启动器 —— 负责以 Steam 协议或自定义路径方式启动游戏，
+/// 并在游戏启动后延迟 5 秒自动开启遥测数据采集。
+/// </summary>
 public static class GameLauncher
 {
     /// <summary>

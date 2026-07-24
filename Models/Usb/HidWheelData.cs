@@ -5,25 +5,36 @@ namespace HITAPEX.Models.Usb;
 /// </summary>
 public class HidWheelData
 {
+    /// <summary>HID 报告 ID</summary>
     public byte ReportId { get; init; }
+
     /// <summary>X 轴数据（保留）</summary>
     public ushort X { get; init; }
+
     /// <summary>Y 轴数据（保留）</summary>
     public ushort Y { get; init; }
+
     /// <summary>右下拨片数据 0-65535</summary>
     public ushort RightBottomPaddle { get; init; }
+
     /// <summary>左下拨片数据 0-65535</summary>
     public ushort LeftBottomPaddle { get; init; }
+
     /// <summary>Z 轴数据（保留）</summary>
     public ushort Z { get; init; }
+
     /// <summary>RZ 轴数据（保留）</summary>
     public ushort Rz { get; init; }
+
     /// <summary>方向键，8 个方向，0 表示释放</summary>
     public byte Dpad { get; init; }
+
     /// <summary>按键位图（bytes 14-21），每位对应一个按键：bit0=按键1, … bit7=按键8</summary>
     public byte[] ButtonBits { get; init; } = new byte[8];
 
     /// <summary>判断指定物理按键是否被按下（1-based: 1-64）</summary>
+    /// <param name="buttonIndex">按键编号（1-64）</param>
+    /// <returns>按下返回 true，否则返回 false</returns>
     public bool IsButtonPressed(int buttonIndex)
     {
         if (buttonIndex < 1 || buttonIndex > 64) return false;
@@ -32,6 +43,9 @@ public class HidWheelData
         return byteIdx < ButtonBits.Length && (ButtonBits[byteIdx] & (1 << bitIdx)) != 0;
     }
 
+    /// <summary>从原始 HID 数据包解析面盘数据</summary>
+    /// <param name="data">HID 原始数据缓冲区</param>
+    /// <returns>解析成功返回 HidWheelData 实例，失败返回 null</returns>
     public static HidWheelData? Parse(byte[] data)
     {
         if (data == null || data.Length < 22 || data[0] != 0x01)

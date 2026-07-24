@@ -9,9 +9,10 @@ public class WheelRpmIndicatorResponse
     /// <summary>12个LED的触发转速值，百分比模式时0-100，RPM模式时0-65535</summary>
     public ushort[] TriggerValues { get; set; } = new ushort[12];
 
-    /// <summary>12个LED灯颜色，每个灯3字节RGB</summary>
+    /// <summary>12个LED灯颜色，每个灯3字节RGB。索引0-11对应LED1-LED12</summary>
     public byte[][] LedColors { get; set; } = new byte[12][];
 
+    /// <summary>初始化 12 个 LED 的触发值和颜色数组</summary>
     public WheelRpmIndicatorResponse()
     {
         for (int i = 0; i < 12; i++)

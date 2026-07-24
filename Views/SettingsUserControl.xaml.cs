@@ -23,6 +23,11 @@ using HITAPEX.Services.Usb;
 
 namespace HITAPEX.Views;
 
+/// <summary>
+/// 固件更新设备列表项的数据模型。
+/// 每个实例表示设备列表中的一行，包含设备类型、型号、序列号、当前版本、
+/// 更新状态、按钮样式、更新描述等信息，同时保存固件更新流程所需的内部字段。
+/// </summary>
 public class DeviceItem
 {
     public string DeviceType { get; set; }
@@ -41,8 +46,17 @@ public class DeviceItem
     public int DeviceIndex { get; set; }
 }
 
+/// <summary>
+/// 设置页面的用户控件，包含两个选项卡：
+///   1. SystemSettings（系统设置） - 开机自启动、语言切换、软件版本更新
+///   2. FirmwareUpdate（固件更新） - 已连接设备列表的固件版本检查与 OTA 刷写
+/// </summary>
 public partial class SettingsUserControl : UserControl
 {
+    // ════════════════════════════════════════════════════════════════
+    // 字段
+    // ════════════════════════════════════════════════════════════════
+
     private DateTime? _lastCheckUpdateTime;
     private DateTime? _firmwareLastCheckTime;
     private bool _isNewVersionDetected;
@@ -56,6 +70,10 @@ public partial class SettingsUserControl : UserControl
     private ClientInstallerInfo? _latestInstaller;
     private string? _installerPath;
     public ObservableCollection<DeviceItem> DeviceList { get; set; }
+
+    // ════════════════════════════════════════════════════════════════
+    // 构造函数与初始化
+    // ════════════════════════════════════════════════════════════════
 
     public SettingsUserControl()
     {
@@ -97,12 +115,22 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // 设备列表管理
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 初始化固件更新页面的设备列表 ObservableCollection，并绑定到 ItemsControl。
+    /// </summary>
     private void InitializeDeviceList()
     {
         DeviceList = new ObservableCollection<DeviceItem>();
         DeviceListItems.ItemsSource = DeviceList;
     }
 
+    /// <summary>
+    /// 弹出固件更新确认对话框，显示设备型号和更新日志，用户可选择立即更新或稍后更新。
+    /// </summary>
     private void ShowUpdateDialog(DeviceItem device)
     {
         if (device == null || device.FirmwareInfo == null) return;
@@ -155,9 +183,24 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // 固件更新对话框与刷写流程
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 单设备固件更新的入口，转发到内部方法并以非批量模式执行。
+    /// </summary>
     private async Task StartDeviceUpdateAsync(DeviceItem device) =>
         await StartDeviceUpdateInternalAsync(device, fromBatch: false);
 
+    /// <summary>
+    /// 固件更新核心流程（单设备）：
+    ///   1. 构建进度对话框 UI（标题、进度条、警告文本，全部以代码动态创建）
+    ///   2. 下载固件（占整体进度的前 20%）
+    ///   3. 通过 FirmwareUpdater 刷写固件（20%-100%）
+    ///   4. 完成后等待设备以正常模式重新连接（最多 15 秒），并刷新设备列表
+    /// 参数 fromBatch 为 true 时表示批量更新中某一步，不在此方法内设置/清除全局锁。
+    /// </summary>
     private async Task StartDeviceUpdateInternalAsync(DeviceItem device, bool fromBatch)
     {
         if (device?.UsbDevice == null || device.FirmwareInfo == null) return;
@@ -644,6 +687,13 @@ public partial class SettingsUserControl : UserControl
         KeyboardNavigation.SetDirectionalNavigation(this, KeyboardNavigationMode.Continue);
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // 系统设置管理（开机启动、语言、版本号等）
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 从用户配置中加载系统设置：开机自启、最小化行为、当前语言、软件版本号。
+    /// </summary>
     private void LoadSettings()
     {
         try
@@ -744,6 +794,10 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 切换设置选项卡（系统设置 / 固件更新），使用淡入动画过渡。
+    /// 首次切换到固件更新选项卡时自动触发固件版本检查。
+    /// </summary>
     private async void SwitchTab(string? tabName)
     {
         if (SystemSettingsContent == null || FirmwareUpdateContent == null)
@@ -823,6 +877,18 @@ public partial class SettingsUserControl : UserControl
     private bool _firstLoaded = true;
     private bool _keepProgressHidden;
 
+    // ════════════════════════════════════════════════════════════════
+    // 软件版本更新（检查更新 → 下载 → 安装）
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 软件更新按钮点击处理（两阶段流程）：
+    ///   阶段一：检查是否有新版本。调用 API 获取最新安装包信息，与当前版本比较。
+    ///     有更新则显示版本号和"立即更新"按钮；已最新则短暂提示后恢复初始状态。
+    ///   阶段二：下载并安装。下载安装包并显示百分比进度，下载完成后自动启动安装程序。
+    ///     若自动安装失败，按钮变为"点击安装"供用户手动执行。
+    /// 已下载状态下再次点击则直接启动已下载的安装程序。
+    /// </summary>
     private async void CheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
         if (_isUpdating) return;
@@ -1038,6 +1104,10 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // UI 辅助方法（按钮文字、进度条、形状重绘等）
+    // ════════════════════════════════════════════════════════════════
+
     /// <summary>
     /// 通过绑定设置按钮文字，语言切换时自动刷新（适用本地化 key）。
     /// </summary>
@@ -1126,6 +1196,10 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // 固件版本检查
+    // ════════════════════════════════════════════════════════════════
+
     private async void FirmwareCheckUpdateButton_Click(object sender, RoutedEventArgs e)
     {
         UpdateFirmwareButtonText("Settings.Checking");
@@ -1148,6 +1222,14 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 检查所有已连接设备的固件更新：
+    ///   1. 调用 API 获取云端固件版本列表并缓存
+    ///   2. 枚举 USB 已连接设备，通过 FirmwareUpdater 获取每台设备的当前固件版本
+    ///   3. 将设备版本与云端版本逐一比较，更新模式下设备始终标记为可更新
+    ///   4. 重建 DeviceList 集合并绑定到列表控件
+    ///   5. 若无设备连接，则插入占位提示项
+    /// </summary>
     private async Task CheckFirmwareUpdatesAsync()
     {
         if (_isFirmwareChecking || _isFirmwareUpdating) return;
@@ -1311,6 +1393,10 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // 批量固件更新
+    // ════════════════════════════════════════════════════════════════
+
     /// <summary>供外部调用，切换到固件更新选项卡</summary>
     public void SwitchToFirmwareUpdateTab(List<UsbDeviceInfo>? updateModeDevices = null)
     {
@@ -1326,8 +1412,11 @@ public partial class SettingsUserControl : UserControl
     }
 
     /// <summary>
-    /// 批量更新流程：从异常弹窗跳转而来，依次对每台设备执行下载→刷写。
-    /// 复用现有 StartDeviceUpdateAsync 的下载和刷写逻辑，按顺序执行。
+    /// 批量固件更新流程（通常从异常弹窗跳转而来）：
+    ///   1. 获取/使用已缓存的云端固件列表
+    ///   2. 为每台更新模式下的设备匹配固件
+    ///   3. 按顺序对每台设备执行 StartDeviceUpdateInternalAsync（fromBatch=true）
+    ///   4. 全部完成后弹出批量更新结果提示，并刷新设备列表
     /// </summary>
     private async Task StartBatchUpdateAsync(List<UsbDeviceInfo> updateModeDevices)
     {
@@ -1538,8 +1627,6 @@ public partial class SettingsUserControl : UserControl
     /// <summary>
     /// UpdateButtonStyle 模板中 Grid 的 SizeChanged 事件处理。
     /// 按钮宽度变化时重绘背景形状，并重置进度裁剪到新宽度。
-    /// <summary>
-    /// UpdateButtonStyle 模板中 Grid 的 SizeChanged 事件处理。
     /// </summary>
     private void UpdateButtonGrid_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -1574,8 +1661,16 @@ public partial class SettingsUserControl : UserControl
     }
 }
 
+// ════════════════════════════════════════════════════════════════
+// RelayCommand — 本地 ICommand 实现
+// ════════════════════════════════════════════════════════════════
+
 // NOTE: This is a local RelayCommand copy used within SettingsUserControl.
 // Consider using the shared ViewModels.RelayCommand instead when refactoring.
+/// <summary>
+/// 本地的 ICommand 实现，用于 SettingsUserControl 内部按钮命令绑定。
+/// 建议后续重构时改用共享的 ViewModels.RelayCommand。
+/// </summary>
 public class RelayCommand : ICommand
 {
     private readonly Action<object?> _execute;

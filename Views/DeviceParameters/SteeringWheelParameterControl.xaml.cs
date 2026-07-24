@@ -12,6 +12,18 @@ using HITAPEX.Services.Usb;
 
 namespace HITAPEX.Views.DeviceParameters;
 
+/// <summary>
+/// 面盘参数配置用户控件，管理方向盘所有可调参数，包括：
+/// - 14个可调按键 LED 设置（颜色、遥测触发功能及触发颜色、光效和速度）
+/// - 12颗 LED 转速灯条（每颗颜色的转速阈值、基础模式、爆闪模式与颜色、遥测开关）
+/// - 全局按键颜色模式（统一颜色常亮 / 单独颜色常亮切换）
+/// - 离合拨片模式（合成轴 / 独立轴 / 按键模式）及离合咬合点百分比
+/// - 睡眠灯光和待机灯效（睡眠时间、待机效果、待机速度）
+/// - HID 按键按下可视化响应（64位按键掩码驱动 GlowCircle / OuterRing 显隐）
+/// - 预设管理（应用、保存、另存为、导出）
+/// - USB 设备通信：通过 6 种协议命令（0x2103~0x2108）与硬件面盘双向交互 —
+///   转速灯基础模式、转速指示、转速灯模式属性、按键灯全局属性、按键灯单独效果、睡眠和拨片
+/// </summary>
 public partial class SteeringWheelParameterControl : UserControl
 {
     // 设备通信状态
@@ -66,14 +78,23 @@ public partial class SteeringWheelParameterControl : UserControl
 
     // ── USB 通信状态 ──
     private bool _isSendingParameters;
-    private bool _isApplyingParameters; // 从设备同步参数时阻止下发
+    /// <summary>
+    /// 从设备同步参数时设为 true，阻止下发反馈环路。
+    /// 同步过程中 UI 控件值变化会触发 OnParameterModified，
+    /// 此时若不下发保护则会把刚从设备读到的值又写回设备，造成闪烁和不必要的通信开销。
+    /// </summary>
+    private bool _isApplyingParameters;
 
     // ── 组合状态（无独立 UI 控件，需字段缓存）──
     private int _keyBrightness = 80;
     private int _sleepLightDuration;
     private int _standbyLightEffect;
     private int _standbyLightSpeed;
-    private int _singleButtonAdjIndex = -1; // -1=全发, >=0=只发该可调索引的按键灯
+    /// <summary>
+    /// 单按键发送优化：单独颜色模式下修改一个按键设置时只需发送一条 0x2107 数据包，
+    /// 而非全部 14 个按键的报文。-1 表示发送全部 14 个按键，>=0 表示只发送该可调索引的按键灯报文。
+    /// </summary>
+    private int _singleButtonAdjIndex = -1;
     /// <summary>设备保存的统一颜色索引（从0x2106读取），打开全局颜色时复用此值</summary>
     private int _deviceUnifiedColorIndex;
 
@@ -157,6 +178,11 @@ public partial class SteeringWheelParameterControl : UserControl
         }), System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
+    /// <summary>
+    /// 刷新设备信息并同步全部参数到 UI。
+    /// 流程：1) 查找直连面盘 USB 设备 → 2) 若无直连则检查基座转接 → 3) 获取固件版本（fire-and-forget）→
+    /// 4) 从设备获取全部面盘参数并同步 UI → 5) 获取设备端预设名称 → 6) 尝试匹配本地预设。
+    /// </summary>
     public async Task RefreshDeviceInfoAsync()
     {
         try
@@ -484,6 +510,10 @@ public partial class SteeringWheelParameterControl : UserControl
         e.Handled = true;
     }
 
+    // ══════════════════════════════════════════════════════════
+    //  预设管理 — 应用、保存、另存为、导出、丢弃修改
+    // ══════════════════════════════════════════════════════════
+
     /// <summary>放弃当前修改，恢复到已应用预设的状态</summary>
     public void DiscardChanges()
     {
@@ -774,6 +804,7 @@ public partial class SteeringWheelParameterControl : UserControl
         {
             if (rootPanel.Children.Contains(editPopup))
                 rootPanel.Children.Remove(editPopup);
+            onSaved?.Invoke();
         };
 
         editPopup.BeginSaveAs(existingNames);
@@ -787,17 +818,33 @@ public partial class SteeringWheelParameterControl : UserControl
         return null;
     }
 
-    /// <summary>需要下发的协议包掩码</summary>
+    /// <summary>
+    /// 需要下发的协议包掩码（Flags 位标记），每个枚举位对应一条 USB 协议命令：
+    /// RpmBaseMode      → 0x2103  写入转速灯基础模式（12颗LED颜色、基础灯效模式及速度）
+    /// RpmIndicator     → 0x2104  写入转速灯转速指示（每颗LED的触发阈值和颜色）
+    /// RpmMode          → 0x2105  写入转速灯模式属性（亮度、遥测开关、爆闪模式/颜色/阈值）
+    /// ButtonLightGlobal→ 0x2106  写入按键灯全局属性（LED模式统一/单独、亮度、统一颜色RGB）
+    /// ButtonLight      → 0x2107  写入按键灯单独效果（每颗LED颜色、遥测功能、闪烁速度、触发颜色）
+    /// SleepAndPaddle   → 0x2108  写入睡眠灯光和拨片参数（睡眠时间、待机效果、离合模式、咬合点）
+    /// All = 全部 6 种协议包一并下发
+    /// </summary>
     [Flags]
     private enum WheelSendMask
     {
         None = 0,
-        RpmBaseMode = 1 << 0,       // 0x2103 转速灯基础模式
-        RpmIndicator = 1 << 1,      // 0x2104 转速灯转速指示
-        RpmMode = 1 << 2,           // 0x2105 转速灯模式等属性
-        ButtonLightGlobal = 1 << 3, // 0x2106 按键灯全局属性（切换模式时只用此包）
-        ButtonLight = 1 << 4,       // 0x2107 按键灯单独效果
-        SleepAndPaddle = 1 << 5,    // 0x2108 睡眠和拨片
+        /// <summary>0x2103 转速灯基础模式</summary>
+        RpmBaseMode = 1 << 0,
+        /// <summary>0x2104 转速灯转速指示</summary>
+        RpmIndicator = 1 << 1,
+        /// <summary>0x2105 转速灯模式等属性</summary>
+        RpmMode = 1 << 2,
+        /// <summary>0x2106 按键灯全局属性（切换模式时只用此包）</summary>
+        ButtonLightGlobal = 1 << 3,
+        /// <summary>0x2107 按键灯单独效果</summary>
+        ButtonLight = 1 << 4,
+        /// <summary>0x2108 睡眠和拨片</summary>
+        SleepAndPaddle = 1 << 5,
+        /// <summary>全部 6 种协议包</summary>
         All = RpmBaseMode | RpmIndicator | RpmMode | ButtonLightGlobal | ButtonLight | SleepAndPaddle,
     }
 
@@ -1027,9 +1074,9 @@ public partial class SteeringWheelParameterControl : UserControl
         {
             var newText = PresetNameText.Text;
             if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
-                newText = $"{_devicePresetName}_板载";
+                newText = $"{_devicePresetName}_{LocalizationService.Instance["DeviceParam.Onboard"]}";
             else if (isOnboard)
-                newText = "板载";
+                newText = LocalizationService.Instance["DeviceParam.Onboard"];
             else
                 newText = _currentPresetName;
 
@@ -1297,7 +1344,12 @@ public partial class SteeringWheelParameterControl : UserControl
         return null;
     }
 
-    /// <summary>从设备获取全部面盘参数并同步到 UI</summary>
+    /// <summary>
+    /// 从设备获取全部 6 种协议数据并同步到 UI。
+    /// 必须顺序发送（禁用并发）：SendCommandAsync 使用每设备键单例 TaskCompletionSource，
+    /// 并发调用会互相取消对方的 TCS，导致除最后一个外全部超时。
+    /// 获取期间设 _isApplyingParameters=true 阻止下发反馈环路。
+    /// </summary>
     private async Task FetchWheelParametersAsync()
     {
         var targetDevice = GetTargetDevice();
@@ -1501,8 +1553,10 @@ public partial class SteeringWheelParameterControl : UserControl
     {
         var colorIdx = DeviceProtocolService.RgbToColorIndex(p.ColorR, p.ColorG, p.ColorB);
         buttonColors[index] = colorIdx;
-        // 协议 TelemetryFunc: 0=关闭, 1=ABS介入, 2=TC介入, ... 7=车轮打滑
-        // 关闭时不覆盖下拉框索引，保留用户上次选中的遥测功能
+        // ═══ 按键灯遥测功能协议约定 ═══
+        // TelemetryFunc: 0=关闭遥测, 1=ABS介入, 2=TC介入, ..., 7=车轮打滑
+        // UI 下拉框索引 = 协议值 - 1（即协议1→UI0, 协议2→UI1, ...）
+        // 关闭时(协议值=0)不覆盖下拉框索引，保留用户上次选中的遥测功能
         if (p.TelemetryFunc != 0)
             buttonTelemetryFunc[index] = p.TelemetryFunc - 1;
         buttonTelemetryEnabled[index] = p.TelemetryFunc != 0;
@@ -1525,9 +1579,10 @@ public partial class SteeringWheelParameterControl : UserControl
             var parsed = DeviceProtocolService.ParseWheelSleepAndPaddleResponse(response);
             if (parsed == null) return;
 
-            // UI 下拉框索引与协议值对应:
-            // 协议: 0=从不, 1=5分钟, 2=10分钟, 3=15分钟, 4=30分钟, 5=60分钟
-            // UI:   0=5分钟, 1=10分钟, 2=15分钟, 3=30分钟, 4=60分钟, 5=从不
+            // ═══ 睡眠时间：UI 下拉框索引与协议值互译 ═══
+            // 协议值:  0=从不(关), 1=5分钟, 2=10分钟, 3=15分钟, 4=30分钟, 5=60分钟
+            // UI索引:  0=5分钟, 1=10分钟, 2=15分钟, 3=30分钟, 4=60分钟, 5=从不
+            // 转换逻辑: 协议0→UI5(从不), 协议1→UI0(5分钟)... 协议5→UI4(60分钟)
             _sleepLightDuration = parsed.SleepTime switch
             {
                 0 => 5, // 从不 -> UI index 5
@@ -1543,8 +1598,10 @@ public partial class SteeringWheelParameterControl : UserControl
             _standbyLightEffect = parsed.SleepEffect == 0 ? 1 : 0;
             _standbyLightSpeed = parsed.SleepEffectSpeed;
 
-            // 离合拨片模式 (协议: 0=独立轴, 1=合成轴, 2=按键)
-            // UI: CombinedAxisRadio=0(合成轴), IndependentAxisRadio=1(独立轴), KeyModeRadio=2(按键)
+            // ═══ 离合模式：UI Radio 索引与协议值互译 ═══
+            // 协议值:  0=独立轴, 1=合成轴, 2=按键
+            // UI索引:  0=合成轴(CombinedAxisRadio), 1=独立轴(IndependentAxisRadio), 2=按键(KeyModeRadio)
+            // 转换逻辑: 协议0→UI1(独立轴), 协议1→UI0(合成轴), 协议2→UI2(按键)
             _clutchMode = parsed.ClutchPaddleMode switch
             {
                 0 => 1, // 独立轴 -> _clutchMode=1
@@ -1573,8 +1630,13 @@ public partial class SteeringWheelParameterControl : UserControl
         }
     }
 
-    /// <summary>根据当前UI状态下发面盘设置命令</summary>
-    /// <param name="sendMask">需下发的协议包掩码，None 时下发全部</param>
+    /// <summary>
+    /// 根据当前 UI 状态下发面盘设置命令到设备。
+    /// 通过 WheelSendMask 位掩码按需分发：只发送掩码中标记的协议包，
+    /// 避免不必要的 USB 通信。内部保护：_isSendingParameters 防重入，
+    /// _isApplyingParameters 防止设备同步时的反馈环路。
+    /// </summary>
+    /// <param name="sendMask">需下发的协议包掩码，默认为 All（下发全部 6 种协议包）</param>
     private void SendWheelParameters(WheelSendMask sendMask = WheelSendMask.All)
     {
         if (_isSendingParameters || _isApplyingParameters)
@@ -1741,6 +1803,8 @@ public partial class SteeringWheelParameterControl : UserControl
             {
                 var btnColorIdx = Math.Clamp(s.ButtonColors[adjIdx], 0, 8);
                 var btnColor = DeviceProtocolService.ColorIndexToRgb[btnColorIdx];
+                // TelemetryFunc 协议: 0=关闭, 1=ABS介入, 2=TC介入, ..., 7=车轮打滑
+                // UI 存储的是 0-based 下拉框索引，协议需要 +1 映射
                 var telemetryFunc = s.ButtonTelemetryEnabled[adjIdx]
                     ? (byte)(s.ButtonTelemetryFunc[adjIdx] + 1) : (byte)0;
                 var flashSpeed = s.ButtonTelemetryLightEffect[adjIdx] == 0 ? (byte)0xFF : (byte)s.ButtonSpeeds[adjIdx];
@@ -1768,29 +1832,32 @@ public partial class SteeringWheelParameterControl : UserControl
 
         try
         {
-            // UI索引到协议值的转换
+            // ═══ 睡眠时间：UI 索引→协议值转换 ═══
+            // UI:  0=5分钟, 1=10分钟, 2=15分钟, 3=30分钟, 4=60分钟, 5=从不
+            // 协议: 0=从不, 1=5分钟, 2=10分钟, 3=15分钟, 4=30分钟, 5=60分钟
             var sleepTime = s.SleepLightDuration switch
             {
-                0 => (byte)1, // 5分钟
-                1 => (byte)2, // 10分钟
-                2 => (byte)3, // 15分钟
-                3 => (byte)4, // 30分钟
-                4 => (byte)5, // 60分钟
-                5 => (byte)0, // 从不
+                0 => (byte)1, // UI 5分钟 → 协议 1
+                1 => (byte)2, // UI 10分钟 → 协议 2
+                2 => (byte)3, // UI 15分钟 → 协议 3
+                3 => (byte)4, // UI 30分钟 → 协议 4
+                4 => (byte)5, // UI 60分钟 → 协议 5
+                5 => (byte)0, // UI 从不 → 协议 0
                 _ => (byte)5
             };
 
-            // UI index: 0=呼吸, 1=关灯; 协议: 0=关灯, 1=呼吸 → 取反
+            // 待机灯效：UI 0=呼吸, 1=关灯；协议 0=关灯, 1=呼吸 → 取反
             var sleepEffect = s.StandbyLightEffect == 0 ? (byte)1 : (byte)0;
             var sleepEffectSpeed = (byte)s.GlobalFlashSpeed;
 
-            // s.ClutchMode: 0=合成轴, 1=独立轴, 2=按键
-            // 协议: 0=独立轴, 1=合成轴, 2=按键
+            // ═══ 离合模式：UI 索引→协议值转换 ═══
+            // s.ClutchMode:  0=合成轴(CombinedAxisRadio), 1=独立轴(IndependentAxisRadio), 2=按键(KeyModeRadio)
+            // 协议值:        0=独立轴, 1=合成轴, 2=按键
             var clutchPaddleMode = s.ClutchMode switch
             {
-                0 => (byte)1, // 合成轴->协议1
-                1 => (byte)0, // 独立轴->协议0
-                2 => (byte)2, // 按键->协议2
+                0 => (byte)1, // UI 合成轴 → 协议 1
+                1 => (byte)0, // UI 独立轴 → 协议 0
+                2 => (byte)2, // UI 按键 → 协议 2
                 _ => (byte)0
             };
 
@@ -1827,15 +1894,23 @@ public partial class SteeringWheelParameterControl : UserControl
 
     private ButtonSettingsPopup? _buttonSettingsPopup;
 
+    // ══════════════════════════════════════════════════════════
+    //  非可调按键识别 — 方向键(B4,B5,B14,B15)和中央键(B10)
+    //  这些按钮不显示弹窗也不参与参数存储
+    // ══════════════════════════════════════════════════════════
+
     // 非可调按键（方向键 + 中央大按键），这些按钮不显示弹窗也不参与参数存储
     private static readonly HashSet<string> NonAdjustableButtonNames = ["Btn4", "Btn5", "Btn10", "Btn14", "Btn15"];
 
-    // 物理按键索引(0-18) → 可调参数索引(0-13)，-1表示不可调
-    // 可调的14个按键: B1(0),B2(1),B3(2), B6(5),B7(6),B8(7),B9(8), B11(10),B12(11),B13(12), B16(15),B17(16),B18(17),B19(18)
+    // ═══ 物理按键索引(0-18) → 可调参数索引(0-13)，-1 表示不可调 ═══
+    // 面盘共有 19 个物理按键(B1~B19)，其中 14 个圆形按键的 LED 可调，
+    // 另外 5 个(B4,B5,B10,B14,B15)为方向键和中央大按键，不可调。
+    // 可调按键映射: B1→0,B2→1,B3→2, B6→3,B7→4,B8→5,B9→6, B11→7,B12→8,B13→9, B16→10,B17→11,B18→12,B19→13
     private static readonly int[] PhysicalToAdjustable =
     [
-        // B1 B2 B3  B4  B5  B6 B7 B8 B9  B10 B11 B12 B13  B14  B15  B16 B17 B18 B19
-           0, 1, 2, -1, -1,  3, 4, 5, 6,  -1,  7,  8,  9,  -1,  -1, 10, 11, 12, 13
+        // 索引:  B1  B2  B3  B4  B5  B6  B7  B8  B9  B10 B11 B12 B13 B14 B15 B16 B17 B18 B19
+        // 可调:   0   1   2   -   -   3   4   5   6   -   7   8   9   -   -  10  11  12  13
+           0,  1,  2, -1, -1,  3,  4,  5,  6,  -1,  7,  8,  9,  -1,  -1, 10, 11, 12, 13
     ];
 
     // ── 用户点击按键 → 打开按键灯设置弹窗 ──
@@ -2001,6 +2076,11 @@ public partial class SteeringWheelParameterControl : UserControl
             rootPanel.Children.Remove(_rpmSettingsPopup);
     }
 
+    /// <summary>
+    /// 保存转速灯弹窗设置到内存并下发设备。
+    /// 包含数据安全保护：若弹窗关闭后 12 个滑块值全为 0 而弹窗打开前有非零数据，
+    /// 说明 _capValue 截断错误或数据已损坏，自动恢复到弹窗打开前的值，避免 cap=0 导致数据永久破坏。
+    /// </summary>
     private void SaveRpmSettings()
     {
         if (_rpmSettingsPopup == null) return;
@@ -2399,10 +2479,11 @@ public partial class SteeringWheelParameterControl : UserControl
     }
 
     // ════════════════════════════════════════════════════════════════
-    //  HID 按键响应 — 由面盘 USB 上报的 HID 按键位图驱动
+    //  USB 设备事件 — 设备插拔与 HID 按键响应
     // ════════════════════════════════════════════════════════════════
 
-    /// <summary>订阅面盘 HID 数据</summary>
+    // ═══ USB 串口设备连接/断开事件 ═══
+
     /// <summary>
     /// 订阅 USB 串口设备连接/断开事件，设备随时插拔时 UI 实时响应。
     /// 始终保持订阅，不随 Unload 取消。
@@ -2448,6 +2529,7 @@ public partial class SteeringWheelParameterControl : UserControl
         });
     }
 
+    /// <summary>订阅面盘 HID 数据接收事件。首次 Load 时调用，之后保持订阅不取消。</summary>
     private void SubscribeHidData()
     {
         if (App.HidService == null) return;
@@ -2462,7 +2544,16 @@ public partial class SteeringWheelParameterControl : UserControl
         App.HidService.WheelDataReceived -= OnWheelHidDataReceived;
     }
 
-    /// <summary>面盘 HID 数据 → 圆形按键的 IsChecked（复用模板中已有的 Glow+OuterRing 触发器动画）</summary>
+    // ════════════════════════════════════════════════════════════════
+    //  HID 按键按下可视化 — 设备上报 HID 按键位图驱动 UI
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 面盘 HID 数据回调：根据 USB HID 上报的 64 位按键掩码驱动圆形按键的按键按下可视化。
+    /// 协议约定：HID 报文字节 14~21(共 8 字节)组成 64 位按键位图，对应 19 个物理按键。
+    /// 通过预缓存的 GlowCircle/OuterRing 引用直接设置 Visibility，绕过 IsChecked 属性，
+    /// 避免 RadioButton 选中逻辑干扰。含防抖（掩码未变则跳过）和弹窗抑制（_isPopupOpen 时暂不更新）。
+    /// </summary>
     private void OnWheelHidDataReceived(UsbDeviceInfo device, HidWheelData data)
     {
         // 仅当面盘直连 USB 时处理
@@ -2513,7 +2604,11 @@ public partial class SteeringWheelParameterControl : UserControl
     /// <summary>按钮名称缓存（索引 0=B1 … 18=B19），用于按键响应指示器</summary>
     private static readonly string[] _buttonNames = ["B1","B2","B3","B4","B5","B6","B7","B8","B9","B10","B11","B12","B13","B14","B15","B16","B17","B18","B19"];
 
-    /// <summary>预缓存圆形按键的 GlowCircle/OuterRing 模板部件引用，供 HID 回调直接操作 Visibility</summary>
+    /// <summary>
+    /// 预缓存 19 个圆形按键的 GlowCircle/OuterRing 模板部件引用。
+    /// 在 HID 数据回调中直接操作这些部件的 Visibility，避免每次遍历 VisualTree
+    /// 查找模板子元素，确保高频（毫秒级）HID 轮询下 UI 线程不会卡顿。
+    /// </summary>
     private void CacheCircularButtons()
     {
         var allButtons = new RadioButton?[] { Btn1, Btn2, Btn3, Btn4, Btn5, Btn6, Btn7, Btn8, Btn9,

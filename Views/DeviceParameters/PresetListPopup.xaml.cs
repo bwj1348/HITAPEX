@@ -15,45 +15,103 @@ using SharpVectors.Converters;
 
 namespace HITAPEX.Views.DeviceParameters;
 
+/// <summary>
+/// 预设浏览/选择侧滑弹窗。
+/// 提供官方预设和个人预设两个选项卡，支持按游戏类别筛选、鼠标悬停显示详情弹窗、
+/// 个人预设的编辑/删除/导出操作，以及导入外部预设文件功能。
+/// 弹窗从右侧滑入，点击遮罩层或应用预设后滑出关闭。
+/// </summary>
 public partial class PresetListPopup : UserControl
 {
+    // ══════════════════════════════════════════
+    //  字段
+    // ══════════════════════════════════════════
+
+    /// <summary>是否已完成首次初始化</summary>
     private bool _isInitialized;
+
+    /// <summary>官方预设列表（只读展示，不可编辑）</summary>
     private readonly List<PresetItem> _officialPresets = new();
+
+    /// <summary>个人预设列表（可编辑、删除、导出）</summary>
     private readonly List<PresetItem> _personalPresets = new();
+
+    /// <summary>所有游戏类别项（用于下拉框筛选）</summary>
     private readonly List<string> _allGameItems = new();
+
+    /// <summary>当前显示的是官方预设选项卡还是个人预设选项卡</summary>
     private bool _isOfficialTab = true;
+
+    /// <summary>当前选中的游戏类别筛选条件</summary>
     private string _currentCategory = LocalizationService.Instance["Preset.All"];
+
+    /// <summary>当前被选中的预设项</summary>
     private PresetItem? _selectedPreset;
+
+    /// <summary>当前被选中预设项对应的 UI 控件</summary>
     private ContentControl? _selectedControl;
+
+    // ---- ComboBox 搜索筛选相关 ----
+
+    /// <summary>覆盖在 ComboBox ContentSite 上的 TextBox，实现输入即搜索</summary>
     private TextBox? _filterTextBox;
+
+    /// <summary>ComboBox 模板中的 ContentSite，显示当前选中项文本</summary>
     private TextBlock? _contentSite;
+
+    /// <summary>ComboBox 模板中的 Watermark 提示文本</summary>
     private TextBlock? _watermark;
+
+    /// <summary>展开 ComboBox 前的选中项，用于取消筛选时恢复</summary>
     private object? _previousGameSelection;
-    // Shared detail popup — one instance for all preset items
+
+    // ---- 共享详情弹窗相关（所有预设项共用同一个 Popup 实例，避免内存浪费） ----
+
+    /// <summary>鼠标悬停预设项时显示的详情弹窗</summary>
     private Popup? _detailPopup;
+
+    /// <summary>详情弹窗中的预设名称文本</summary>
     private TextBlock? _detailNameText;
+
+    /// <summary>详情弹窗中的游戏标签容器</summary>
     private WrapPanel? _detailGamesPanel;
+
+    /// <summary>详情弹窗中的内容堆叠面板</summary>
     private StackPanel? _detailContentStack;
+
+    /// <summary>详情弹窗的根网格容器</summary>
     private Grid? _detailRootGrid;
+
+    /// <summary>详情弹窗背景切角多边形的 Path 列表</summary>
     private List<Path>? _detailPolygonPaths;
+
+    /// <summary>详情弹窗边框线条的 Path 列表</summary>
     private List<Path>? _detailBorderSegments;
 
     /// <summary>当前弹窗对应的设备类型</summary>
     public Models.Usb.DeviceType DeviceType { get; set; } = Models.Usb.DeviceType.Pedal;
 
+    /// <summary>用户点击"应用"按钮时触发，传递选中的预设</summary>
     public event EventHandler<PresetItem>? PresetApplied;
 
-    //用于控制弹窗延迟任务的取消标志
+    /// <summary>
+    /// 用于控制详情弹窗延迟显示任务的取消令牌。
+    /// 鼠标悬停在预设项上 500ms 后才弹出详情弹窗；
+    /// 如果在 500ms 内鼠标移开，则取消弹窗。
+    /// </summary>
     private CancellationTokenSource? _popupDelayCts;
 
     public PresetListPopup()
     {
         InitializeComponent();
+        // 推迟实际初始化到 Loaded 事件，确保 XAML 模板已应用
         Loaded += OnLoaded;
     }
 
+    /// <summary>首次加载时初始化 ComboBox、加载预设数据、创建共享详情弹窗并渲染列表</summary>
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        // 防止重复初始化（Loaded 可能被多次触发）
         if (_isInitialized) return;
         _isInitialized = true;
 
@@ -61,9 +119,15 @@ public partial class PresetListPopup : UserControl
         LoadPresets();
         InitSharedDetailPopup();
         RenderPresetList();
+        // 滚动条同步：ScrollViewer 滚动时更新自定义滚动条
         PresetScrollViewer.ScrollChanged += PresetScrollViewer_ScrollChanged;
     }
 
+    // ══════════════════════════════════════════
+    //  编辑弹窗（仅个人预设）
+    // ══════════════════════════════════════════
+
+    /// <summary>打开编辑弹窗，允许用户修改个人预设的名称和参数</summary>
     private void OpenEditPopup(PresetItem preset)
     {
         var editPopup = new EditPresetPopup();
@@ -87,6 +151,7 @@ public partial class PresetListPopup : UserControl
         };
         editPopup.EditCancelled += (_, _) => RemoveEditPopup(editPopup);
 
+        // 将编辑弹窗添加到当前页面的根面板上，实现覆盖显示
         if (Content is Panel rootPanel)
             rootPanel.Children.Add(editPopup);
 
@@ -94,12 +159,18 @@ public partial class PresetListPopup : UserControl
         editPopup.Show();
     }
 
+    /// <summary>从根面板移除编辑弹窗</summary>
     private void RemoveEditPopup(EditPresetPopup popup)
     {
         if (Content is Panel rootPanel)
             rootPanel.Children.Remove(popup);
     }
 
+    // ══════════════════════════════════════════
+    //  滚动条同步
+    // ══════════════════════════════════════════
+
+    /// <summary>ScrollViewer 滚动时同步更新自定义滚动条的位置和大小</summary>
     private void PresetScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
     {
         if (PresetScrollViewer.ScrollableHeight <= 0)
@@ -113,6 +184,11 @@ public partial class PresetListPopup : UserControl
         PresetScrollBar.Value = PresetScrollViewer.VerticalOffset;
     }
 
+    // ══════════════════════════════════════════
+    //  数据加载
+    // ══════════════════════════════════════════
+
+    /// <summary>从 PresetService 加载官方预设和个人预设数据</summary>
     private void LoadPresets()
     {
         if (App.PresetService != null)
@@ -129,28 +205,42 @@ public partial class PresetListPopup : UserControl
         }
     }
 
+    // ══════════════════════════════════════════
+    //  显示 / 隐藏
+    // ══════════════════════════════════════════
+
+    /// <summary>显示弹窗，触发从右侧滑入动画</summary>
     public void Show()
     {
         Visibility = Visibility.Visible;
         AnimateIn();
     }
 
+    /// <summary>隐藏弹窗，触发向右侧滑出动画，动画完成后设置为 Collapsed</summary>
     public void Hide()
     {
         AnimateOut(() => Visibility = Visibility.Collapsed);
     }
 
     // ══════════════════════════════════════════
-    //  动画
+    //  动画：从右侧滑入/滑出
+    //  使用 TranslateTransform 控制 PopupPanel 的水平位移，
+    //  配合 Opacity 动画实现淡入淡出效果
     // ══════════════════════════════════════════
 
+    /// <summary>
+    /// 滑入动画：弹窗面板从右侧（X = PanelWidth）平移到 X = 0，
+    /// 同时面板和遮罩层淡入显示。
+    /// </summary>
     private void AnimateIn()
     {
+        // 初始状态：遮罩透明、面板透明、面板位于右侧
         OverlayBackground.Opacity = 0;
         PopupPanel.Opacity = 0;
         PopupPanel.RenderTransform = new TranslateTransform(PopupPanel.Width, 0);
         PopupPanel.IsHitTestVisible = false;
 
+        // 面板从右侧滑入到原始位置
         DoubleAnimation slideIn = new(PopupPanel.Width, 0, TimeSpan.FromMilliseconds(300))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
@@ -164,6 +254,7 @@ public partial class PresetListPopup : UserControl
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
 
+        // 面板淡入完成后才允许点击交互
         panelFade.Completed += (_, _) => { PopupPanel.IsHitTestVisible = true; };
 
         PopupPanel.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideIn);
@@ -171,6 +262,10 @@ public partial class PresetListPopup : UserControl
         OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
     }
 
+    /// <summary>
+    /// 滑出动画：弹窗面板从当前 X 位置平移到 X = PanelWidth（右侧之外），
+    /// 同时面板和遮罩层淡出，动画完成后执行回调。
+    /// </summary>
     private void AnimateOut(Action onCompleted)
     {
         if (PopupPanel.RenderTransform is not TranslateTransform translate)
@@ -178,6 +273,7 @@ public partial class PresetListPopup : UserControl
 
         PopupPanel.IsHitTestVisible = false;
 
+        // 面板从当前位置滑出到右侧
         DoubleAnimation slideOut = new(translate.X, PopupPanel.Width, TimeSpan.FromMilliseconds(260))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
@@ -191,6 +287,7 @@ public partial class PresetListPopup : UserControl
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
 
+        // 面板淡出完成后设置 Visibility = Collapsed
         panelFade.Completed += (_, _) => { onCompleted(); };
 
         translate.BeginAnimation(TranslateTransform.XProperty, slideOut);
@@ -199,9 +296,10 @@ public partial class PresetListPopup : UserControl
     }
 
     // ══════════════════════════════════════════
-    //  下拉框初始化
+    //  ComboBox 初始化：游戏类别下拉筛选
     // ══════════════════════════════════════════
 
+    /// <summary>初始化游戏类别 ComboBox，填充所有游戏项并挂载事件</summary>
     private void InitCategoryComboBox()
     {
         _allGameItems.Clear();
@@ -225,9 +323,13 @@ public partial class PresetListPopup : UserControl
     }
 
     // ══════════════════════════════════════════
-    //  下拉框文本筛选
+    //  ComboBox 搜索即输入（Search-as-you-type）
+    //  通过 Template 查找 ContentSite 和 Watermark，
+    //  将一个透明的 TextBox 覆盖在 ContentSite 上方，
+    //  用户输入时实时筛选下拉列表。
     // ══════════════════════════════════════════
 
+    /// <summary>下拉框展开时初始化筛选 TextBox，记录展开前选中项</summary>
     private void CategoryComboBox_DropDownOpened(object? sender, EventArgs e)
     {
         if (_filterTextBox == null)
@@ -274,12 +376,18 @@ public partial class PresetListPopup : UserControl
         ShowContentSiteOrWatermark();
     }
 
+    /// <summary>用户点击筛选文本框获得焦点时，隐藏 ContentSite 和 Watermark 以显示输入光标</summary>
     private void FilterTextBox_GotFocus(object sender, RoutedEventArgs e)
     {
         // 用户点击文本框开始输入 → 隐藏 ContentSite 和 Watermark
         HideContentSiteAndWatermark();
     }
 
+    /// <summary>
+    /// 筛选文本框失去焦点时：
+    /// - 下拉框仍展开 → 延迟重新获取焦点（因为鼠标悬停项会导致 TextBox 失焦）
+    /// - 下拉框已关闭且文本为空 → 恢复 ContentSite/Watermark
+    /// </summary>
     private void FilterTextBox_LostKeyboardFocus(object sender, System.Windows.Input.KeyboardFocusChangedEventArgs e)
     {
         // 下拉框仍展开时，鼠标悬停到展开项会导致 TextBox 失焦，
@@ -301,6 +409,7 @@ public partial class PresetListPopup : UserControl
         }
     }
 
+    /// <summary>筛选文本变化时，隐藏 Watermark 并实时过滤下拉框项</summary>
     private void FilterTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         var filterText = _filterTextBox?.Text ?? string.Empty;
@@ -314,6 +423,7 @@ public partial class PresetListPopup : UserControl
         DoFilterItems(filterText);
     }
 
+    /// <summary>根据筛选文本过滤 ComboBox 中的游戏类别项</summary>
     private void DoFilterItems(string filterText)
     {
         CategoryComboBox.SelectionChanged -= CategoryComboBox_SelectionChanged;
@@ -337,6 +447,7 @@ public partial class PresetListPopup : UserControl
         CategoryComboBox.SelectionChanged += CategoryComboBox_SelectionChanged;
     }
 
+    /// <summary>处理筛选文本框的键盘事件：上下键导航、回车确认、Esc 取消</summary>
     private void FilterTextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         switch (e.Key)
@@ -377,12 +488,14 @@ public partial class PresetListPopup : UserControl
         }
     }
 
+    /// <summary>隐藏 ContentSite 和 Watermark，露出下方的筛选 TextBox</summary>
     private void HideContentSiteAndWatermark()
     {
         if (_contentSite != null) _contentSite.Visibility = Visibility.Collapsed;
         if (_watermark != null) _watermark.Visibility = Visibility.Collapsed;
     }
 
+    /// <summary>根据当前是否有选中项来显示 ContentSite 或 Watermark</summary>
     private void ShowContentSiteOrWatermark()
     {
         if (_contentSite == null || _watermark == null) return;
@@ -399,6 +512,10 @@ public partial class PresetListPopup : UserControl
         }
     }
 
+    /// <summary>
+    /// 重置 ComboBox 筛选状态：清空筛选文本、恢复完整列表，
+    /// 并保持之前选中的项不变。
+    /// </summary>
     private void ResetComboBoxFilter()
     {
         // 必须在清空 TextBox 文本之前保存选中项
@@ -429,6 +546,7 @@ public partial class PresetListPopup : UserControl
     //  选项卡切换
     // ══════════════════════════════════════════
 
+    /// <summary>切换到官方预设选项卡</summary>
     private void TabOfficial_Click(object sender, RoutedEventArgs e)
     {
         _isOfficialTab = true;
@@ -438,6 +556,7 @@ public partial class PresetListPopup : UserControl
         RenderPresetList();
     }
 
+    /// <summary>切换到个人预设选项卡</summary>
     private void TabPersonal_Click(object sender, RoutedEventArgs e)
     {
         _isOfficialTab = false;
@@ -447,12 +566,14 @@ public partial class PresetListPopup : UserControl
         RenderPresetList();
     }
 
+    /// <summary>更新选项卡下划线可见性，标识当前选中的选项卡</summary>
     private void UpdateTabVisuals()
     {
         TabOfficialUnderline.Visibility = _isOfficialTab ? Visibility.Visible : Visibility.Collapsed;
         TabPersonalUnderline.Visibility = _isOfficialTab ? Visibility.Collapsed : Visibility.Visible;
     }
 
+    /// <summary>个人选项卡显示导入按钮，官方选项卡隐藏导入按钮</summary>
     private void UpdateBottomButtons()
     {
         ImportButton.Visibility = _isOfficialTab ? Visibility.Collapsed : Visibility.Visible;
@@ -462,6 +583,7 @@ public partial class PresetListPopup : UserControl
     //  预设列表渲染
     // ══════════════════════════════════════════
 
+    /// <summary>根据当前选项卡和游戏类别筛选条件重新渲染预设列表</summary>
     private void RenderPresetList()
     {
         PresetItemsControl.Items.Clear();
@@ -481,6 +603,7 @@ public partial class PresetListPopup : UserControl
         Dispatcher.BeginInvoke(new Action(SyncScrollBar), System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
+    /// <summary>在渲染完成后同步自定义滚动条的状态</summary>
     private void SyncScrollBar()
     {
         if (PresetScrollViewer.ScrollableHeight <= 0)
@@ -495,11 +618,13 @@ public partial class PresetListPopup : UserControl
         PresetScrollBar.Value = PresetScrollViewer.VerticalOffset;
     }
 
+    /// <summary>自定义滚动条拖动时同步滚动 ScrollViewer</summary>
     private void PresetScrollBar_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
     {
         PresetScrollViewer.ScrollToVerticalOffset(e.NewValue);
     }
 
+    /// <summary>创建官方预设列表项 UI 控件（含旗帜图标和预设名称）</summary>
     private FrameworkElement CreatePresetItem(PresetItem preset)
     {
         var item = new ContentControl
@@ -560,6 +685,10 @@ public partial class PresetListPopup : UserControl
         return item;
     }
 
+    /// <summary>
+    /// 创建个人预设列表项 UI 控件（含旗帜图标、名称、游戏标签、编辑/删除/导出按钮）。
+    /// 游戏标签在 Loaded 事件中通过 TrimTagOverflow 进行溢出修剪。
+    /// </summary>
     private FrameworkElement CreatePersonalPresetItem(PresetItem preset)
     {
         var item = new ContentControl
@@ -670,6 +799,10 @@ public partial class PresetListPopup : UserControl
         return item;
     }
 
+    /// <summary>
+    /// 游戏标签溢出修剪：最多显示 2 行，超出部分用 "..." 标签替代。
+    /// 先截断第 3 行及以后的标签，再在最后一行末尾腾出空间放置 "..." 标签。
+    /// </summary>
     private void TrimTagOverflow(WrapPanel tagsPanel)
     {
         const double tagRowH = 36;
@@ -678,10 +811,12 @@ public partial class PresetListPopup : UserControl
         var children = tagsPanel.Children.Cast<FrameworkElement>().ToList();
         if (children.Count == 0) return;
 
+        // 第一步：找到第 3 行及以后的标签，全部移除
         int overflowIdx = children.Count;
         for (int i = 0; i < children.Count; i++)
         {
             var pos = children[i].TranslatePoint(new Point(0, 0), tagsPanel);
+            // Y >= 2 行高度 → 属于第 3 行及更后
             if (pos.Y >= 2 * tagRowH)
             {
                 overflowIdx = i;
@@ -689,24 +824,28 @@ public partial class PresetListPopup : UserControl
             }
         }
 
+        // 如果没有溢出（所有标签都在 2 行以内），直接返回
         if (overflowIdx >= children.Count)
             return;
 
+        // 移除第 3 行及之后的所有标签
         for (int i = children.Count - 1; i >= overflowIdx; i--)
             tagsPanel.Children.RemoveAt(i);
 
+        // 第二步：在最后一行末尾腾出空间放置 "..." 标签
         var dotsTag = CreateGameTag("...");
         double dotsWidth = dotsTag.Width + tagMarginR;
         double available = tagsPanel.ActualWidth;
 
+        // 从后向前移除标签，直到最后一行有足够空间放入 "..."
         while (tagsPanel.Children.Count > 0)
         {
             var last = (FrameworkElement)tagsPanel.Children[tagsPanel.Children.Count - 1];
             var lastPos = last.TranslatePoint(new Point(0, 0), tagsPanel);
-            if (lastPos.Y < tagRowH) break;
+            if (lastPos.Y < tagRowH) break; // 最后一项在第一行，不修剪
 
             double rightEdge = lastPos.X + last.ActualWidth + tagMarginR;
-            if (rightEdge + dotsWidth <= available) break;
+            if (rightEdge + dotsWidth <= available) break; // 有足够空间放 "..."
 
             tagsPanel.Children.RemoveAt(tagsPanel.Children.Count - 1);
         }
@@ -723,6 +862,7 @@ public partial class PresetListPopup : UserControl
     private static readonly string s_editIconGeometry =
         "M0.75 15.75H13.4366 M7.67093 11.7133L4.21094 12.3361L4.7876 8.83001L12.5495 1.09115C12.6567 0.983054 12.7843 0.897252 12.9248 0.838699C13.0654 0.780146 13.2161 0.75 13.3684 0.75C13.5206 0.75 13.6714 0.780146 13.8119 0.838699C13.9525 0.897252 14.08 0.983054 14.1873 1.09115L15.4098 2.31369C15.5179 2.4209 15.6037 2.54846 15.6622 2.68901C15.7208 2.82955 15.7509 2.9803 15.7509 3.13255C15.7509 3.2848 15.7208 3.43555 15.6622 3.5761C15.6037 3.71664 15.5179 3.8442 15.4098 3.95142L7.67093 11.7133Z";
 
+    /// <summary>创建图标按钮（Path + Grid），支持鼠标悬停颜色变化和点击回调</summary>
     private static FrameworkElement CreateIconButton(string geometry, Action? onClick = null)
     {
         var normalBrush = new SolidColorBrush(Color.FromArgb(0xFF, 0xEE, 0xEE, 0xEE));
@@ -760,6 +900,10 @@ public partial class PresetListPopup : UserControl
         return grid;
     }
 
+    /// <summary>
+    /// 初始化共享详情弹窗（所有预设项共用单个 Popup 实例）。
+    /// 包含预设名称、游戏标签列表，背景为切角多边形，边框为分段线条。
+    /// </summary>
     private void InitSharedDetailPopup()
     {
         _detailPopup = new Popup
@@ -831,27 +975,32 @@ public partial class PresetListPopup : UserControl
         _detailPopup.Child = _detailRootGrid;
     }
 
+    /// <summary>
+    /// 显示详情弹窗（鼠标悬停 500ms 后触发）。
+    /// 使用 CancellationTokenSource 实现延迟取消：如果 500ms 内鼠标移开，
+    /// MouseLeave 调用 HideDetailPopup 取消 Token，弹窗不会显示。
+    /// </summary>
     private async void ShowDetailPopup(PresetItem preset, FrameworkElement target)
     {
         if (_detailPopup == null) return;
 
-        // 1. 取消上一次可能还未完成的延迟任务
+        // 取消上一次可能还未完成的延迟任务
         _popupDelayCts?.Cancel();
         _popupDelayCts = new CancellationTokenSource();
         var token = _popupDelayCts.Token;
 
-        // 2. 先关闭当前可能处于打开状态的弹窗
+        // 先关闭当前可能处于打开状态的弹窗
         if (_detailPopup.IsOpen)
             _detailPopup.IsOpen = false;
 
         try
         {
-            // 3. 核心修改：等待1秒（1000毫秒）
+            // 延迟 500ms：鼠标悬停 500ms 后才显示详情弹窗，避免快速划过时闪烁
             await Task.Delay(500, token);
         }
         catch (TaskCanceledException)
         {
-            // 如果在1秒内触发了 MouseLeave，任务被取消，直接退出
+            // 如果在 500ms 内触发了 MouseLeave，任务被取消，直接退出
             return;
         }
 
@@ -861,13 +1010,13 @@ public partial class PresetListPopup : UserControl
         foreach (var game in preset.Games)
             _detailGamesPanel.Children.Add(CreateGameTag(game));
 
-        // 调用之前修复的尺寸计算方法
+        // 根据实际内容重新计算弹窗的切角多边形和边框几何
         UpdateDetailGeometries();
 
         // 更新弹窗要挂载的目标位置
         _detailPopup.PlacementTarget = target;
 
-        // 使用 Dispatcher 将“打开”动作推迟到 Render 优先级
+        // 使用 Dispatcher 将”打开”动作推迟到 Render 优先级，确保布局已完成
         _=Dispatcher.BeginInvoke(new Action(() =>
         {
             // 再次检查：确保等待期间目标没有被清空，且任务未被取消
@@ -878,20 +1027,28 @@ public partial class PresetListPopup : UserControl
         }), System.Windows.Threading.DispatcherPriority.Render);
     }
 
+    /// <summary>
+    /// 隐藏详情弹窗，同时取消正在等待中的延迟显示任务。
+    /// </summary>
     private void HideDetailPopup()
     {
-        // 核心修改：鼠标移开时，立刻取消延迟显示的计时器任务
+        // 鼠标移开时，立刻取消延迟显示的计时器任务
         _popupDelayCts?.Cancel();
 
         if (_detailPopup != null)
         {
             _detailPopup.IsOpen = false;
 
-            // 鼠标离开时必须清空目标
+            // 鼠标离开时必须清空目标，防止残留引用
             _detailPopup.PlacementTarget = null;
         }
     }
 
+    /// <summary>
+    /// 动态更新详情弹窗的切角多边形和边框几何。
+    /// 通过强制 Measure 获取内容的期望尺寸，然后重新绘制背景多边形和边框线条，
+    /// 使弹窗大小精确匹配内容。
+    /// </summary>
     private void UpdateDetailGeometries()
     {
         if (_detailContentStack == null || _detailRootGrid == null ||
@@ -929,6 +1086,7 @@ public partial class PresetListPopup : UserControl
         _detailRootGrid.Height = totalH;
     }
 
+    /// <summary>创建游戏标签 UI 控件（切角平行四边形背景 + 游戏名称文本）</summary>
     private FrameworkElement CreateGameTag(string gameName)
     {
         var text = new TextBlock
@@ -972,12 +1130,14 @@ public partial class PresetListPopup : UserControl
     //  事件处理
     // ══════════════════════════════════════════
 
+    /// <summary>点击遮罩背景时关闭弹窗（仅当点击源为遮罩层本身，防止事件冒泡误关闭）</summary>
     private void Overlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.OriginalSource == OverlayBackground)
             Hide();
     }
 
+    /// <summary>ComboBox 选中项变化时，从选中文本中提取游戏简称作为筛选条件</summary>
     private void CategoryComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var selected = CategoryComboBox.SelectedItem?.ToString();
@@ -986,15 +1146,18 @@ public partial class PresetListPopup : UserControl
             _currentCategory = LocalizationService.Instance["Preset.All"];
             return;
         }
+        // 从 "Assetto Corsa Competizione (ACC)" 中提取括号内的简称 "ACC"
         var match = System.Text.RegularExpressions.Regex.Match(selected, @"\(([^)]+)\)");
         _currentCategory = match.Success ? match.Groups[1].Value : selected;
     }
 
+    /// <summary>点击筛选按钮，重新渲染预设列表</summary>
     private void FilterButton_Click(object sender, RoutedEventArgs e)
     {
         RenderPresetList();
     }
 
+    /// <summary>点击取消按钮，重置游戏筛选为"全部"</summary>
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
         _currentCategory = LocalizationService.Instance["Preset.All"];
@@ -1003,6 +1166,7 @@ public partial class PresetListPopup : UserControl
         RenderPresetList();
     }
 
+    /// <summary>点击应用按钮，触发 PresetApplied 事件并关闭弹窗</summary>
     private void ApplyButton_Click(object sender, RoutedEventArgs e)
     {
         var selectedPreset = GetSelectedPreset();
@@ -1011,6 +1175,7 @@ public partial class PresetListPopup : UserControl
         Hide();
     }
 
+    /// <summary>点击导入按钮，打开文件对话框选择 JSON 预设文件导入</summary>
     private void ImportButton_Click(object sender, RoutedEventArgs e)
     {
         var dlg = new Microsoft.Win32.OpenFileDialog
@@ -1042,6 +1207,7 @@ public partial class PresetListPopup : UserControl
     //  公开方法
     // ══════════════════════════════════════════
 
+    /// <summary>从外部刷新个人预设列表数据</summary>
     public void RefreshPersonalPresets(List<PresetItem> presets)
     {
         _personalPresets.Clear();
@@ -1049,6 +1215,7 @@ public partial class PresetListPopup : UserControl
         if (!_isOfficialTab) RenderPresetList();
     }
 
+    /// <summary>从外部设置官方预设列表数据</summary>
     public void SetOfficialPresets(IEnumerable<PresetItem> presets)
     {
         _officialPresets.Clear();
@@ -1056,6 +1223,7 @@ public partial class PresetListPopup : UserControl
         if (_isOfficialTab) RenderPresetList();
     }
 
+    /// <summary>从外部设置个人预设列表数据</summary>
     public void SetPersonalPresets(IEnumerable<PresetItem> presets)
     {
         _personalPresets.Clear();
@@ -1063,37 +1231,46 @@ public partial class PresetListPopup : UserControl
         if (!_isOfficialTab) RenderPresetList();
     }
 
+    /// <summary>从外部添加一条个人预设</summary>
     public void AddPersonalPreset(PresetItem preset)
     {
         _personalPresets.Add(preset);
         if (!_isOfficialTab) RenderPresetList();
     }
 
+    /// <summary>从外部移除一条个人预设</summary>
     public void RemovePersonalPreset(PresetItem preset)
     {
         _personalPresets.Remove(preset);
         if (!_isOfficialTab) RenderPresetList();
     }
 
+    // ══════════════════════════════════════════
+    //  预设选中 / 应用 / 删除 / 导出
+    // ══════════════════════════════════════════
+
+    /// <summary>将当前个人预设列表持久化保存到文件</summary>
     private void SavePersonalPresets()
     {
         App.PresetService?.SavePersonalPresets(_personalPresets, DeviceType);
     }
 
+    /// <summary>获取当前选中的预设项</summary>
     private PresetItem? GetSelectedPreset()
     {
         return _selectedPreset;
     }
 
+    /// <summary>选中一个预设项，取消前一个选中并更新视觉效果</summary>
     private void SelectPresetItem(PresetItem preset, ContentControl control)
     {
-        // Deselect previous
+        // 取消上一个选中项的高亮
         DeselectCurrentItem();
 
         _selectedPreset = preset;
         _selectedControl = control;
 
-        // Apply hover-like selected visual
+        // 应用选中视觉效果：红色描边 + 渐变填充背景
         var bgRect = control.Template.FindName("BgRect", control) as System.Windows.Shapes.Rectangle;
         if (bgRect != null)
         {
@@ -1112,6 +1289,7 @@ public partial class PresetListPopup : UserControl
         }
     }
 
+    /// <summary>取消当前选中项，清除视觉效果</summary>
     private void DeselectCurrentItem()
     {
         if (_selectedControl != null)
@@ -1128,6 +1306,7 @@ public partial class PresetListPopup : UserControl
         _selectedControl = null;
     }
 
+    /// <summary>应用选中的预设（双击触发），触发 PresetApplied 事件并关闭弹窗</summary>
     private void ApplySelectedPreset()
     {
         if (_selectedPreset != null)
@@ -1135,6 +1314,7 @@ public partial class PresetListPopup : UserControl
         Hide();
     }
 
+    /// <summary>显示删除确认对话框（仅个人预设可用）</summary>
     private void ShowDeleteConfirmDialog(PresetItem preset)
     {
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
@@ -1170,6 +1350,10 @@ public partial class PresetListPopup : UserControl
         dialog.Show();
     }
 
+    /// <summary>
+    /// 导出预设到文件。打开保存文件对话框选择目标路径，
+    /// 导出失败时会弹出重试对话框。
+    /// </summary>
     private void ExportPreset(PresetItem preset)
     {
         var dlg = new Microsoft.Win32.SaveFileDialog
@@ -1186,6 +1370,7 @@ public partial class PresetListPopup : UserControl
         TryExportPresetWithRetry(preset, fileName);
     }
 
+    /// <summary>尝试导出预设，成功显示 Toast 提示，失败显示重试对话框</summary>
     private void TryExportPresetWithRetry(PresetItem preset, string fileName)
     {
         if (PerformExportPreset(preset, fileName))
@@ -1197,6 +1382,7 @@ public partial class PresetListPopup : UserControl
         ShowExportFailedDialog(() => TryExportPresetWithRetry(preset, fileName));
     }
 
+    /// <summary>执行预设导出到文件的实际操作</summary>
     private bool PerformExportPreset(PresetItem preset, string fileName)
     {
         try
@@ -1211,6 +1397,7 @@ public partial class PresetListPopup : UserControl
         }
     }
 
+    /// <summary>显示导出成功的 Toast 提示（1 秒后自动消失）</summary>
     private void ShowExportSuccessToast(string message)
     {
         var rootPanel = (Window.GetWindow(this)?.Content as Panel);
@@ -1300,6 +1487,7 @@ public partial class PresetListPopup : UserControl
         timer.Start();
     }
 
+    /// <summary>显示导出失败对话框，提供重试和取消选项</summary>
     private void ShowExportFailedDialog(Action? onRetry)
     {
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
@@ -1334,6 +1522,7 @@ public partial class PresetListPopup : UserControl
         dialog.Show();
     }
 
+    /// <summary>Accent 按钮尺寸变化时重新绘制切角背景路径</summary>
     private void AccentButton_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (sender is not Grid grid) return;
@@ -1345,6 +1534,7 @@ public partial class PresetListPopup : UserControl
         path.Data = Geometry.Parse($"M{w},0 H9 L0,9 V{h} H{w - 9} L{w},{h - 9} V0 Z");
     }
 
+    /// <summary>操作按钮尺寸变化时重新绘制切角背景路径</summary>
     private void ActionButton_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (sender is not Grid grid) return;
@@ -1356,6 +1546,7 @@ public partial class PresetListPopup : UserControl
         path.Data = Geometry.Parse($"M{w},0 H9 L0,9 V{h} H{w - 9} L{w},{h - 9} V0 Z");
     }
 
+    /// <summary>ComboBox 尺寸变化时重新绘制切角背景路径</summary>
     private void ComboBox_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (sender is not Grid grid) return;
@@ -1371,15 +1562,32 @@ public partial class PresetListPopup : UserControl
 
 }
 
+/// <summary>
+/// 预设项数据模型。
+/// 包含预设的名称、描述、分类、关联游戏列表、参数快照等元数据，
+/// 用于在 PresetListPopup 中展示和操作预设。
+/// </summary>
 public class PresetItem
 {
+    /// <summary>预设名称</summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>预设描述</summary>
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>预设分类</summary>
     public string Category { get; set; } = string.Empty;
+
+    /// <summary>预设包含的参数项数量</summary>
     public int ItemCount { get; set; }
+
+    /// <summary>关联的游戏列表</summary>
     public List<string> Games { get; set; } = new();
+
+    /// <summary>踏板预设参数快照</summary>
     public Models.Usb.PedalPresetSnapshot? Parameters { get; set; }
 
+    /// <summary>方向盘/基座预设参数快照</summary>
     public Models.Usb.WheelPresetSnapshot? WheelParameters { get; set; }
 
     /// <summary>是否为个人预设（可编辑/删除），官方预设不可编辑</summary>

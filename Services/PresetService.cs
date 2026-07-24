@@ -5,8 +5,18 @@ using HITAPEX.Views.DeviceParameters;
 
 namespace HITAPEX.Services;
 
+/// <summary>
+/// 预设服务 —— 管理官方预设和个人预设的加载、保存、导入、导出。
+/// 官方预设从安装目录的 JSON 文件加载（只读）；个人预设存储在
+/// %LocalAppData%\HITAPEX\Presets\personal.json，支持按设备类型过滤。
+/// </summary>
+/// <remarks>
+/// 线程安全性：文件写入通过 SemaphoreSlim 加锁，避免并发写入冲突。
+/// 预设分为两种来源：Official（官方，IsPersonal=false）和 Personal（用户自定义，IsPersonal=true）。
+/// </remarks>
 public class PresetService
 {
+    /// <summary>JSON 序列化选项：缩进格式化 + 属性名大小写不敏感</summary>
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
@@ -18,6 +28,11 @@ public class PresetService
     private readonly string _officialFilePath;
     private readonly SemaphoreSlim _fileLock = new(1, 1);
 
+    /// <summary>
+    /// 初始化预设服务。确定官方预设和个人预设的文件路径。
+    /// 官方预设：{AppBase}\Assets\Presets\official_presets.json
+    /// 个人预设：%LocalAppData%\HITAPEX\Presets\personal.json
+    /// </summary>
     public PresetService()
     {
         var baseDir = AppContext.BaseDirectory;

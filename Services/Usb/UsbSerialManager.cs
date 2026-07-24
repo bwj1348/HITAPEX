@@ -3,6 +3,15 @@ using HITAPEX.Models.Usb;
 
 namespace HITAPEX.Services.Usb;
 
+/// <summary>
+/// USB 串口管理器 —— IUsbSerialManager 的实现，负责目标设备的发现、连接、断开、重连和数据收发。
+/// 通过 UsbDeviceDiscovery 进行 WMI 热插拔监控，每个设备分配独立的 DeviceSerialChannel 进行串口通信。
+/// </summary>
+/// <remarks>
+/// 线程安全性：设备集合使用 ConcurrentDictionary，启停通过 _startStopLock 保护。
+/// 自动重连：连接失败时以指数退避（1s → 2s → 4s → 8s → 16s）最多重试 5 次。
+/// 错误恢复：串口异常时自动触发重连流程。
+/// </remarks>
 public class UsbSerialManager : IUsbSerialManager
 {
     private readonly DeviceLogger _logger;
@@ -18,11 +27,19 @@ public class UsbSerialManager : IUsbSerialManager
     private const int ReconnectBaseDelayMs = 1000;
     private const int ReconnectMaxDelayMs = 30000;
 
+    /// <summary>设备首次连接成功时触发</summary>
     public event Action<UsbDeviceInfo>? DeviceConnected;
+
+    /// <summary>设备断开连接时触发</summary>
     public event Action<UsbDeviceInfo>? DeviceDisconnected;
+
+    /// <summary>从设备收到原始数据时触发</summary>
     public event Action<UsbDeviceInfo, byte[]>? RawDataReceived;
+
+    /// <summary>设备发生错误时触发</summary>
     public event Action<UsbDeviceInfo, string>? DeviceError;
 
+    /// <summary>当前已连接的设备列表（仅 State == Connected）</summary>
     public IReadOnlyList<UsbDeviceInfo> ConnectedDevices
     {
         get
@@ -34,8 +51,10 @@ public class UsbSerialManager : IUsbSerialManager
         }
     }
 
+    /// <summary>管理器是否正在运行</summary>
     public bool IsRunning => _isRunning;
 
+    /// <summary>初始化 USB 串口管理器</summary>
     public UsbSerialManager()
     {
         _logger = new DeviceLogger();
@@ -45,26 +64,33 @@ public class UsbSerialManager : IUsbSerialManager
         _discovery.DeviceRemoved += OnDeviceRemoved;
     }
 
+    /// <summary>注册一个目标设备 VID/PID</summary>
     public void RegisterTargetDevice(VidPidPair pair)
     {
         _discovery.AddTargetDevice(pair);
     }
 
+    /// <summary>批量注册目标设备</summary>
     public void RegisterTargetDevices(IEnumerable<VidPidPair> pairs)
     {
         _discovery.AddTargetDevices(pairs);
     }
 
+    /// <summary>注销一个目标设备</summary>
     public void UnregisterTargetDevice(VidPidPair pair)
     {
         _discovery.RemoveTargetDevice(pair);
     }
 
+    /// <summary>获取当前注册的所有目标设备</summary>
     public IReadOnlyCollection<VidPidPair> GetRegisteredDevices()
     {
         return _discovery.GetTargetDevices();
     }
 
+    /// <summary>
+    /// 启动管理器 —— 扫描已连接的设备并开始热插拔监控。
+    /// </summary>
     public void Start()
     {
         lock (_startStopLock)
@@ -76,16 +102,19 @@ public class UsbSerialManager : IUsbSerialManager
 
             _logger.Log(DeviceEventType.DiscoveryStarted, "", "USB串口管理器启动");
 
+            // 先扫描当前已连接的设备
             var existingDevices = _discovery.DiscoverDevices();
             foreach (var device in existingDevices)
             {
                 OnDeviceArrived(device);
             }
 
+            // 启动 WMI 热插拔监控（失败时自动降级为轮询）
             _discovery.StartHotplugMonitoring();
         }
     }
 
+    /// <summary>停止管理器 —— 断开所有设备并停止热插拔监控</summary>
     public void Stop()
     {
         lock (_startStopLock)
@@ -101,6 +130,9 @@ public class UsbSerialManager : IUsbSerialManager
         }
     }
 
+    /// <summary>
+    /// 设备插入事件处理 —— 新设备直接创建通道并连接；已知设备若未连接则尝试重新连接。
+    /// </summary>
     private void OnDeviceArrived(UsbDeviceInfo deviceInfo)
     {
         var key = deviceInfo.DeviceKey;
@@ -119,6 +151,9 @@ public class UsbSerialManager : IUsbSerialManager
         ConnectDevice(deviceInfo);
     }
 
+    /// <summary>
+    /// 设备拔出事件处理 —— 移除通道并取消事件订阅，触发 DeviceDisconnected。
+    /// </summary>
     private void OnDeviceRemoved(UsbDeviceInfo deviceInfo)
     {
         var key = deviceInfo.DeviceKey;
@@ -138,6 +173,10 @@ public class UsbSerialManager : IUsbSerialManager
         }
     }
 
+    /// <summary>
+    /// 连接到指定设备（创建 DeviceSerialChannel 并打开串口）。
+    /// 首次连接失败将自动触发指数退避重连（最多 5 次）。
+    /// </summary>
     public bool ConnectDevice(UsbDeviceInfo deviceInfo)
     {
         var key = deviceInfo.DeviceKey;
@@ -167,6 +206,7 @@ public class UsbSerialManager : IUsbSerialManager
         return false;
     }
 
+    /// <summary>断开指定设备连接</summary>
     public void DisconnectDevice(UsbDeviceInfo deviceInfo)
     {
         var key = deviceInfo.DeviceKey;
@@ -187,6 +227,7 @@ public class UsbSerialManager : IUsbSerialManager
         }
     }
 
+    /// <summary>断开所有已连接的设备</summary>
     public void DisconnectAll()
     {
         foreach (var key in _channels.Keys.ToList())
@@ -206,6 +247,10 @@ public class UsbSerialManager : IUsbSerialManager
         }
     }
 
+    /// <summary>
+    /// 自动重连流程 —— 指数退避延迟（1s → 2s → 4s → 8s → 16s），最多 5 次尝试。
+    /// 成功则触发 DeviceConnected 事件，失败则将设备状态设为 Error。
+    /// </summary>
     private async Task TryReconnectAsync(UsbDeviceInfo deviceInfo, DeviceSerialChannel channel)
     {
         var attempts = 0;
@@ -248,11 +293,15 @@ public class UsbSerialManager : IUsbSerialManager
         channel.Dispose();
     }
 
+    /// <summary>通道原始数据回调 → 转发到 RawDataReceived 事件</summary>
     private void OnChannelRawDataReceived(DeviceSerialChannel channel, byte[] data)
     {
         RawDataReceived?.Invoke(channel.DeviceInfo, data);
     }
 
+    /// <summary>
+    /// 通道错误回调 —— 触发 DeviceError 事件，若非正在重连则自动启动重连流程。
+    /// </summary>
     private void OnChannelError(DeviceSerialChannel channel, string error)
     {
         var deviceInfo = channel.DeviceInfo;
