@@ -589,13 +589,35 @@ public partial class BaseParameterControl : UserControl
                 PresetNameText.Text = LocalizationService.Instance["DeviceParam.Onboard"];
             else
                 PresetNameText.Text = _currentPresetName;
-            // 有未保存修改时缩小名称区域宽度，为"已更改"文字腾出空间
-            PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
+            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
         }
 
         // 控制"已更改"提示文字的显示/隐藏
         if (ModifiedIndicator != null)
             ModifiedIndicator.Visibility = _isPresetModified ? Visibility.Visible : Visibility.Collapsed;
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (PresetNameText == null || PresetInfoGrid == null || PresetInfoGrid.ActualWidth <= 0) return;
+            if (PresetNameInnerGrid == null) return;
+
+            double leftOffset = PresetNameInnerGrid.TranslatePoint(new Point(0, 0), PresetInfoGrid).X;
+            double available = PresetInfoGrid.ActualWidth - leftOffset - 15;
+
+            PresetNameText.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            double nameW = PresetNameText.DesiredSize.Width;
+
+            double indicatorW = 0;
+            if (ModifiedIndicator != null && _isPresetModified)
+            {
+                ModifiedIndicator.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+                indicatorW = ModifiedIndicator.DesiredSize.Width + 3;
+                available += 3;
+            }
+
+            if (nameW + indicatorW > available)
+                PresetNameText.MaxWidth = Math.Max(0, available - indicatorW);
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
 
         // 撤回按钮状态控制：已修改时可用（默认颜色 + 手型光标），未修改时半透明禁用
         if (UndoButtonPath != null)
@@ -652,6 +674,7 @@ public partial class BaseParameterControl : UserControl
         }
     }
 
+    /// <summary>计算 PresetNameText 的最大宽度：确保已更改贴紧显示，名称过长时截断</summary>
     // ═══════════════════════════════════════════
     // 按钮事件处理
     // ═══════════════════════════════════════════

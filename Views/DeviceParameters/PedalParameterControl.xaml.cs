@@ -73,7 +73,7 @@ public partial class PedalParameterControl : UserControl
     private string _deviceModel = "";
     private string _connectionStatusText = LocalizationService.Instance["DeviceParam.ConnectedBase"];
     private string _connectionStatusColor = "#179548";
-    private string _firmwareVersion = "v 1.0.0";
+    private string? _firmwareVersion;
     private bool _isSendingParameters;
     private bool _isApplyingParameters; // 从设备同步参数时阻止下发
     private string? _latestApiFirmwareVersion;
@@ -727,7 +727,7 @@ public partial class PedalParameterControl : UserControl
             var target = personalPresets.FirstOrDefault(p => p.Name == _currentPresetName);
             if (target == null) return false;
 
-            target.Parameters = CaptureCurrentParameters();
+            target.PedalParameters = CaptureCurrentParameters();
             App.PresetService.SavePersonalPresets(personalPresets, Models.Usb.DeviceType.Pedal);
             popup?.RefreshPersonalPresets(personalPresets);
 
@@ -954,7 +954,7 @@ public partial class PedalParameterControl : UserControl
                 Description = edited.Description,
                 Category = edited.Category,
                 Games = edited.Games,
-                Parameters = CaptureCurrentParameters(),
+                PedalParameters = CaptureCurrentParameters(),
                 IsPersonal = true,
                 DeviceType = Models.Usb.DeviceType.Pedal
             };
@@ -1026,7 +1026,7 @@ public partial class PedalParameterControl : UserControl
             var exportItem = new PresetItem
             {
                 Name = _currentPresetName,
-                Parameters = snapshot,
+                PedalParameters = snapshot,
                 IsPersonal = true,
                 DeviceType = Models.Usb.DeviceType.Pedal
             };
@@ -1093,7 +1093,7 @@ public partial class PedalParameterControl : UserControl
 
     private void OnPresetApplied(object? sender, PresetItem preset)
     {
-        if (preset.Parameters == null) return;
+        if (preset.PedalParameters == null) return;
 
         if (_isPresetModified)
             ShowUnsavedDialog(() => ApplyPreset(preset), () => ApplyPreset(preset));
@@ -1104,11 +1104,11 @@ public partial class PedalParameterControl : UserControl
     private void ApplyPreset(PresetItem preset)
     {
         _isApplyingPreset = true;
-        ApplyPresetSnapshot(preset.Parameters!);
+        ApplyPresetSnapshot(preset.PedalParameters!);
         SendPedalParameters();
         _isApplyingPreset = false;
 
-        _appliedPresetParameters = preset.Parameters;
+        _appliedPresetParameters = preset.PedalParameters;
         _currentPresetName = preset.Name;
         _isAppliedPresetPersonal = preset.IsPersonal;
         _isPresetModified = false;
@@ -1135,21 +1135,46 @@ public partial class PedalParameterControl : UserControl
 
         if (PresetNameText != null)
         {
-            var newText = PresetNameText.Text;
+            string nameText;
             if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
-                newText = $"{_devicePresetName}_{LocalizationService.Instance["DeviceParam.Onboard"]}";
+                nameText = $"{_devicePresetName}_{LocalizationService.Instance["DeviceParam.Onboard"]}";
             else if (isOnboard)
-                newText = LocalizationService.Instance["DeviceParam.Onboard"];
+                nameText = LocalizationService.Instance["DeviceParam.Onboard"];
             else
-                newText = _currentPresetName;
+                nameText = _currentPresetName;
 
-            Debug.WriteLine($"[PedalControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{newText}'");
-            PresetNameText.Text = newText;
-            PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
+            Debug.WriteLine($"[PedalControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{nameText}'");
+            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
+            PresetNameText.Text = nameText;
         }
 
         if (ModifiedIndicator != null)
             ModifiedIndicator.Visibility = _isPresetModified ? Visibility.Visible : Visibility.Collapsed;
+
+        // 延迟到布局完成后：名称+已更改超出可用空间时限制名称宽度触发截断
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (PresetNameText == null || PresetInfoGrid == null || PresetInfoGrid.ActualWidth <= 0) return;
+            if (PresetNameInnerGrid == null) return;
+
+            double leftOffset = PresetNameInnerGrid.TranslatePoint(new Point(0, 0), PresetInfoGrid).X;
+            double available = PresetInfoGrid.ActualWidth - leftOffset - 15;
+
+            PresetNameText.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            double nameW = PresetNameText.DesiredSize.Width;
+
+            double indicatorW = 0;
+            if (ModifiedIndicator != null && _isPresetModified)
+            {
+                ModifiedIndicator.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+                indicatorW = ModifiedIndicator.DesiredSize.Width + 3; // left margin
+                // 补偿已更改文字的 Measure 偏差，避免名称截断后右侧留白
+                available += 3;
+            }
+
+            if (nameW + indicatorW > available)
+                PresetNameText.MaxWidth = Math.Max(0, available - indicatorW);
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
 
         if (UndoButtonPath != null)
         {
@@ -1202,6 +1227,7 @@ public partial class PedalParameterControl : UserControl
         if (PersonalPresetIcon != null)
             PersonalPresetIcon.Visibility = (!isOnboard && _isAppliedPresetPersonal) ? Visibility.Visible : Visibility.Collapsed;
     }
+
 
     /// <summary>将当前 UI 参数捕获为快照</summary>
     private PedalPresetSnapshot CaptureCurrentParameters()
@@ -1558,7 +1584,7 @@ public partial class PedalParameterControl : UserControl
                     }
                     else
                     {
-                        _firmwareVersion = "未知";
+                        _firmwareVersion = null;
                     }
                 }
             }
@@ -1691,7 +1717,7 @@ public partial class PedalParameterControl : UserControl
                 isPersonal = false;
             }
 
-            if (matched?.Parameters != null && _appliedPresetParameters.ParametersEqual(matched.Parameters))
+            if (matched?.PedalParameters != null && _appliedPresetParameters.ParametersEqual(matched.PedalParameters))
             {
                 _currentPresetName = matched.Name;
                 _isAppliedPresetPersonal = isPersonal;
@@ -1714,7 +1740,7 @@ public partial class PedalParameterControl : UserControl
         _deviceModel = "";
         _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
         _connectionStatusColor = "#C60E0E";
-        _firmwareVersion = "---";
+        _firmwareVersion = null;
         _pedalCount = 1;
 
         // 重置预设状态
@@ -1763,7 +1789,7 @@ public partial class PedalParameterControl : UserControl
     {
         try
         {
-            if (App.FirmwareApi == null || string.IsNullOrEmpty(_firmwareVersion) || _firmwareVersion == "---" || _firmwareVersion == "未知")
+            if (App.FirmwareApi == null || string.IsNullOrEmpty(_firmwareVersion))
             {
                 if (NewVersionAvailableBorder != null)
                     NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
@@ -1980,9 +2006,7 @@ public partial class PedalParameterControl : UserControl
             ConnectionStatusText.Text = _connectionStatusText;
 
         if (FirmwareVersionText != null)
-            FirmwareVersionText.Text = _firmwareVersion == "未知" ? LocalizationService.Instance["DeviceParam.Unknown"]
-                : _firmwareVersion == "---" ? LocalizationService.Instance["DeviceParam.UnknownVersion"]
-                : _firmwareVersion;
+            FirmwareVersionText.Text = _firmwareVersion ?? LocalizationService.Instance["DeviceParam.UnknownVersion"];
 
         // 更新连接状态图标颜色
         var color = (Color)ColorConverter.ConvertFromString(_connectionStatusColor);

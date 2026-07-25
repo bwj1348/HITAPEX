@@ -17,7 +17,7 @@
     "iR",
     "LMU"
   ],
-  "Parameters": {
+  "PedalParameters": {
     "clutchCurveType": 5,
     "clutchDirection": 0,
     "clutchPoint1Y": 50,

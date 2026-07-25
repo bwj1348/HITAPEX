@@ -1585,7 +1585,7 @@ public class PresetItem
     public List<string> Games { get; set; } = new();
 
     /// <summary>踏板预设参数快照</summary>
-    public Models.Usb.PedalPresetSnapshot? Parameters { get; set; }
+    public Models.Usb.PedalPresetSnapshot? PedalParameters { get; set; }
 
     /// <summary>方向盘/基座预设参数快照</summary>
     public Models.Usb.WheelPresetSnapshot? WheelParameters { get; set; }

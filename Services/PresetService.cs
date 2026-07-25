@@ -180,7 +180,7 @@ public class PresetService
             Description = preset.Description,
             Category = preset.Category,
             Games = preset.Games,
-            Parameters = preset.Parameters,
+            PedalParameters = preset.PedalParameters,
             WheelParameters = preset.WheelParameters,
             IsPersonal = true
         };

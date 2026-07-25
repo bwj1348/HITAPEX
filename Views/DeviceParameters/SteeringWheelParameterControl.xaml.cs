@@ -34,7 +34,7 @@ public partial class SteeringWheelParameterControl : UserControl
     private string _deviceModel = "";
     private string _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
     private string _connectionStatusColor = "#C60E0E";
-    private string _firmwareVersion = "---";
+    private string? _firmwareVersion;
     private string? _latestApiFirmwareVersion;
 
     // ── 按键参数状态（数组长度19，索引对应 Btn1-Btn19）──
@@ -212,7 +212,7 @@ public partial class SteeringWheelParameterControl : UserControl
                 {
                     var deviceInfo = await App.FirmwareUpdater.GetDeviceInfoAsync(
                         _connectedWheelDevice, DeviceType.Wheel);
-                    _firmwareVersion = deviceInfo?.VersionString ?? "未知";
+                    _firmwareVersion = deviceInfo?.VersionString;
                 }
             }
             else
@@ -379,7 +379,7 @@ public partial class SteeringWheelParameterControl : UserControl
         _deviceModel = "";
         _connectionStatusText = LocalizationService.Instance["DeviceParam.NotConnected"];
         _connectionStatusColor = "#C60E0E";
-        _firmwareVersion = "---";
+        _firmwareVersion = null;
 
         // 重置预设状态
         _appliedPresetParameters = null;
@@ -398,7 +398,8 @@ public partial class SteeringWheelParameterControl : UserControl
             if (_buttonRings[i] != null) _buttonRings[i]!.Visibility = Visibility.Collapsed;
         }
         if (KeyResponseName != null)
-            KeyResponseName.Text = "---";
+            KeyResponseName.Text = LocalizationService.Instance["DeviceParam.UnknownVersion"];
+        UpdateButtonCircleColors();
     }
 
     /// <summary>
@@ -426,7 +427,7 @@ public partial class SteeringWheelParameterControl : UserControl
             ConnectionStatusText.Text = _connectionStatusText;
 
         if (FirmwareVersionText != null)
-            FirmwareVersionText.Text = _firmwareVersion;
+            FirmwareVersionText.Text = _firmwareVersion ?? LocalizationService.Instance["DeviceParam.UnknownVersion"];
 
         var color = (Color)ColorConverter.ConvertFromString(_connectionStatusColor);
         var brush = new SolidColorBrush(color);
@@ -443,7 +444,7 @@ public partial class SteeringWheelParameterControl : UserControl
     {
         try
         {
-            if (App.FirmwareApi == null || string.IsNullOrEmpty(_firmwareVersion) || _firmwareVersion == "---" || _firmwareVersion == "未知")
+            if (App.FirmwareApi == null || string.IsNullOrEmpty(_firmwareVersion))
             {
                 if (NewVersionAvailableBorder != null)
                     NewVersionAvailableBorder.Visibility = Visibility.Collapsed;
@@ -552,12 +553,12 @@ public partial class SteeringWheelParameterControl : UserControl
         }
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "未 保 存";
+        dialog.Title = LocalizationService.Instance["Dialog.UnsavedTitle"];
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设已更改，是否保存？",
+            Text = LocalizationService.Instance["Dialog.UnsavedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -568,7 +569,7 @@ public partial class SteeringWheelParameterControl : UserControl
 
         if (_isAppliedPresetPersonal)
         {
-            dialog.AddButton("保 存", (_, _) =>
+            dialog.AddButton(LocalizationService.Instance["Common.Save"], (_, _) =>
             {
                 dialog.Hide();
                 TrySaveWithRetry(() => PerformSave(), () => onSaved?.Invoke());
@@ -576,14 +577,14 @@ public partial class SteeringWheelParameterControl : UserControl
         }
         else
         {
-            dialog.AddButton("另 存 为", (_, _) =>
+            dialog.AddButton(LocalizationService.Instance["Common.SaveAs"], (_, _) =>
             {
                 dialog.Hide();
                 SaveAsInternal(onSaved);
             }, isPrimary: true);
         }
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
             onCancelled?.Invoke();
@@ -624,13 +625,13 @@ public partial class SteeringWheelParameterControl : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "保 存 失 败";
+        dialog.Title = LocalizationService.Instance["Dialog.SaveFailed"];
         dialog.ShowIcon = true;
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设未能成功保存，请检查后重试。",
+            Text = LocalizationService.Instance["Dialog.SaveFailedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -639,13 +640,13 @@ public partial class SteeringWheelParameterControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("重 试", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Retry"], (_, _) =>
         {
             dialog.Hide();
             onRetry?.Invoke();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
@@ -1072,21 +1073,44 @@ public partial class SteeringWheelParameterControl : UserControl
 
         if (PresetNameText != null)
         {
-            var newText = PresetNameText.Text;
+            string nameText;
             if (isOnboard && !string.IsNullOrEmpty(_devicePresetName))
-                newText = $"{_devicePresetName}_{LocalizationService.Instance["DeviceParam.Onboard"]}";
+                nameText = $"{_devicePresetName}_{LocalizationService.Instance["DeviceParam.Onboard"]}";
             else if (isOnboard)
-                newText = LocalizationService.Instance["DeviceParam.Onboard"];
+                nameText = LocalizationService.Instance["DeviceParam.Onboard"];
             else
-                newText = _currentPresetName;
+                nameText = _currentPresetName;
 
-            Debug.WriteLine($"[SteeringWheelControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{newText}'");
-            PresetNameText.Text = newText;
-            PresetNameText.MaxWidth = _isPresetModified ? 195 : 270;
+            Debug.WriteLine($"[SteeringWheelControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{nameText}'");
+            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
+            PresetNameText.Text = nameText;
         }
 
         if (ModifiedIndicator != null)
             ModifiedIndicator.Visibility = _isPresetModified ? Visibility.Visible : Visibility.Collapsed;
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (PresetNameText == null || PresetInfoGrid == null || PresetInfoGrid.ActualWidth <= 0) return;
+            if (PresetNameInnerGrid == null) return;
+
+            double leftOffset = PresetNameInnerGrid.TranslatePoint(new Point(0, 0), PresetInfoGrid).X;
+            double available = PresetInfoGrid.ActualWidth - leftOffset - 15;
+
+            PresetNameText.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            double nameW = PresetNameText.DesiredSize.Width;
+
+            double indicatorW = 0;
+            if (ModifiedIndicator != null && _isPresetModified)
+            {
+                ModifiedIndicator.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+                indicatorW = ModifiedIndicator.DesiredSize.Width + 3;
+                available += 3;
+            }
+
+            if (nameW + indicatorW > available)
+                PresetNameText.MaxWidth = Math.Max(0, available - indicatorW);
+        }), System.Windows.Threading.DispatcherPriority.Loaded);
 
         if (UndoButtonPath != null)
         {
@@ -1163,12 +1187,12 @@ public partial class SteeringWheelParameterControl : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "撤 回 更 改";
+        dialog.Title = LocalizationService.Instance["Dialog.RevertChanges"];
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "所有未保存的调整将被恢复为上一次保存的状态。",
+            Text = LocalizationService.Instance["Dialog.RevertChangesMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -1177,13 +1201,13 @@ public partial class SteeringWheelParameterControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("撤 回", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Undo"], (_, _) =>
         {
             dialog.Hide();
             DiscardChanges();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
@@ -1196,7 +1220,7 @@ public partial class SteeringWheelParameterControl : UserControl
         if (!_isAppliedPresetPersonal || !_isPresetModified) return;
         TrySaveWithRetry(() => PerformSave(), () =>
         {
-            ShowSuccessToast("保 存 成 功");
+            ShowSuccessToast(LocalizationService.Instance["Preset.SaveSuccess"]);
         });
     }
 
@@ -1211,8 +1235,8 @@ public partial class SteeringWheelParameterControl : UserControl
 
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "导出预设",
-            Filter = "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+            Title = LocalizationService.Instance["Preset.ExportPreset"],
+            Filter = LocalizationService.Instance["Preset.PresetFileFilter"],
             DefaultExt = ".json",
             FileName = _currentPresetName == "Default" ? "wheel_preset" : _currentPresetName
         };
@@ -1227,7 +1251,7 @@ public partial class SteeringWheelParameterControl : UserControl
     {
         if (PerformExport(fileName))
         {
-            ShowSuccessToast("导 出 成 功");
+            ShowSuccessToast(LocalizationService.Instance["Preset.ExportSuccess"]);
             return;
         }
 
@@ -1261,13 +1285,13 @@ public partial class SteeringWheelParameterControl : UserControl
         if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
 
         var dialog = mainWindow.GlobalDialog;
-        dialog.Title = "导 出 失 败";
+        dialog.Title = LocalizationService.Instance["Preset.ExportFailed"];
         dialog.ShowIcon = true;
         dialog.ClearButtons();
 
         dialog.DialogContent = new TextBlock
         {
-            Text = "当前预设导出失败，请检查后重试。",
+            Text = LocalizationService.Instance["Preset.ExportFailedMessage"],
             FontSize = 22,
             Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
             TextWrapping = TextWrapping.Wrap,
@@ -1276,13 +1300,13 @@ public partial class SteeringWheelParameterControl : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton("重 试", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Retry"], (_, _) =>
         {
             dialog.Hide();
             onRetry?.Invoke();
         }, isPrimary: true);
 
-        dialog.AddButton("取 消", (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
         {
             dialog.Hide();
         }, isPrimary: false);
@@ -1325,6 +1349,7 @@ public partial class SteeringWheelParameterControl : UserControl
         _deviceUnifiedColorIndex = preset.WheelParameters!.GlobalKeyColor;
         Debug.WriteLine($"[SteeringWheelControl.ApplyPreset] 更新后: _currentPresetName='{_currentPresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _deviceUnifiedColorIndex={_deviceUnifiedColorIndex}");
         UpdatePresetDisplay();
+        UpdateButtonCircleColors();
 
         SendPresetName(preset.Name);
         SendWheelParameters();
@@ -1385,6 +1410,7 @@ public partial class SteeringWheelParameterControl : UserControl
         // 同步缓存：首次从设备读回的统一颜色
         _deviceUnifiedColorIndex = _appliedPresetParameters.GlobalKeyColor;
         UpdatePresetDisplay();
+        UpdateButtonCircleColors();
     }
 
     private async Task FetchRpmBaseModeAsync(UsbDeviceInfo device)
@@ -2011,6 +2037,9 @@ public partial class SteeringWheelParameterControl : UserControl
         _buttonTelemetryTriggerColor[adjIndex] = _buttonSettingsPopup.GetTelemetryTriggerColor();
         _buttonSpeeds[adjIndex] = _buttonSettingsPopup.GetSpeed();
 
+        // 更新对应按键的 ButtonCircle 颜色
+        UpdateButtonCircleColors();
+
         // 单独颜色模式时只下发被修改的按键那一条数据包
         _singleButtonAdjIndex = adjIndex;
         OnParameterModified(WheelSendMask.ButtonLight);
@@ -2128,6 +2157,7 @@ public partial class SteeringWheelParameterControl : UserControl
     {
         if (_suppressColorChecked) return;
         _deviceUnifiedColorIndex = GetSelectedGlobalKeyColor();
+        UpdateButtonCircleColors();
         OnParameterModified(WheelSendMask.ButtonLightGlobal);
     }
 
@@ -2142,6 +2172,7 @@ public partial class SteeringWheelParameterControl : UserControl
         // 全局颜色模式下各自按键灯颜色无意义，取消所有按键的选中状态
         DeselectAllWheelKeyButtons();
 
+        UpdateButtonCircleColors();
         OnParameterModified(WheelSendMask.ButtonLightGlobal);
     }
 
@@ -2172,6 +2203,7 @@ public partial class SteeringWheelParameterControl : UserControl
         if (ColorPurple != null) ColorPurple.IsChecked = false;
         if (ColorWhite != null) ColorWhite.IsChecked = false;
         _suppressColorChecked = false;
+        UpdateButtonCircleColors();
         OnParameterModified(WheelSendMask.ButtonLightGlobal);
     }
 
@@ -2438,10 +2470,9 @@ public partial class SteeringWheelParameterControl : UserControl
     {
         if (sender is not Grid grid) return;
 
-        // 判断是左拨片还是右拨片
+        // 通过已命名的子元素区分左右拨片区域，避免依赖本地化文本内容
         var parentGrid = grid.Parent as Grid;
-        var isLeftPaddle = parentGrid?.Children.OfType<TextBlock>()
-            .Any(tb => tb.Text.Contains("左 拨 片")) ?? false;
+        var isLeftPaddle = parentGrid?.FindName("LeftShiftPaddleStatus") != null;
 
         var dotName = isLeftPaddle ? "LeftShiftPaddleStatusDot" : "RightShiftPaddleStatusDot";
         var statusName = isLeftPaddle ? "LeftShiftPaddleStatus" : "RightShiftPaddleStatus";
@@ -2451,10 +2482,10 @@ public partial class SteeringWheelParameterControl : UserControl
         var statusText = parentGrid?.FindName(statusName) as TextBlock;
         var calibratePath = parentGrid?.FindName(pathName) as System.Windows.Shapes.Path;
 
-        if (statusText != null && statusText.Text == "等待输入...")
+        if (statusText != null && statusText.Text == LocalizationService.Instance["WheelParam.WaitingForInput"])
         {
             // 切换到已输入状态
-            statusText.Text = "已输入";
+            statusText.Text = LocalizationService.Instance["WheelParam.Entered"];
             statusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EEEEEE"));
             if (dot != null)
                 dot.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8016C642"));
@@ -2580,24 +2611,36 @@ public partial class SteeringWheelParameterControl : UserControl
 
             string? firstPressed = null;
 
+            // 1. 先恢复所有按键：圆环恢复为配置颜色，光晕全部清除
+            UpdateButtonCircleColors();
+            for (int i = 0; i < 19; i++)
+            {
+                if (_buttonGlows[i] != null)
+                    _buttonGlows[i]!.Visibility = Visibility.Collapsed;
+            }
+
+            // 2. 在配置颜色之上叠加当前按下的按键（红色光晕 + 红色圆环）
             for (int physicalIdx = 0; physicalIdx < 19; physicalIdx++)
             {
                 bool pressed = (mask & (1UL << physicalIdx)) != 0;
+                if (!pressed) continue;
 
-                // 直接控制 GlowCircle / OuterRing 的 Visibility，绕过 IsChecked
-                // 这样点击按钮不会产生选中效果，仅 HID 上报数据驱动视觉效果
                 var glow = _buttonGlows[physicalIdx];
                 var ring = _buttonRings[physicalIdx];
-                var vis = pressed ? Visibility.Visible : Visibility.Collapsed;
-                if (glow != null) glow.Visibility = vis;
-                if (ring != null) ring.Visibility = vis;
 
-                if (pressed && firstPressed == null)
+                if (glow != null) glow.Visibility = Visibility.Visible;
+                if (ring != null)
+                {
+                    ring.Fill = new SolidColorBrush(Color.FromRgb(0xC6, 0x0E, 0x0E));
+                    ring.Visibility = Visibility.Visible;
+                }
+
+                if (firstPressed == null)
                     firstPressed = _buttonNames[physicalIdx];
             }
 
             if (KeyResponseName != null)
-                KeyResponseName.Text = firstPressed ?? "---";
+                KeyResponseName.Text = firstPressed ?? LocalizationService.Instance["DeviceParam.UnknownVersion"];
         });
     }
 
@@ -2621,6 +2664,41 @@ public partial class SteeringWheelParameterControl : UserControl
 
             _buttonGlows[i] = btn.Template.FindName("GlowCircle", btn) as Ellipse;
             _buttonRings[i] = btn.Template.FindName("OuterRing", btn) as Ellipse;
+        }
+    }
+
+    /// <summary>将 _buttonColors 中的颜色索引映射为 RGB 并更新 14 个可调按键的 OuterRing 颜色与可见性</summary>
+    private void UpdateButtonCircleColors()
+    {
+        var isGlobalMode = KeyColorToggle?.IsChecked == true;
+
+        for (int i = 0; i < 19; i++)
+        {
+            var ring = _buttonRings[i];
+            if (ring == null) continue;
+
+            var adjIdx = PhysicalToAdjustable[i];
+            if (adjIdx < 0)
+            {
+                // 非可调按键（方向键无圆环，中央大按键有圆环但不显示颜色）
+                ring.Visibility = Visibility.Collapsed;
+                continue;
+            }
+
+            // 全局颜色模式下所有按键使用统一颜色，单独模式下使用各自的颜色
+            var colorIdx = isGlobalMode ? _deviceUnifiedColorIndex : _buttonColors[adjIdx];
+
+            if (colorIdx == 8) // Off → 显示暗灰色圆环
+            {
+                ring.Fill = new SolidColorBrush(Color.FromRgb(0x69, 0x69, 0x69));
+                ring.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                var rgb = DeviceProtocolService.ColorIndexToRgb[colorIdx];
+                ring.Fill = new SolidColorBrush(Color.FromRgb(rgb[0], rgb[1], rgb[2]));
+                ring.Visibility = Visibility.Visible;
+            }
         }
     }
 

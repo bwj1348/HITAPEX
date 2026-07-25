@@ -596,7 +596,8 @@ public partial class EditPresetPopup : UserControl
             Category = _originalPreset.Category,
             ItemCount = _originalPreset.ItemCount,
             Games = _selectedGames.OrderBy(g => g, StringComparer.OrdinalIgnoreCase).ToList(),
-            Parameters = _originalPreset.Parameters,
+            PedalParameters = _originalPreset.PedalParameters,
+            WheelParameters = _originalPreset.WheelParameters,
             DeviceType = DeviceType
         };
 

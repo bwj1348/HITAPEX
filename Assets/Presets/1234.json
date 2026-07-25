@@ -4,7 +4,7 @@
   "Category": "",
   "ItemCount": 0,
   "Games": [],
-  "Parameters": null,
+  "PedalParameters": null,
   "WheelParameters": {
     "keyColorEnabled": true,
     "globalKeyColor": 0,

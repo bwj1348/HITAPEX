@@ -164,12 +164,18 @@
             </Grid.ColumnDefinitions>
 
             <!-- 当前预设边框 -->
-            <Grid Grid.Column="0" Width="388" Height="37">
+                <Grid x:Name="PresetInfoGrid" Grid.Column="0" Width="388" Height="37">
                 <Path Data="M393 5H10.1733L5 11V42H6.552H387.827L393 36V5Z" Fill="#33EEEEEE" Stretch="Fill"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,15,0">
-                    <TextBlock Text="{lex:Loc DeviceParam.Current}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                    <Border Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
-                    <Viewbox Width="15" Height="17" Margin="0,0,8,0">
+                <Grid VerticalAlignment="Center" Margin="15,0,15,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="CurrentLabel" Grid.Column="0" Text="{lex:Loc DeviceParam.Current}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <Border x:Name="SeparatorBorder" Grid.Column="1" Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
+                    <Viewbox x:Name="PresetIconViewbox" Grid.Column="2" Width="15" Height="17" Margin="0,0,8,0">
                         <Grid Width="15" Height="17">
                             <!-- 官方预设图标（旗帜） -->
                             <Canvas x:Name="OfficialPresetIcon" Width="15" Height="17">
@@ -218,9 +224,15 @@
                             </Canvas>
                         </Grid>
                     </Viewbox>
-                    <TextBlock x:Name="PresetNameText" Text="{lex:Loc DeviceParam.Default}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="ModifiedIndicator" Text="{lex:Loc DeviceParam.Modified}" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Foreground="#C60E0E" Visibility="Collapsed"/>
-                </StackPanel>
+                    <Grid Grid.Column="3" x:Name="PresetNameInnerGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" x:Name="PresetNameText" Text="{lex:Loc DeviceParam.Default}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" x:Name="ModifiedIndicator" Text="{lex:Loc DeviceParam.Modified}" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Foreground="#C60E0E" Visibility="Collapsed"/>
+                    </Grid>
+                </Grid>
             </Grid>
 
             <!-- 功能按钮 -->

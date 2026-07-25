@@ -27,6 +27,8 @@
   "Common.ClearAll": "清空全部",
   "Common.Undo": "撤 回",
   "Common.SaveAs": "另存为",
+  "Common.SaveSuccess": "保 存 成 功",
+  "Common.ExportSuccess": "导 出 成 功",
 
   "Splash.BrandName": "HITAPEX",
   "Splash.Subtitle": "RACING SIMULATOR",
@@ -233,6 +235,7 @@
   "WheelParam.ShiftPaddleInstruction": "请按下需要校准的拨片，系统将自动识别当前输入，然后点击\"校准\"",
   "WheelParam.WaitingForInput": "等待输入...",
   "WheelParam.Calibrate": "校 准",
+  "WheelParam.Entered": "已输入",
 
   "PedalParam.Title": "踏 板",
   "PedalParam.Clutch": "离合器",
@@ -317,6 +320,10 @@
   "Dialog.DontSave": "不保存",
   "Dialog.SaveFailed": "保 存 失 败",
   "Dialog.SaveFailedMessage": "当前预设未能成功保存，请检查后重试。",
+  "Common.ExportPreset": "导出预设",
+  "Common.JsonFileFilter": "预设文件 (*.json)|*.json|所有文件 (*.*)|*.*",
+  "Dialog.ExportFailedTitle": "导 出 失 败",
+  "Dialog.ExportFailedMessage": "当前预设导出失败，请检查后重试。",
   "Dialog.RevertChanges": "撤 回 更 改",
   "Dialog.RevertChangesMessage": "所有未保存的调整将被恢复为上一次保存的状态。",
   "Dialog.LaunchFailed": "启动失败",

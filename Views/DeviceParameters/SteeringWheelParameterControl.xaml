@@ -926,12 +926,18 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.Column="0" Width="388" Height="37">
+                <Grid x:Name="PresetInfoGrid" Grid.Column="0" Width="388" Height="37">
                 <Path Data="M393 5H10.1733L5 11V42H6.552H387.827L393 36V5Z" Fill="#33EEEEEE" Stretch="Fill"/>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,15,0">
-                    <TextBlock Text="{lex:Loc DeviceParam.Current}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                    <Border Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
-                    <Viewbox Width="15" Height="17" Margin="0,0,8,0">
+                <Grid VerticalAlignment="Center" Margin="15,0,15,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="CurrentLabel" Grid.Column="0" Text="{lex:Loc DeviceParam.Current}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                    <Border x:Name="SeparatorBorder" Grid.Column="1" Width="1" Height="20" Background="#EEEEEE" Margin="10,0,10,0"/>
+                    <Viewbox x:Name="PresetIconViewbox" Grid.Column="2" Width="15" Height="17" Margin="0,0,8,0">
                         <Grid Width="15" Height="17">
                             <Canvas x:Name="OfficialPresetIcon" Width="15" Height="17">
                                 <Path Data="M9.85 15.7504L5.3 12.2888L0.75 15.7504V5.36576C0.75 5.05974 0.886964 4.76626 1.13076 4.54987C1.37456 4.33348 1.70522 4.21191 2.05 4.21191H8.55C8.89478 4.21191 9.22544 4.33348 9.46924 4.54987C9.71304 4.76626 9.85 5.05974 9.85 5.36576V15.7504Z"
@@ -965,13 +971,19 @@
                             </Canvas>
                         </Grid>
                     </Viewbox>
-                    <TextBlock x:Name="PresetNameText" Text="{lex:Loc DeviceParam.Default}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="ModifiedIndicator" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Visibility="Collapsed">
-                        <Run Text="(" Foreground="#EEEEEE"/>
-                        <Run Text="{lex:Loc DeviceParam.Modified}" Foreground="#C60E0E"/>
-                        <Run Text=")" Foreground="#EEEEEE"/>
-                    </TextBlock>
-                </StackPanel>
+                    <Grid Grid.Column="3" x:Name="PresetNameInnerGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" x:Name="PresetNameText" Text="{lex:Loc DeviceParam.Default}" FontSize="18" Foreground="#EEEEEE" VerticalAlignment="Center" FontFamily="{StaticResource OrbitronFont}" FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" x:Name="ModifiedIndicator" VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold" FontSize="18" Visibility="Collapsed">
+                            <Run Text="(" Foreground="#EEEEEE"/>
+                            <Run Text="{lex:Loc DeviceParam.Modified}" Foreground="#C60E0E"/>
+                            <Run Text=")" Foreground="#EEEEEE"/>
+                        </TextBlock>
+                    </Grid>
+                </Grid>
             </Grid>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">

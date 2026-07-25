@@ -27,6 +27,8 @@
   "Common.ClearAll": "Remove All",
   "Common.Undo": "Undo",
   "Common.SaveAs": "Save As",
+  "Common.SaveSuccess": "Save Successful",
+  "Common.ExportSuccess": "Export Successful",
 
   "Splash.BrandName": "HITAPEX",
   "Splash.Subtitle": "RACING SIMULATOR",
@@ -232,6 +234,7 @@
   "WheelParam.ShiftPaddleInstruction": "Press the paddle you want to calibrate. The system will automatically detect the current input, then click \"Calibrate\"",
   "WheelParam.WaitingForInput": "Detecting...",
   "WheelParam.Calibrate": "Calibrate",
+  "WheelParam.Entered": "Entered",
 
   "PedalParam.Title": "Pedals",
   "PedalParam.Clutch": "CLUTCH",
@@ -316,6 +319,10 @@
   "Dialog.DontSave": "Don't Save",
   "Dialog.SaveFailed": "Failed to Save",
   "Dialog.SaveFailedMessage": "The current preset could not be saved. Please review your settings and try again.",
+  "Common.ExportPreset": "Export Preset",
+  "Common.JsonFileFilter": "Preset Files (*.json)|*.json|All Files (*.*)|*.*",
+  "Dialog.ExportFailedTitle": "Export Failed",
+  "Dialog.ExportFailedMessage": "The current preset could not be exported. Please try again.",
   "Dialog.RevertChanges": "Undo Changes",
   "Dialog.RevertChangesMessage": "All unsaved changes will be discarded and restored to the last saved version.",
   "Dialog.LaunchFailed": "Launch Failed",

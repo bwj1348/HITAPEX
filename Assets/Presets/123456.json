@@ -4,7 +4,7 @@
   "Category": "",
   "ItemCount": 0,
   "Games": [],
-  "Parameters": {
+  "PedalParameters": {
     "clutchCurveType": 2,
     "clutchDirection": 0,
     "clutchPoint1Y": 40,
