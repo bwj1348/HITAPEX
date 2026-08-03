@@ -1306,4 +1306,32 @@ public partial class HomeUserControl : UserControl
             }
         }
     }
+
+    /// <summary>
+    /// 首页设备卡片的 Group.svg 图标点击事件。
+    /// Tag="0"=基座, Tag="1"=面盘, Tag="2"=踏板 → 跳转对应设备参数界面。
+    /// </summary>
+    private void GroupIcon_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.Tag is not string tag) return;
+        if (!int.TryParse(tag, out int tabIndex)) return;
+
+        var mainWindow = Application.Current.MainWindow as HITAPEX.MainWindow;
+        if (mainWindow?.DataContext is not HITAPEX.ViewModels.MainWindowViewModel viewModel) return;
+
+        // 导航到设备页面
+        var deviceItem = viewModel.NavigationItems.FirstOrDefault(n => n.Name == "Device");
+        if (deviceItem == null) return;
+
+        viewModel.SelectedNavigationItem = deviceItem;
+
+        // 延迟到 DeviceUserControl 加载完成后再切换到指定子选项卡
+        mainWindow.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            if (viewModel.CurrentView is DeviceUserControl deviceView)
+                deviceView.NavigateToTab(tabIndex);
+        });
+
+        e.Handled = true;
+    }
 }

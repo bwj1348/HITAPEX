@@ -107,6 +107,8 @@ public partial class SteeringWheelParameterControl : UserControl
     private readonly Ellipse?[] _buttonGlows = new Ellipse?[19];
     /// <summary>19 个按键的 OuterRing 引用（仅圆形按键有值，方向键为 null）</summary>
     private readonly Ellipse?[] _buttonRings = new Ellipse?[19];
+    /// <summary>12 颗转速灯 LED 指示条引用（Path 梯形条），用于显示对应颜色</summary>
+    private readonly Shape?[] _rpmLedShapes = new Shape?[12];
     /// <summary>是否已完成一次性初始化，防止事件处理器重复注册</summary>
     private bool _isInitialized;
 
@@ -155,6 +157,9 @@ public partial class SteeringWheelParameterControl : UserControl
 
             // 预缓存圆形按键引用，用于 HID 快速驱动 IsChecked
             CacheCircularButtons();
+
+            // 缓存 12 颗转速灯 LED 指示点引用
+            CacheRpmLeds();
         }
 
         Debug.WriteLine($"[SteeringWheelControl.Loaded] 界面加载: _currentPresetName='{_currentPresetName}', _devicePresetName='{_devicePresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _isPresetModified={_isPresetModified}");
@@ -400,6 +405,7 @@ public partial class SteeringWheelParameterControl : UserControl
         if (KeyResponseName != null)
             KeyResponseName.Text = LocalizationService.Instance["DeviceParam.UnknownVersion"];
         UpdateButtonCircleColors();
+        UpdateRpmLedColors();
     }
 
     /// <summary>
@@ -530,6 +536,7 @@ public partial class SteeringWheelParameterControl : UserControl
         _isPresetModified = false;
         _deviceUnifiedColorIndex = _appliedPresetParameters.GlobalKeyColor;
         UpdatePresetDisplay();
+        UpdateRpmLedColors();
     }
 
     /// <summary>弹出未保存确认弹窗</summary>
@@ -774,8 +781,6 @@ public partial class SteeringWheelParameterControl : UserControl
             var newPreset = new PresetItem
             {
                 Name = presetName,
-                Description = edited.Description,
-                Category = edited.Category,
                 Games = edited.Games,
                 WheelParameters = CaptureCurrentParameters(),
                 IsPersonal = true,
@@ -1082,18 +1087,17 @@ public partial class SteeringWheelParameterControl : UserControl
                 nameText = _currentPresetName;
 
             Debug.WriteLine($"[SteeringWheelControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{nameText}'");
-            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
             PresetNameText.Text = nameText;
         }
 
         if (ModifiedIndicator != null)
             ModifiedIndicator.Visibility = _isPresetModified ? Visibility.Visible : Visibility.Collapsed;
 
-        Dispatcher.BeginInvoke(new Action(() =>
+        PresetInfoGrid?.UpdateLayout();
+        if (PresetNameText != null && PresetInfoGrid != null && PresetInfoGrid.ActualWidth > 0
+            && PresetNameInnerGrid != null)
         {
-            if (PresetNameText == null || PresetInfoGrid == null || PresetInfoGrid.ActualWidth <= 0) return;
-            if (PresetNameInnerGrid == null) return;
-
+            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
             double leftOffset = PresetNameInnerGrid.TranslatePoint(new Point(0, 0), PresetInfoGrid).X;
             double available = PresetInfoGrid.ActualWidth - leftOffset - 15;
 
@@ -1110,7 +1114,7 @@ public partial class SteeringWheelParameterControl : UserControl
 
             if (nameW + indicatorW > available)
                 PresetNameText.MaxWidth = Math.Max(0, available - indicatorW);
-        }), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
 
         if (UndoButtonPath != null)
         {
@@ -1350,6 +1354,7 @@ public partial class SteeringWheelParameterControl : UserControl
         Debug.WriteLine($"[SteeringWheelControl.ApplyPreset] 更新后: _currentPresetName='{_currentPresetName}', _isAppliedPresetPersonal={_isAppliedPresetPersonal}, _deviceUnifiedColorIndex={_deviceUnifiedColorIndex}");
         UpdatePresetDisplay();
         UpdateButtonCircleColors();
+        UpdateRpmLedColors();
 
         SendPresetName(preset.Name);
         SendWheelParameters();
@@ -1411,6 +1416,7 @@ public partial class SteeringWheelParameterControl : UserControl
         _deviceUnifiedColorIndex = _appliedPresetParameters.GlobalKeyColor;
         UpdatePresetDisplay();
         UpdateButtonCircleColors();
+        UpdateRpmLedColors();
     }
 
     private async Task FetchRpmBaseModeAsync(UsbDeviceInfo device)
@@ -2147,6 +2153,7 @@ public partial class SteeringWheelParameterControl : UserControl
         _rpmBaseLightSpeed = _rpmSettingsPopup.GetRpmBaseLightSpeed();
         _rpmTelemetryEnabled = _rpmSettingsPopup.GetRpmTelemetryEnabled();
 
+        UpdateRpmLedColors();
         OnParameterModified(WheelSendMask.RpmBaseMode | WheelSendMask.RpmIndicator | WheelSendMask.RpmMode);
     }
 
@@ -2667,6 +2674,18 @@ public partial class SteeringWheelParameterControl : UserControl
         }
     }
 
+    /// <summary>
+    /// 预缓存 12 颗转速灯 LED 指示点的 Ellipse 引用。
+    /// 避免每次更新颜色时通过 FindName 遍历逻辑树，保持颜色刷新高效。
+    /// </summary>
+    private void CacheRpmLeds()
+    {
+        var ledShapes = new Shape?[] { RpmLed1, RpmLed2, RpmLed3, RpmLed4, RpmLed5, RpmLed6,
+                                       RpmLed7, RpmLed8, RpmLed9, RpmLed10, RpmLed11, RpmLed12 };
+        for (int i = 0; i < 12; i++)
+            _rpmLedShapes[i] = ledShapes[i];
+    }
+
     /// <summary>将 _buttonColors 中的颜色索引映射为 RGB 并更新 14 个可调按键的 OuterRing 颜色与可见性</summary>
     private void UpdateButtonCircleColors()
     {
@@ -2698,6 +2717,27 @@ public partial class SteeringWheelParameterControl : UserControl
                 var rgb = DeviceProtocolService.ColorIndexToRgb[colorIdx];
                 ring.Fill = new SolidColorBrush(Color.FromRgb(rgb[0], rgb[1], rgb[2]));
                 ring.Visibility = Visibility.Visible;
+            }
+        }
+    }
+
+    /// <summary>将 _rpmColors 中的颜色索引映射为 RGB 并更新 12 颗转速灯 LED 指示条的填充颜色</summary>
+    private void UpdateRpmLedColors()
+    {
+        for (int i = 0; i < 12; i++)
+        {
+            var led = _rpmLedShapes[i];
+            if (led == null) continue;
+
+            var colorIdx = Math.Clamp(_rpmColors[i], 0, 8);
+            if (colorIdx == 8) // Off → 暗灰色
+            {
+                led.Fill = new SolidColorBrush(Color.FromRgb(0x69, 0x69, 0x69));
+            }
+            else
+            {
+                var rgb = DeviceProtocolService.ColorIndexToRgb[colorIdx];
+                led.Fill = new SolidColorBrush(Color.FromRgb(rgb[0], rgb[1], rgb[2]));
             }
         }
     }

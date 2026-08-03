@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Markup;
+using System.Windows.Media;
 using HITAPEX.Services;
 
 namespace HITAPEX.Helpers;
@@ -40,14 +41,14 @@ public class FontExtension : MarkupExtension
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
         if (IsInDesignMode(serviceProvider))
-            return "Microsoft YaHei";
+            return new FontFamily("Microsoft YaHei");
 
         var binding = new Binding
         {
             Source = LocalizationService.Instance,
             Path = new PropertyPath(nameof(LocalizationService.CurrentFontFamily)),
             Mode = BindingMode.OneWay,
-            FallbackValue = "Microsoft YaHei"
+            FallbackValue = new FontFamily("Microsoft YaHei")
         };
 
         return binding.ProvideValue(serviceProvider);

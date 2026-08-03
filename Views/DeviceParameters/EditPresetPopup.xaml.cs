@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -5,6 +6,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using HITAPEX.Models;
 using HITAPEX.Services;
 
 namespace HITAPEX.Views.DeviceParameters;
@@ -19,29 +21,16 @@ public partial class EditPresetPopup : UserControl
     //  静态游戏数据（游戏缩写列表 + 全称映射 + 显示名生成）
     // ══════════════════════════════════════════
 
-    /// <summary>所有游戏的缩写列表，在 UI 中展示的原始值</summary>
-    private static readonly List<string> s_allGames =
-    [
-        "ACC", "AC EVO", "DR2.0", "EA WRC", "F1", "FH5", "FM",
-        "GT4", "GTWC", "IGTC", "iR", "LMU"
-    ];
+    /// <summary>所有游戏的缩写列表，从 GameListConfig 动态生成</summary>
+    private static readonly List<string> s_allGames = Models.GameListConfig.GetGames()
+        .Select(g => g.Abbreviation)
+        .Where(a => !string.IsNullOrEmpty(a))
+        .ToList();
 
-    /// <summary>游戏缩写 -> 完整名称的映射表</summary>
-    private static readonly Dictionary<string, string> s_gameFullNames = new()
-    {
-        ["ACC"] = "Assetto Corsa Competizione",
-        ["AC EVO"] = "Assetto Corsa Evo",
-        ["DR2.0"] = "Dirt Rally 2.0",
-        ["EA WRC"] = "EA Sports WRC",
-        ["F1"] = "F1 24",
-        ["FH5"] = "Forza Horizon 5",
-        ["FM"] = "Forza Motorsport",
-        ["GT4"] = "GT4 European Series",
-        ["GTWC"] = "GT World Challenge",
-        ["IGTC"] = "Intercontinental GT Challenge",
-        ["iR"] = "iRacing",
-        ["LMU"] = "Le Mans Ultimate"
-    };
+    /// <summary>游戏缩写 -> 完整名称的映射表，从 GameListConfig 动态生成</summary>
+    private static readonly Dictionary<string, string> s_gameFullNames = Models.GameListConfig.GetGames()
+        .Where(g => !string.IsNullOrEmpty(g.Abbreviation))
+        .ToDictionary(g => g.Abbreviation, g => g.Name);
 
     /// <summary>获取游戏的显示名称：全称 (缩写) 格式；若无全称则回退到缩写</summary>
     private static string GetGameDisplayName(string abbreviation)
@@ -592,12 +581,10 @@ public partial class EditPresetPopup : UserControl
         var edited = new PresetItem
         {
             Name = name,
-            Description = _originalPreset.Description,
-            Category = _originalPreset.Category,
-            ItemCount = _originalPreset.ItemCount,
             Games = _selectedGames.OrderBy(g => g, StringComparer.OrdinalIgnoreCase).ToList(),
             PedalParameters = _originalPreset.PedalParameters,
             WheelParameters = _originalPreset.WheelParameters,
+            BaseParameters = _originalPreset.BaseParameters,
             DeviceType = DeviceType
         };
 

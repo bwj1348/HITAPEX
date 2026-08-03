@@ -109,10 +109,10 @@
                                     </RepeatButton>
                                 </Track.IncreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb Width="16" Height="16" Margin="0,-8,0,-8">
+                                    <Thumb Width="16" Height="16" Margin="0,-8,0,-8" Cursor="Hand">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Grid Width="16" Height="16" Cursor="Hand">
+                                                <Grid Width="16" Height="16">
                                                     <Ellipse Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Slider}}"
                                                              StrokeThickness="1"
                                                              Width="16" Height="16" Fill="Transparent"/>
@@ -161,24 +161,11 @@
                                         <RectangleGeometry Rect="3,3,16,26" RadiusX="2" RadiusY="2"/>
                                     </Path.Data>
                                 </Path>
-                                <!-- 禁用遮罩 -->
-                                <Path x:Name="DisabledOverlay"
-                                      Fill="#991B1B1B"
-                                      Stretch="Fill"
-                                      Visibility="Collapsed"
-                                      IsHitTestVisible="False">
-                                    <Path.Data>
-                                        <RectangleGeometry Rect="0,0,22,32" RadiusX="2" RadiusY="2"/>
-                                    </Path.Data>
-                                </Path>
                             </Grid>
                         </Viewbox>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -206,18 +193,11 @@
                                 </Path>
                                 <Path x:Name="SmallFill" Data="M4.32314 27.7498C4.15952 28.3828 4.63747 29 5.29132 29H24C24.5523 29 25 28.5523 25 28V4C25 3.44772 24.5523 3 24 3H11.4944C11.0385 3 10.6403 3.30836 10.5262 3.74976L4.32314 27.7498Z"
                                       Fill="{TemplateBinding Background}" Stretch="None"/>
-                                <Path x:Name="DisabledOverlay"
-                                      Data="M2.63672 31.25H26C26.6904 31.25 27.25 30.6904 27.25 30V2C27.25 1.30964 26.6904 0.75 26 0.75H10.4766C9.91616 0.75016 9.42455 1.12341 9.27344 1.66309L1.43359 29.6631C1.21045 30.4601 1.80911 31.2499 2.63672 31.25Z"
-                                      Fill="#991B1B1B" Stretch="None"
-                                      Visibility="Collapsed" IsHitTestVisible="False"/>
                             </Grid>
                         </Viewbox>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -245,18 +225,11 @@
                                 </Path>
                                 <Path x:Name="SmallFill" Data="M23.67686 27.7498C23.84048 28.3828 23.36253 29 22.70868 29H4C3.4477 29 3 28.5523 3 28V4C3 3.44772 3.4477 3 4 3H16.5056C16.9615 3 17.3597 3.30836 17.4738 3.74976L23.67686 27.7498Z"
                                       Fill="{TemplateBinding Background}" Stretch="None"/>
-                                <Path x:Name="DisabledOverlay"
-                                      Data="M27.289 29.4607C27.6461 30.736 26.6874 32 25.3631 32H2C0.895432 32 0 31.1046 0 30V2C0 0.89543 0.89543 0 2 0H17.5231C18.42 0 19.2072 0.597073 19.449 1.46074L27.289 29.4607Z"
-                                      Fill="#991B1B1B" Stretch="None"
-                                      Visibility="Collapsed" IsHitTestVisible="False"/>
                             </Grid>
                         </Viewbox>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -340,17 +313,10 @@
                             </Path>
                             <Path x:Name="SmallFill" Data="M8.53195 27.2227H21.8961L28.465 0.000434875H24.3123H6.56884L0 27.2227H8.53195Z" Width="28" Height="27.5"
                                   Fill="{TemplateBinding Background}" Stretch="Fill" Margin="1,1,1.5,1"/>
-                            <Path x:Name="DisabledOverlay"
-                                  Data="M1.26842 34L9.18248 1H35.1034L27.1893 34H1.26842Z"
-                                  Fill="#991B1B1B" Stretch="None"
-                                  Visibility="Collapsed" IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -375,17 +341,10 @@
                             </Path>
                             <Path x:Name="SmallFill" Data="M14.0258 31.1113H29.0391L36.4186 3.88911H31.7534H11.8204L4.44101 31.1113H14.0258Z" Width="32" Height="28"
                           Fill="{TemplateBinding Background}" Stretch="Fill" Margin="1,1,1.5,1"/>
-                            <Path x:Name="DisabledOverlay"
-                          Data="M1.30556 34L10.1952 1H39.5546L30.6649 34H1.30556Z"
-                          Fill="#991B1B1B" Stretch="None"
-                          Visibility="Collapsed" IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="LargeBorder" Property="StrokeThickness" Value="2"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -411,17 +370,10 @@
                                   Data="M2.90293 35H13.9969L16.7945 23.334H13.9004H2.80646L0.00886154 35H2.90293Z"/>
                             <Path Opacity="0.2" Fill="Black" Stretch="None"
                                   Data="M8.49962 11.668H19.5935L22.3911 0.00193119H19.4971H8.40315L5.60555 11.668H8.49962Z"/>
-                            <Path x:Name="DisabledOverlay"
-                                  Data="M1.26842 34L9.18249 1H35.1034L27.1893 34H1.26842Z"
-                                  Fill="#991B1B1B" Stretch="None"
-                                  Visibility="Collapsed" IsHitTestVisible="False"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="OuterPath" Property="Stroke" Value="#80000000"/>
-                            </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="DisabledOverlay" Property="Visibility" Value="Visible"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -744,10 +696,10 @@
                                     </RepeatButton>
                                 </Track.IncreaseRepeatButton>
                                 <Track.Thumb>
-                                    <Thumb Width="20" Height="18">
+                                    <Thumb Width="20" Height="18" Cursor="Hand">
                                         <Thumb.Template>
                                             <ControlTemplate TargetType="Thumb">
-                                                <Canvas Width="20" Height="18" Background="Transparent" Cursor="Hand">
+                                                <Canvas Width="20" Height="18" Background="Transparent">
                                                     <Path Data="M19.1494 17.5H0.850586L10 1.03027L19.1494 17.5Z"
                                                           Stroke="#C60E0E" StrokeThickness="1"
                                                           Width="20" Height="18" Stretch="None"/>

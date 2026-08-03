@@ -361,6 +361,16 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <StackPanel.ToolTip>
+                                            <ToolTip Background="#99000000" Foreground="#EEEEEE"
+                                                     BorderThickness="0" FontSize="14" FontWeight="SemiBold"
+                                                     Placement="Left" VerticalOffset="-1" HorizontalOffset="-13">
+                                                <ToolTip.Content>
+                                                    <TextBlock Text="{lex:Loc Game.AutoApplyPresetTip}"
+                                                               FontFamily="{lex:Font}"/>
+                                                </ToolTip.Content>
+                                            </ToolTip>
+                                        </StackPanel.ToolTip>
                                         <TextBlock Text="{lex:Loc Game.AutoApplyPreset}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                         <CheckBox x:Name="AutoApplyPresetCheckBox" IsChecked="True" Style="{StaticResource DualStateSvgToggleStyle}" Checked="AutoApplyPreset_Changed" Unchecked="AutoApplyPreset_Changed"/>
                                     </StackPanel>
@@ -426,7 +436,7 @@
 
                                                             <ContentPresenter x:Name="ContentSite" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="{TemplateBinding Padding}" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}" IsHitTestVisible="False"/>
 
-                                                            <svgc:SvgViewbox Source="/Assets/edit.svg" Stretch="Fill" Width="12" Height="12" HorizontalAlignment="Right" Margin="0,0,32,0"/>
+                                                            <svgc:SvgViewbox x:Name="PresetEditIcon" Source="/Assets/edit.svg" Stretch="Fill" Width="12" Height="12" HorizontalAlignment="Right" Margin="0,0,32,0" Cursor="Hand"/>
 
                                                             <Path x:Name="Arrow" Data="M13.0605 1.06055L7.06055 7.06055L1.06055 1.06055" Stroke="#EEEEEE" StrokeThickness="1.5" HorizontalAlignment="Right" Margin="0,0,10,0" VerticalAlignment="Center" IsHitTestVisible="False" RenderTransformOrigin="0.5,0.5">
                                                                 <Path.RenderTransform>
@@ -436,6 +446,15 @@
 
                                                             <Popup x:Name="Popup" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Placement="Bottom" VerticalOffset="-5" PopupAnimation="Fade">
                                                                 <Grid Width="{TemplateBinding ActualWidth}">
+                                                                    <Grid.Style>
+                                                                        <Style TargetType="Grid">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding HasItems, RelativeSource={RelativeSource TemplatedParent}}" Value="False">
+                                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Grid.Style>
 
                                                                     <Rectangle>
                                                                         <Rectangle.Fill>
@@ -681,56 +700,31 @@
                         Style="{StaticResource DevicePresetCardStyle}" 
                         Header="{lex:Loc Game.BasePreset}"
                         Tag="M4,12 L20,12 L20,22 L4,22 Z M8,4 L16,4 L16,12 L8,12 Z M0,14 L4,14 L4,20 L0,20 Z M20,14 L24,14 L24,20 L20,20 Z">
-                                        <ComboBox x:Name="BasePresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                        </ComboBox>
+                                        <ComboBox x:Name="BasePresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}" SelectionChanged="PresetComboBox_SelectionChanged" PreviewMouseLeftButtonDown="PresetComboBox_PreviewMouseLeftButtonDown"/>
+
                                     </HeaderedContentControl>
 
                                     <HeaderedContentControl Grid.Row="0" Grid.Column="1" Margin="20,0,0,20" 
                         Style="{StaticResource DevicePresetCardStyle}" 
                         Header="{lex:Loc Game.WheelPreset}"
                         Tag="M12,0 C5.37,0 0,5.37 0,12 C0,18.63 5.37,24 12,24 C18.63,24 24,18.63 24,12 C24,5.37 18.63,0 12,0 Z M12,3 C16.97,3 21,7.03 21,12 C21,13.6 20.58,15.1 19.85,16.4 L14.5,13.5 L14.5,10.5 L9.5,10.5 L9.5,13.5 L4.15,16.4 C3.42,15.1 3,13.6 3,12 C3,7.03 7.03,3 12,3 Z">
-                                        <ComboBox x:Name="WheelPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                        </ComboBox>
+                                        <ComboBox x:Name="WheelPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}" SelectionChanged="PresetComboBox_SelectionChanged" PreviewMouseLeftButtonDown="PresetComboBox_PreviewMouseLeftButtonDown"/>
+
                                     </HeaderedContentControl>
 
                                     <HeaderedContentControl Grid.Row="1" Grid.Column="0" Margin="0,0,0,20" 
                         Style="{StaticResource DevicePresetCardStyle}" 
                         Header="{lex:Loc Game.PedalPreset}"
                         Tag="M4,20 L8,20 L10,6 L6,6 Z M12,20 L16,20 L18,6 L14,6 Z M20,20 L24,20 L26,4 L22,4 Z M2,20 L26,20 L26,22 L2,22 Z">
-                                        <ComboBox x:Name="PedalPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                            <ComboBoxItem Content="Default-P1000"/>
-                                        </ComboBox>
+                                        <ComboBox x:Name="PedalPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}" SelectionChanged="PresetComboBox_SelectionChanged" PreviewMouseLeftButtonDown="PresetComboBox_PreviewMouseLeftButtonDown"/>
+
                                     </HeaderedContentControl>
 
                                     <HeaderedContentControl Grid.Row="1" Grid.Column="1" Margin="20,0,0,20" 
                         Style="{StaticResource DevicePresetCardStyle}" 
                         Header="{lex:Loc Game.ShifterPreset}"
                         Tag="M12,0 C10.9,0 10,0.9 10,2 C10,3.1 10.9,4 12,4 C13.1,4 14,3.1 14,2 C14,0.9 13.1,0 12,0 Z M11,5 L13,5 L13,11 L19,11 L19,7 L17,7 L17,5 L21,5 L21,7 L19,7 L19,13 L13,13 L13,19 L19,19 L19,15 L17,15 L17,13 L21,13 L21,15 L19,15 L19,21 L13,21 L13,24 L11,24 L11,21 L5,21 L5,15 L7,15 L7,13 L3,13 L3,15 L5,15 L5,19 L11,19 L11,13 L5,13 L5,7 L7,7 L7,5 L3,5 L3,7 L5,7 L5,11 L11,11 Z">
-                                        <ComboBox x:Name="ShifterPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}">
-                                            <ComboBoxItem Content="{lex:Loc Game.Preset1H}"/>
-                                            <ComboBoxItem Content="{lex:Loc Game.Preset2Seq}"/>
-                                            <ComboBoxItem Content="{lex:Loc Game.Preset3Auto}"/>
-                                        </ComboBox>
+                                        <ComboBox x:Name="ShifterPresetComboBox" Style="{StaticResource TechPresetComboBoxStyle}" SelectionChanged="PresetComboBox_SelectionChanged" PreviewMouseLeftButtonDown="PresetComboBox_PreviewMouseLeftButtonDown"/>
                                     </HeaderedContentControl>
                                 </Grid>
                             </Grid>
@@ -1339,9 +1333,10 @@
                                                                 <Setter Property="Opacity" Value="1"/>
                                                                 <Setter Property="ToolTip">
                                                                     <Setter.Value>
-                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
+                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="16" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="{lex:Loc Home.RemoveFromPin}"/>
+                                                                                <TextBlock Text="{lex:Loc Home.RemoveFromPin}"
+                                                                                           FontFamily="{lex:Font}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>
@@ -1355,9 +1350,10 @@
                                                                 <Setter Property="Opacity" Value="1"/>
                                                                 <Setter Property="ToolTip">
                                                                     <Setter.Value>
-                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
+                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="16" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="{lex:Loc Home.AddToPin}"/>
+                                                                                <TextBlock Text="{lex:Loc Home.AddToPin}"
+                                                                                           FontFamily="{lex:Font}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>

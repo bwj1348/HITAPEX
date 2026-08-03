@@ -951,8 +951,6 @@ public partial class PedalParameterControl : UserControl
             var newPreset = new PresetItem
             {
                 Name = presetName,
-                Description = edited.Description,
-                Category = edited.Category,
                 Games = edited.Games,
                 PedalParameters = CaptureCurrentParameters(),
                 IsPersonal = true,
@@ -1144,19 +1142,18 @@ public partial class PedalParameterControl : UserControl
                 nameText = _currentPresetName;
 
             Debug.WriteLine($"[PedalControl.UpdatePresetDisplay] PresetNameText: '{PresetNameText.Text}' -> '{nameText}'");
-            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
             PresetNameText.Text = nameText;
         }
 
         if (ModifiedIndicator != null)
             ModifiedIndicator.Visibility = _isPresetModified ? Visibility.Visible : Visibility.Collapsed;
 
-        // 延迟到布局完成后：名称+已更改超出可用空间时限制名称宽度触发截断
-        Dispatcher.BeginInvoke(new Action(() =>
+        // 同步测量并设置名称最大宽度：名称+已更改超出可用空间时限制名称宽度触发截断
+        PresetInfoGrid?.UpdateLayout();
+        if (PresetNameText != null && PresetInfoGrid != null && PresetInfoGrid.ActualWidth > 0
+            && PresetNameInnerGrid != null)
         {
-            if (PresetNameText == null || PresetInfoGrid == null || PresetInfoGrid.ActualWidth <= 0) return;
-            if (PresetNameInnerGrid == null) return;
-
+            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
             double leftOffset = PresetNameInnerGrid.TranslatePoint(new Point(0, 0), PresetInfoGrid).X;
             double available = PresetInfoGrid.ActualWidth - leftOffset - 15;
 
@@ -1167,14 +1164,13 @@ public partial class PedalParameterControl : UserControl
             if (ModifiedIndicator != null && _isPresetModified)
             {
                 ModifiedIndicator.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-                indicatorW = ModifiedIndicator.DesiredSize.Width + 3; // left margin
-                // 补偿已更改文字的 Measure 偏差，避免名称截断后右侧留白
+                indicatorW = ModifiedIndicator.DesiredSize.Width + 3;
                 available += 3;
             }
 
             if (nameW + indicatorW > available)
                 PresetNameText.MaxWidth = Math.Max(0, available - indicatorW);
-        }), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
 
         if (UndoButtonPath != null)
         {

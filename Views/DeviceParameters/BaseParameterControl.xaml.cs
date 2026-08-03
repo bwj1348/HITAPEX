@@ -589,18 +589,17 @@ public partial class BaseParameterControl : UserControl
                 PresetNameText.Text = LocalizationService.Instance["DeviceParam.Onboard"];
             else
                 PresetNameText.Text = _currentPresetName;
-            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
         }
 
         // 控制"已更改"提示文字的显示/隐藏
         if (ModifiedIndicator != null)
             ModifiedIndicator.Visibility = _isPresetModified ? Visibility.Visible : Visibility.Collapsed;
 
-        Dispatcher.BeginInvoke(new Action(() =>
+        PresetInfoGrid?.UpdateLayout();
+        if (PresetNameText != null && PresetInfoGrid != null && PresetInfoGrid.ActualWidth > 0
+            && PresetNameInnerGrid != null)
         {
-            if (PresetNameText == null || PresetInfoGrid == null || PresetInfoGrid.ActualWidth <= 0) return;
-            if (PresetNameInnerGrid == null) return;
-
+            PresetNameText.ClearValue(TextBlock.MaxWidthProperty);
             double leftOffset = PresetNameInnerGrid.TranslatePoint(new Point(0, 0), PresetInfoGrid).X;
             double available = PresetInfoGrid.ActualWidth - leftOffset - 15;
 
@@ -617,7 +616,7 @@ public partial class BaseParameterControl : UserControl
 
             if (nameW + indicatorW > available)
                 PresetNameText.MaxWidth = Math.Max(0, available - indicatorW);
-        }), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
 
         // 撤回按钮状态控制：已修改时可用（默认颜色 + 手型光标），未修改时半透明禁用
         if (UndoButtonPath != null)

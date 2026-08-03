@@ -70,6 +70,7 @@
   "Game.TelemetryConfig": "TELEMETRY SUPPORT",
   "Game.DeviceConfig": "CONFIGURATION",
   "Game.AutoApplyPreset": "Auto Apply Presets",
+  "Game.AutoApplyPresetTip": "Auto-Applies Preset And Overrides Settings",
   "Game.BasePreset": "Wheel Base Presets",
   "Game.WheelPreset": "Steering Wheel Presets",
   "Game.PedalPreset": "Pedals Presets",
@@ -176,6 +177,7 @@
   "Firmware.CheckFirmwareUpdate": "Check Firmware Update",
   "Firmware.UpdateMode": "Update Mode",
   "Firmware.UnknownDevice": "Unknown Device",
+  "Firmware.NoDeviceDetected": "No Device Detected",
   "Firmware.DeviceFirmwareAbnormal": "Firmware error detected on {0}. Firmware update is required to use the device.",
   "Firmware.UpdateModeDevice": "{0} (Update Mode)",
 

@@ -99,13 +99,16 @@
                                 <TextBlock Text="{lex:Loc Home.BaseStationEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
                             
-                            <svgc:SvgViewbox Grid.Column="2" Source="/Assets/Group.svg" Width="15" Height="15" VerticalAlignment="Top"/>
+                            <svgc:SvgViewbox x:Name="BaseGroupIcon" Grid.Column="2" Source="/Assets/Group.svg"
+                                             Width="15" Height="15" VerticalAlignment="Top"
+                                             Cursor="Hand"
+                                             MouseLeftButtonDown="GroupIcon_Click" Tag="0"/>
                         </Grid>
 
                         <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,8,0,0">
                             <Grid Width="143" Height="143">
                                 <Ellipse Stroke="#EEEEEE" StrokeThickness="0.21" Fill="Transparent"/>
-                                
+
                                 <Path x:Name="BackgroundArc" Stroke="#6BC60E0E" StrokeThickness="8.29" Fill="Transparent" RenderTransformOrigin="0.5,0.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round">
                                     <Path.Data>
                                         <PathGeometry>
@@ -231,7 +234,10 @@
                                 <TextBlock Text="{lex:Loc Home.SteeringWheelEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
 
-                            <svgc:SvgViewbox Grid.Column="2" Source="/Assets/Group.svg" Width="15" Height="15" VerticalAlignment="Top"/>
+                            <svgc:SvgViewbox x:Name="WheelGroupIcon" Grid.Column="2" Source="/Assets/Group.svg"
+                                             Width="15" Height="15" VerticalAlignment="Top"
+                                             Cursor="Hand"
+                                             MouseLeftButtonDown="GroupIcon_Click" Tag="1"/>
                         </Grid>
 
                         <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -312,7 +318,10 @@
                                 <TextBlock Text="{lex:Loc Home.PedalsEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
 
-                            <svgc:SvgViewbox Grid.Column="2" Source="/Assets/Group.svg" Width="15" Height="15" VerticalAlignment="Top"/>
+                            <svgc:SvgViewbox x:Name="PedalGroupIcon" Grid.Column="2" Source="/Assets/Group.svg"
+                                             Width="15" Height="15" VerticalAlignment="Top"
+                                             Cursor="Hand"
+                                             MouseLeftButtonDown="GroupIcon_Click" Tag="2"/>
                         </Grid>
 
                         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,19,0,0">
@@ -750,9 +759,9 @@
                                                                 <Setter Property="Opacity" Value="1"/>
                                                                 <Setter Property="ToolTip">
                                                                     <Setter.Value>
-                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
+                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="16" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="{lex:Loc Home.RemoveFromPin}"/>
+                                                                                <TextBlock Text="{lex:Loc Home.RemoveFromPin}" FontFamily="{lex:Font}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>
@@ -768,9 +777,9 @@
                                                                 <Setter Property="Opacity" Value="1"/>
                                                                 <Setter Property="ToolTip">
                                                                     <Setter.Value>
-                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="13" FontWeight="Medium">
+                                                                        <ToolTip Background="#99000000" Foreground="#FFFFFF" BorderThickness="0" FontSize="16" FontWeight="Medium">
                                                                             <ToolTip.Content>
-                                                                                <TextBlock Text="{lex:Loc Home.AddToPin}"/>
+                                                                                <TextBlock Text="{lex:Loc Home.AddToPin}" FontFamily="{lex:Font}"/>
                                                                             </ToolTip.Content>
                                                                         </ToolTip>
                                                                     </Setter.Value>

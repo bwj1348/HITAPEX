@@ -33,6 +33,15 @@ public partial class DeviceUserControl : UserControl
     public PedalParameterControl? PedalControl => _pedalControl;
     public SteeringWheelParameterControl? SteeringWheelControl => _steeringWheelControl;
 
+    /// <summary>
+    /// 导航到指定设备子页（供外部调用，如首页 Group 图标点击跳转）。
+    /// </summary>
+    /// <param name="index">0=基座, 1=面盘, 2=踏板</param>
+    public void NavigateToTab(int index)
+    {
+        UpdateNavigationSelection(Math.Clamp(index, 0, 2));
+    }
+
     public DeviceUserControl()
     {
         InitializeComponent();

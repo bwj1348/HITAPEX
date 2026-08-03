@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -14,9 +15,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using HITAPEX.Controls;
 using HITAPEX.Models;
+using HITAPEX.Models.Usb;
 using HITAPEX.Services;
 using HITAPEX.Services.Data;
 using HITAPEX.Services.Data.Api;
+using HITAPEX.Services.Usb;
+using HITAPEX.Views.DeviceParameters;
 using Microsoft.Win32;
 
 namespace HITAPEX.Views;
@@ -69,6 +73,7 @@ public partial class GameUserControl : UserControl
         LocalizationService.Instance.PropertyChanged += OnLanguageChanged;
 
         InitializeGameList();
+        PopulatePresetComboBoxes();
         StartTelemetrySimulation();
         UpdateScrollbarThumb();
     }
@@ -555,7 +560,7 @@ public partial class GameUserControl : UserControl
     // ═══════════════════════════════════════════════════
 
     /// <summary>
-    /// 右侧详情面板的"启动游戏"按钮点击：根据当前选中的游戏和启动模式执行启动，
+    /// 右侧详情面板的"启动游戏"按钮点击：自动应用预设后根据当前选中的游戏和启动模式执行启动，
     /// 启动成功则保存用户数据，失败则弹出错误对话框。
     /// </summary>
     private void LaunchGameButton_Click(object sender, MouseButtonEventArgs e)
@@ -563,6 +568,8 @@ public partial class GameUserControl : UserControl
         e.Handled = true;
 
         if (_selectedGame == null) return;
+
+        ApplyPresetsIfAutoApplyEnabled();
 
         var mode = _selectedGame?.LaunchMode == LaunchModeUdf.CustomPath ? LaunchMode.CustomPath : LaunchMode.Steam;
         if (GameLauncher.Launch(_selectedGame, mode))
@@ -636,13 +643,214 @@ public partial class GameUserControl : UserControl
     }
 
     /// <summary>
-    /// 自动应用预设复选状态变化处理（当前占位，逻辑待实现）。
+    /// 自动应用预设复选框状态变化处理。
     /// </summary>
     private void AutoApplyPreset_Changed(object sender, RoutedEventArgs e)
     {
-        if (AutoApplyPresetCheckBox == null) return;
-        
-        var isAutoApply = AutoApplyPresetCheckBox.IsChecked == true;
+        // 状态由 AutoApplyPresetCheckBox.IsChecked 实时反映，无需额外处理
+    }
+
+    /// <summary>
+    /// 游戏启动时，若"自动应用预设"开关打开，则将四个下拉框中选中的预设下发到对应设备。
+    /// </summary>
+    private void ApplyPresetsIfAutoApplyEnabled()
+    {
+        if (AutoApplyPresetCheckBox?.IsChecked != true)
+            return;
+
+        ApplySinglePresetFromComboBox(BasePresetComboBox, Models.Usb.DeviceType.Base);
+        ApplySinglePresetFromComboBox(WheelPresetComboBox, Models.Usb.DeviceType.Wheel);
+        ApplySinglePresetFromComboBox(PedalPresetComboBox, Models.Usb.DeviceType.Pedal);
+        ApplySinglePresetFromComboBox(ShifterPresetComboBox, Models.Usb.DeviceType.Shifter);
+    }
+
+    /// <summary>
+    /// 从指定下拉框获取选中的预设，并下发到对应类型的已连接设备。
+    /// </summary>
+    private static void ApplySinglePresetFromComboBox(ComboBox comboBox, Models.Usb.DeviceType deviceType)
+    {
+        if (comboBox.SelectedItem is not ComboBoxItem item || item.Tag is not PresetItem preset)
+            return;
+
+        // 查找对应设备类型的已连接设备
+        var connectedDevices = App.UsbManager?.ConnectedDevices
+            ?? System.Collections.ObjectModel.ReadOnlyCollection<UsbDeviceInfo>.Empty;
+
+        var targetDevice = connectedDevices.FirstOrDefault(d =>
+        {
+            var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+            return descriptor != null && descriptor.DeviceType == deviceType
+                   && descriptor.IsNormalMode(d.Vid, d.Pid);
+        });
+
+        if (targetDevice == null)
+        {
+            Debug.WriteLine($"[GameUI] 未找到已连接的{deviceType}设备，跳过预设应用: {preset.Name}");
+            return;
+        }
+
+        try
+        {
+            switch (deviceType)
+            {
+                case Models.Usb.DeviceType.Pedal when preset.PedalParameters != null:
+                    ApplyPedalPreset(targetDevice, preset);
+                    break;
+                case Models.Usb.DeviceType.Wheel when preset.WheelParameters != null:
+                    ApplyWheelPreset(targetDevice, preset);
+                    break;
+                case Models.Usb.DeviceType.Base when preset.BaseParameters != null:
+                    ApplyBasePreset(targetDevice, preset);
+                    break;
+                // Shifter 的预设快照模型尚未实现，暂跳过
+                default:
+                    Debug.WriteLine($"[GameUI] {deviceType} 预设应用尚未实现或参数为空: {preset.Name}");
+                    return;
+            }
+
+            // 下发预设名称到设备
+            if (App.ProtocolService != null)
+                App.ProtocolService.SetPresetName(targetDevice.DeviceKey, deviceType, preset.Name);
+
+            Debug.WriteLine($"[GameUI] 预设已应用到{deviceType}设备: {preset.Name}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[GameUI] 应用预设失败 ({deviceType}): {ex.Message}");
+        }
+    }
+
+    /// <summary>将踏板预设参数下发到设备</summary>
+    private static void ApplyPedalPreset(UsbDeviceInfo device, PresetItem preset)
+    {
+        if (App.UsbManager == null || preset.PedalParameters == null) return;
+
+        var p = preset.PedalParameters;
+        var clutchPoints = new byte[]
+        {
+            p.ClutchPoint1Y, p.ClutchPoint1X,
+            p.ClutchPoint2Y, p.ClutchPoint2X,
+            p.ClutchPoint3Y, p.ClutchPoint3X,
+            p.ClutchPoint4Y, p.ClutchPoint4X,
+        };
+        var brakePoints = new byte[]
+        {
+            p.BrakePoint1Y, p.BrakePoint1X,
+            p.BrakePoint2Y, p.BrakePoint2X,
+            p.BrakePoint3Y, p.BrakePoint3X,
+            p.BrakePoint4Y, p.BrakePoint4X,
+        };
+        var throttlePoints = new byte[]
+        {
+            p.ThrottlePoint1Y, p.ThrottlePoint1X,
+            p.ThrottlePoint2Y, p.ThrottlePoint2X,
+            p.ThrottlePoint3Y, p.ThrottlePoint3X,
+            p.ThrottlePoint4Y, p.ThrottlePoint4X,
+        };
+
+        var cmd = DeviceProtocolService.BuildSetPedalParametersCommand(
+            p.ClutchDirection, clutchPoints, p.ClutchDeadZoneFront, p.ClutchDeadZoneRear,
+            p.BrakeDirection, brakePoints, p.BrakeDeadZoneFront, p.BrakeDeadZoneRear,
+            p.ThrottleDirection, throttlePoints, p.ThrottleDeadZoneFront, p.ThrottleDeadZoneRear);
+
+        App.UsbManager.SendToDevice(device.DeviceKey, cmd);
+    }
+
+    /// <summary>将面盘预设参数下发到设备（6 条协议命令）</summary>
+    private static void ApplyWheelPreset(UsbDeviceInfo device, PresetItem preset)
+    {
+        if (App.UsbManager == null || preset.WheelParameters == null) return;
+
+        var s = preset.WheelParameters;
+
+        // 0x2103 转速灯基础模式
+        var rpmLedColors = new byte[12][];
+        for (int i = 0; i < 12; i++)
+        {
+            var idx = Math.Clamp(s.RpmColors[i], 0, 8);
+            rpmLedColors[i] = (byte[])DeviceProtocolService.ColorIndexToRgb[idx].Clone();
+        }
+        var cmd1 = DeviceProtocolService.BuildSetWheelRpmBaseModeCommand(
+            (byte)s.RpmBaseLightMode, (byte)s.RpmBaseLightSpeed, rpmLedColors);
+        App.UsbManager.SendToDevice(device.DeviceKey, cmd1);
+
+        // 0x2104 转速灯转速指示
+        var triggerValues = new ushort[12];
+        var triggerLedColors = new byte[12][];
+        for (int i = 0; i < 12; i++)
+        {
+            triggerValues[i] = (ushort)s.RpmValues[i];
+            var ci = Math.Clamp(s.RpmColors[i], 0, 8);
+            triggerLedColors[i] = (byte[])DeviceProtocolService.ColorIndexToRgb[ci].Clone();
+        }
+        var cmd2 = DeviceProtocolService.BuildSetWheelRpmIndicatorCommand(
+            (byte)s.RpmDisplayMode, triggerValues, triggerLedColors);
+        App.UsbManager.SendToDevice(device.DeviceKey, cmd2);
+
+        // 0x2105 转速灯模式属性
+        var strobeColorIdx = Math.Clamp(s.RpmStrobeColor, 0, 8);
+        var strobeColor = DeviceProtocolService.ColorIndexToRgb[strobeColorIdx];
+        var cmd3 = DeviceProtocolService.BuildSetWheelRpmModeCommand(
+            (byte)s.RpmBrightness, (byte)(s.RpmTelemetryEnabled ? 0 : 1), (byte)s.RpmLightMode,
+            (byte)s.RpmStrobeMode, (byte)s.RpmSpeed,
+            strobeColor[0], strobeColor[1], strobeColor[2], (byte)s.RpmCapValue);
+        App.UsbManager.SendToDevice(device.DeviceKey, cmd3);
+
+        // 0x2106 按键灯全局属性
+        var unifiedColorIdx = Math.Clamp(s.GlobalKeyColor, 0, 8);
+        var unifiedColor = DeviceProtocolService.ColorIndexToRgb[unifiedColorIdx];
+        var cmd4 = DeviceProtocolService.BuildSetWheelButtonLightGlobalCommand(
+            (byte)(s.KeyColorEnabled ? 1 : 0), (byte)s.KeyBrightness,
+            unifiedColor[0], unifiedColor[1], unifiedColor[2]);
+        App.UsbManager.SendToDevice(device.DeviceKey, cmd4);
+
+        // 0x2107 按键灯单独效果（14 个可调按键）
+        for (int adjIdx = 0; adjIdx < 14; adjIdx++)
+        {
+            var btnColorIdx = Math.Clamp(s.ButtonColors[adjIdx], 0, 8);
+            var btnColor = DeviceProtocolService.ColorIndexToRgb[btnColorIdx];
+            var telemetryFunc = s.ButtonTelemetryEnabled[adjIdx]
+                ? (byte)(s.ButtonTelemetryFunc[adjIdx] + 1) : (byte)0;
+            var flashSpeed = s.ButtonTelemetryLightEffect[adjIdx] == 0
+                ? (byte)0xFF : (byte)s.ButtonSpeeds[adjIdx];
+            var tcIdx = Math.Clamp(s.ButtonTelemetryTriggerColor[adjIdx], 0, 8);
+            var tcColor = DeviceProtocolService.ColorIndexToRgb[tcIdx];
+
+            var cmd5 = DeviceProtocolService.BuildSetWheelButtonLightCommand(
+                (byte)adjIdx, btnColor[0], btnColor[1], btnColor[2],
+                telemetryFunc, flashSpeed, tcColor[0], tcColor[1], tcColor[2]);
+            App.UsbManager.SendToDevice(device.DeviceKey, cmd5);
+        }
+
+        // 0x2108 睡眠和拨片
+        var sleepTime = s.SleepLightDuration switch
+        {
+            0 => (byte)1, 1 => (byte)2, 2 => (byte)3, 3 => (byte)4, 4 => (byte)5, 5 => (byte)0, _ => (byte)5
+        };
+        var sleepEffect = s.StandbyLightEffect == 0 ? (byte)1 : (byte)0;
+        var clutchPaddleMode = s.ClutchMode switch
+        {
+            0 => (byte)1, 1 => (byte)0, 2 => (byte)2, _ => (byte)0
+        };
+        var cmd6 = DeviceProtocolService.BuildSetWheelSleepAndPaddleCommand(
+            sleepTime, sleepEffect, (byte)s.GlobalFlashSpeed,
+            clutchPaddleMode, (byte)Math.Round(s.ClutchPointValue));
+        App.UsbManager.SendToDevice(device.DeviceKey, cmd6);
+    }
+
+    /// <summary>将基座预设参数下发到设备（0x2101 协议）</summary>
+    private static void ApplyBasePreset(UsbDeviceInfo device, PresetItem preset)
+    {
+        if (App.UsbManager == null || preset.BaseParameters == null) return;
+
+        var p = preset.BaseParameters;
+        var cmd = DeviceProtocolService.BuildSetBaseParametersCommand(
+            p.MaxSteeringAngle, p.LimitRigidity, p.MaxSpeed, p.SmoothLevel,
+            p.ForceStrength, p.MechInertia, p.MechCentering, p.MechDamping,
+            p.MechFriction, p.GameInertia, p.GameElastic, p.GameDamping,
+            p.GameFriction, p.GameInertiaStr, p.HandsOffProtect, p.ForceReverse);
+
+        App.UsbManager.SendToDevice(device.DeviceKey, cmd);
     }
 
     /// <summary>
@@ -675,6 +883,7 @@ public partial class GameUserControl : UserControl
                 dialog.Hide();
                 if (_selectedGame != null)
                 {
+                    ApplyPresetsIfAutoApplyEnabled();
                     var mode = _selectedGame?.LaunchMode == LaunchModeUdf.CustomPath ? LaunchMode.CustomPath : LaunchMode.Steam;
                     if (GameLauncher.Launch(_selectedGame, mode))
                         _gameDataService?.SaveUserData(_selectedGame);
@@ -849,7 +1058,7 @@ public partial class GameUserControl : UserControl
     }
 
     /// <summary>
-    /// 卡片上的启动按钮点击：先选中对应游戏，再执行启动逻辑。
+    /// 卡片上的启动按钮点击：先选中对应游戏，自动应用预设后再执行启动逻辑。
     /// </summary>
     private void LaunchButton_Click(object sender, MouseButtonEventArgs e)
     {
@@ -858,6 +1067,8 @@ public partial class GameUserControl : UserControl
         if (sender is FrameworkElement element && element.DataContext is GameItem gameItem)
         {
             SelectGame(gameItem);
+
+            ApplyPresetsIfAutoApplyEnabled();
 
             var mode = _selectedGame?.LaunchMode == LaunchModeUdf.CustomPath ? LaunchMode.CustomPath : LaunchMode.Steam;
             if (GameLauncher.Launch(gameItem, mode))
@@ -1206,5 +1417,154 @@ public partial class GameUserControl : UserControl
             ? _selectedGame.DescriptionEn
             : _selectedGame.Description;
         GameDescriptionText.Text = desc;
+    }
+
+    // ═══════════════════════════════════════════════════
+    // 预设下拉框 — 从 PresetService 加载真实预设数据
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 从 PresetService 加载官方和个人预设，填充四个设备类型的预设下拉框。
+    /// 每个下拉框首个选项为 "Default"（设备内置默认预设），
+    /// 随后按官方预设 → 个人预设的顺序列出所有可用预设。
+    /// </summary>
+    private void PopulatePresetComboBoxes()
+    {
+        if (App.PresetService == null) return;
+
+        PopulateSinglePresetComboBox(BasePresetComboBox, Models.Usb.DeviceType.Base);
+        PopulateSinglePresetComboBox(WheelPresetComboBox, Models.Usb.DeviceType.Wheel);
+        PopulateSinglePresetComboBox(PedalPresetComboBox, Models.Usb.DeviceType.Pedal);
+        PopulateSinglePresetComboBox(ShifterPresetComboBox, Models.Usb.DeviceType.Shifter);
+    }
+
+    /// <summary>
+    /// 为单个 ComboBox 填充预设列表。
+    /// 按官方预设、个人预设的顺序列出所有可用预设，不设默认选中项。
+    /// </summary>
+    private static void PopulateSinglePresetComboBox(ComboBox comboBox, Models.Usb.DeviceType deviceType)
+    {
+        var items = comboBox.Items;
+        items.Clear();
+
+        // 加载官方预设
+        var officialPresets = App.PresetService!.LoadOfficialPresets(deviceType);
+        foreach (var preset in officialPresets)
+        {
+            items.Add(new ComboBoxItem
+            {
+                Content = preset.Name,
+                Tag = preset
+            });
+        }
+
+        // 加载个人预设
+        var personalPresets = App.PresetService.LoadPersonalPresets(deviceType);
+        foreach (var preset in personalPresets)
+        {
+            items.Add(new ComboBoxItem
+            {
+                Content = preset.Name,
+                Tag = preset
+            });
+        }
+
+        // 不设默认选中项，下拉框为空显示
+        comboBox.SelectedIndex = -1;
+    }
+
+    /// <summary>
+    /// 预设下拉框选择变更的统一处理入口。
+    /// 当 AutoApplyPreset 开启时，选中的预设将在游戏启动时自动应用到对应设备。
+    /// </summary>
+    private void PresetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // 预设选择变更时的逻辑：
+        // - 仅记录选中项；实际预设应用由游戏启动流程（LaunchGameButton_Click）触发
+        // - 启动时根据 AutoApplyPresetCheckBox 状态决定是否下发预设到设备
+        if (sender is ComboBox comboBox && comboBox.SelectedItem is ComboBoxItem item)
+        {
+            var presetName = item.Content?.ToString() ?? "Default";
+            System.Diagnostics.Debug.WriteLine($"[GameUI] 预设选择变更: {comboBox.Name} -> {presetName}");
+        }
+    }
+
+    /// <summary>
+    /// ComboBox 鼠标按下事件：通过 MouseButtonEventArgs 的 OriginalSource
+    /// 判断是否点击了编辑图标。如果是则拦截事件并跳转到设备参数界面的预设列表弹窗。
+    /// 如果当前有选中的预设，则在弹窗中定位并选中该预设。
+    /// </summary>
+    private void PresetComboBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not ComboBox comboBox) return;
+
+        // 沿视觉树向上查找，判断点击是否来自编辑图标（PresetEditIcon）
+        if (!HitTestOriginatedFromPresetEditIcon(e.OriginalSource as DependencyObject, comboBox))
+            return; // 非编辑图标，正常展开下拉框
+
+        // 点击编辑图标：拦截事件，跳转到预设弹窗
+        e.Handled = true;
+
+        var selectedPresetName = (comboBox.SelectedItem as ComboBoxItem)?.Content?.ToString();
+
+        var (deviceType, tabIndex) = comboBox.Name switch
+        {
+            "BasePresetComboBox" => (Models.Usb.DeviceType.Base, 0),
+            "WheelPresetComboBox" => (Models.Usb.DeviceType.Wheel, 1),
+            "PedalPresetComboBox" => (Models.Usb.DeviceType.Pedal, 2),
+            "ShifterPresetComboBox" => (Models.Usb.DeviceType.Shifter, 3),
+            _ => (Models.Usb.DeviceType.Base, 0)
+        };
+
+        NavigateToPresetPopup(deviceType, tabIndex, selectedPresetName);
+    }
+
+    /// <summary>
+    /// 沿视觉树向上查找，判断点击源是否来自 ComboBox 模板中的 PresetEditIcon。
+    /// </summary>
+    private static bool HitTestOriginatedFromPresetEditIcon(DependencyObject? source, ComboBox comboBox)
+    {
+        var editIcon = comboBox.Template.FindName("PresetEditIcon", comboBox);
+        if (editIcon == null) return false;
+
+        while (source != null)
+        {
+            if (ReferenceEquals(source, editIcon))
+                return true;
+            source = VisualTreeHelper.GetParent(source);
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 导航到设备参数界面并打开预设列表弹窗，可选地定位到指定预设。
+    /// </summary>
+    private static void NavigateToPresetPopup(Models.Usb.DeviceType deviceType, int tabIndex, string? presetName)
+    {
+        if (Window.GetWindow(Application.Current.MainWindow) is not MainWindow mainWindow)
+            return;
+
+        var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
+        if (vm == null) return;
+
+        // 切换到设备参数页面
+        var deviceItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Device");
+        if (deviceItem != null)
+            vm.SelectedNavigationItem = deviceItem;
+
+        // 延迟到 UI 加载完成后：导航到对应的设备 tab 并打开预设弹窗
+        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+        {
+            // 导航到对应设备 tab（0=基座, 1=面盘, 2=踏板, 3=排挡）
+            if (vm.CurrentView is DeviceUserControl deviceView)
+                deviceView.NavigateToTab(tabIndex);
+
+            // 打开预设弹窗
+            var popup = mainWindow.ShowPresetListPopup(deviceType);
+
+            // 如果有选中预设，在弹窗中定位到该预设
+            if (!string.IsNullOrEmpty(presetName))
+                popup.SelectAndScrollToPreset(presetName);
+        });
     }
 }

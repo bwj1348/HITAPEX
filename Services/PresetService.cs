@@ -177,11 +177,10 @@ public class PresetService
         var exportItem = new PresetItem
         {
             Name = preset.Name,
-            Description = preset.Description,
-            Category = preset.Category,
             Games = preset.Games,
             PedalParameters = preset.PedalParameters,
             WheelParameters = preset.WheelParameters,
+            BaseParameters = preset.BaseParameters,
             IsPersonal = true
         };
 

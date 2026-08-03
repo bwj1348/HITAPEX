@@ -70,6 +70,7 @@
   "Game.TelemetryConfig": "遥 测 配 置",
   "Game.DeviceConfig": "设 备 配 置",
   "Game.AutoApplyPreset": "自动应用预设",
+  "Game.AutoApplyPresetTip": "启用后将覆盖当前设置并自动应用预设",
   "Game.BasePreset": "基座预设",
   "Game.WheelPreset": "方向盘预设",
   "Game.PedalPreset": "脚踏板预设",

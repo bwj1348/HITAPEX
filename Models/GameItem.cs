@@ -24,6 +24,9 @@ public class GameItem : INotifyPropertyChanged
     /// <summary>游戏显示名称（中文）。如 "Assetto Corsa Competizione"</summary>
     public string Name { get; set; } = "";
 
+    /// <summary>游戏缩写/简称，用于预设关联和筛选。如 "ACC"、"FH5"</summary>
+    public string Abbreviation { get; set; } = "";
+
     /// <summary>Steam 商店 App ID 字符串。非 Steam 游戏可能为自定义值（如 "22"），用于 Steam 协议启动和安装检测</summary>
     public string SteamId { get; set; } = "";
 

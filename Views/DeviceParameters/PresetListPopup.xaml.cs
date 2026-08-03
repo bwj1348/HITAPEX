@@ -51,6 +51,9 @@ public partial class PresetListPopup : UserControl
     /// <summary>当前被选中预设项对应的 UI 控件</summary>
     private ContentControl? _selectedControl;
 
+    /// <summary>首次加载前暂存待定位的预设名称，Loaded 完成后执行</summary>
+    private string? _pendingSelectName;
+
     // ---- ComboBox 搜索筛选相关 ----
 
     /// <summary>覆盖在 ComboBox ContentSite 上的 TextBox，实现输入即搜索</summary>
@@ -303,18 +306,11 @@ public partial class PresetListPopup : UserControl
     private void InitCategoryComboBox()
     {
         _allGameItems.Clear();
-        _allGameItems.Add("Assetto Corsa Competizione (ACC)");
-        _allGameItems.Add("Assetto Corsa Evo (AC EVO)");
-        _allGameItems.Add("Forza Horizon 5 (FH5)");
-        _allGameItems.Add("Forza Motorsport (FM)");
-        _allGameItems.Add("Dirt Rally 2.0 (DR2.0)");
-        _allGameItems.Add("EA Sports WRC (EA WRC)");
-        _allGameItems.Add("GT World Challenge (GTWC)");
-        _allGameItems.Add("Intercontinental GT Challenge (IGTC)");
-        _allGameItems.Add("GT4 European Series (GT4)");
-        _allGameItems.Add("iRacing (iR)");
-        _allGameItems.Add("F1 24 (F1)");
-        _allGameItems.Add("Le Mans Ultimate (LMU)");
+        foreach (var game in Models.GameListConfig.GetGames())
+        {
+            if (!string.IsNullOrEmpty(game.Abbreviation))
+                _allGameItems.Add($"{game.Name} ({game.Abbreviation})");
+        }
 
         CategoryComboBox.DropDownOpened += CategoryComboBox_DropDownOpened;
         CategoryComboBox.DropDownClosed += CategoryComboBox_DropDownClosed;
@@ -673,6 +669,7 @@ public partial class PresetListPopup : UserControl
 
         item.Content = stackPanel;
 
+        item.Tag = preset; // 标记预设数据，供 SelectAndScrollToPreset 快速查找
         item.PreviewMouseLeftButtonDown += (_, _) => SelectPresetItem(preset, item);
         item.MouseDoubleClick += (_, _) => ApplySelectedPreset();
 
@@ -687,7 +684,7 @@ public partial class PresetListPopup : UserControl
 
     /// <summary>
     /// 创建个人预设列表项 UI 控件（含旗帜图标、名称、游戏标签、编辑/删除/导出按钮）。
-    /// 游戏标签在 Loaded 事件中通过 TrimTagOverflow 进行溢出修剪。
+    /// 动态判断名称和标签是否能在一行显示，若不能才将预设名称宽度限制为 102。
     /// </summary>
     private FrameworkElement CreatePersonalPresetItem(PresetItem preset)
     {
@@ -696,6 +693,7 @@ public partial class PresetListPopup : UserControl
             Style = (Style)FindResource("PersonalPresetItemStyle")
         };
 
+        item.Tag = preset; // 标记预设数据，供 SelectAndScrollToPreset 快速查找
         item.PreviewMouseLeftButtonDown += (_, _) => SelectPresetItem(preset, item);
         item.MouseDoubleClick += (_, _) => ApplySelectedPreset();
 
@@ -724,11 +722,11 @@ public partial class PresetListPopup : UserControl
         Grid.SetColumn(iconGrid, 0);
         mainGrid.Children.Add(iconGrid);
 
-        // Preset name
+        // Preset name (移除硬编码的 MaxWidth = 102)
         var nameText = new TextBlock
         {
             Text = preset.Name,
-            MaxWidth = 102,
+            // MaxWidth = 102,  <-- 已移除，默认允许根据内容撑开
             Foreground = new SolidColorBrush(Color.FromArgb(0xE6, 0xEE, 0xEE, 0xEE)),
             FontSize = 18,
             FontWeight = FontWeights.Bold,
@@ -740,12 +738,10 @@ public partial class PresetListPopup : UserControl
         Grid.SetColumn(nameText, 1);
         mainGrid.Children.Add(nameText);
 
-        // Game tags — wrap naturally, trim overflow synchronously in Loaded
+        // Game tags — wrap naturally
         var tagsPanel = new WrapPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0,0,0,-10) };
         foreach (var game in preset.Games)
             tagsPanel.Children.Add(CreateGameTag(game));
-
-        tagsPanel.Loaded += (_, _) => TrimTagOverflow(tagsPanel);
 
         Grid.SetColumn(tagsPanel, 2);
         mainGrid.Children.Add(tagsPanel);
@@ -773,14 +769,8 @@ public partial class PresetListPopup : UserControl
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 0, 0)
         };
-        iconPanel.Children.Add(CreateIconButton(s_deleteIconGeometry, () =>
-        {
-            ShowDeleteConfirmDialog(preset);
-        }));
-        iconPanel.Children.Add(CreateIconButton(s_copyIconGeometry, () =>
-        {
-            ExportPreset(preset);
-        }));
+        iconPanel.Children.Add(CreateIconButton(s_deleteIconGeometry, () => ShowDeleteConfirmDialog(preset)));
+        iconPanel.Children.Add(CreateIconButton(s_copyIconGeometry, () => ExportPreset(preset)));
         iconPanel.Children.Add(CreateIconButton(s_editIconGeometry, () => OpenEditPopup(preset)));
         Grid.SetColumn(iconPanel, 1);
         rightSection.Children.Add(iconPanel);
@@ -795,6 +785,34 @@ public partial class PresetListPopup : UserControl
             item.MouseEnter += (_, _) => ShowDetailPopup(preset, item);
             item.MouseLeave += (_, _) => HideDetailPopup();
         }
+
+        // ==========================================
+        // 动态宽度与标签修剪逻辑
+        // ==========================================
+        mainGrid.Loaded += (_, _) =>
+        {
+            // 1. 测量无任何空间限制下（标签不换行）的理想尺寸
+            nameText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            tagsPanel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            
+            double desiredTotalWidth = nameText.DesiredSize.Width + tagsPanel.DesiredSize.Width;
+
+            // 2. 计算 Name (Col 1) 和 Tags (Col 2) 可用的实际总宽度
+            // 公式：网格总宽 - 左侧图标所在列的实际宽度 - 右侧操作栏所在列的实际宽度
+            double availableWidth = mainGrid.ActualWidth 
+                                    - mainGrid.ColumnDefinitions[0].ActualWidth 
+                                    - mainGrid.ColumnDefinitions[3].ActualWidth;
+
+            // 3. 如果理想总宽超出可用空间，说明一行装不下
+            if (desiredTotalWidth > availableWidth)
+            {
+                nameText.MaxWidth = 102;
+                mainGrid.UpdateLayout(); // 强制更新布局以应用新的 MaxWidth，迫使标签面板换行或挤压
+            }
+
+            // 4. 执行原有的溢出修剪逻辑
+            TrimTagOverflow(tagsPanel);
+        };
 
         return item;
     }
@@ -1245,6 +1263,94 @@ public partial class PresetListPopup : UserControl
         if (!_isOfficialTab) RenderPresetList();
     }
 
+    /// <summary>
+    /// 按名称查找并选中预设（供外部如 GameUserControl 调用）。
+    /// 先查个人预设再查官方预设，找到后滚动到可见位置并高亮。
+    /// 若控件尚未完成初始化，则延迟到 Loaded 之后再执行。
+    /// </summary>
+    /// <param name="presetName">预设名称</param>
+    public void SelectAndScrollToPreset(string presetName)
+    {
+        if (!_isInitialized)
+        {
+            // 控件尚未加载完成，暂存预设名并等 Loaded 后再执行
+            _pendingSelectName = presetName;
+            Loaded += DelayedSelect;
+            return;
+        }
+
+        DoSelectAndScrollToPreset(presetName);
+    }
+
+    private void DelayedSelect(object? sender, RoutedEventArgs e)
+    {
+        Loaded -= DelayedSelect;
+        // 此时 _isInitialized 为 true，但 Loaded 里刚调完 RenderPresetList，
+        // 需要再推迟一帧等模板应用完毕
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+        {
+            if (_pendingSelectName != null)
+            {
+                DoSelectAndScrollToPreset(_pendingSelectName);
+                _pendingSelectName = null;
+            }
+        });
+    }
+
+    private void DoSelectAndScrollToPreset(string presetName)
+    {
+        // 先在个人预设中查找，再查官方预设
+        var preset = _personalPresets.FirstOrDefault(p =>
+            string.Equals(p.Name, presetName, StringComparison.OrdinalIgnoreCase));
+        var isPersonal = true;
+
+        if (preset == null)
+        {
+            preset = _officialPresets.FirstOrDefault(p =>
+                string.Equals(p.Name, presetName, StringComparison.OrdinalIgnoreCase));
+            isPersonal = false;
+        }
+
+        if (preset == null) return;
+
+        // 切换到对应的 Tab
+        if (isPersonal && _isOfficialTab)
+        {
+            _isOfficialTab = false;
+            UpdateTabVisuals();
+            UpdateBottomButtons();
+            RenderPresetList();
+        }
+        else if (!isPersonal && !_isOfficialTab)
+        {
+            _isOfficialTab = true;
+            UpdateTabVisuals();
+            UpdateBottomButtons();
+            RenderPresetList();
+        }
+
+        // 从 Items 中直接定位匹配的 ContentControl（Tag 存了 PresetItem）
+        ContentControl? targetControl = null;
+        foreach (var itemObj in PresetItemsControl.Items)
+        {
+            if (itemObj is ContentControl cc && cc.Tag is PresetItem p &&
+                string.Equals(p.Name, presetName, StringComparison.OrdinalIgnoreCase))
+            {
+                targetControl = cc;
+                break;
+            }
+        }
+
+        if (targetControl == null) return;
+
+        // 推迟到布局渲染完成后选中，确保模板已应用、BgRect 可被查找
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, () =>
+        {
+            SelectPresetItem(preset, targetControl);
+            targetControl.BringIntoView();
+        });
+    }
+
     // ══════════════════════════════════════════
     //  预设选中 / 应用 / 删除 / 导出
     // ══════════════════════════════════════════
@@ -1572,27 +1678,21 @@ public class PresetItem
     /// <summary>预设名称</summary>
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>预设描述</summary>
-    public string Description { get; set; } = string.Empty;
-
-    /// <summary>预设分类</summary>
-    public string Category { get; set; } = string.Empty;
-
-    /// <summary>预设包含的参数项数量</summary>
-    public int ItemCount { get; set; }
-
-    /// <summary>关联的游戏列表</summary>
+    /// <summary>关联的游戏列表（游戏简称）</summary>
     public List<string> Games { get; set; } = new();
-
-    /// <summary>踏板预设参数快照</summary>
-    public Models.Usb.PedalPresetSnapshot? PedalParameters { get; set; }
-
-    /// <summary>方向盘/基座预设参数快照</summary>
-    public Models.Usb.WheelPresetSnapshot? WheelParameters { get; set; }
 
     /// <summary>是否为个人预设（可编辑/删除），官方预设不可编辑</summary>
     public bool IsPersonal { get; set; }
 
-    /// <summary>设备类型（基座/踏板/面盘）</summary>
+    /// <summary>设备类型（基座/踏板/面盘/排挡等）</summary>
     public Models.Usb.DeviceType DeviceType { get; set; } = Models.Usb.DeviceType.Pedal;
+
+    /// <summary>基座预设参数快照</summary>
+    public Models.Usb.BasePresetSnapshot? BaseParameters { get; set; }
+
+    /// <summary>面盘预设参数快照</summary>
+    public Models.Usb.WheelPresetSnapshot? WheelParameters { get; set; }
+
+    /// <summary>踏板预设参数快照</summary>
+    public Models.Usb.PedalPresetSnapshot? PedalParameters { get; set; }
 }
