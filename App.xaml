@@ -34,6 +34,38 @@
 
         <FontFamily x:Key="OrbitronFont">./Assets/Fonts/#Orbitron</FontFamily>
 
+        <LinearGradientBrush x:Key="TabSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C60E0E" Offset="0"/>
+            <GradientStop Color="#600707" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="CheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Grid Width="22" Height="18" Margin="0,0,8,0">
+                                <Path x:Name="CheckBoxOuter" Data="M20.8093 0.724774L20.6165 1.44828L16.6167 16.4484L16.4233 17.1738H0.942858L1.13574 16.4503L5.13549 1.45016L5.32888 0.724774H20.8093Z" Stroke="#C60E0E" StrokeThickness="1.5" Fill="Transparent" Stretch="Fill"/>
+                                <Path x:Name="CheckBoxInner" Data="M15 0H3.5L0 13H11.5167L15 0Z" Fill="#C60E0E" Stretch="Fill" Margin="3,2.3" Visibility="Collapsed"/>
+                            </Grid>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="CheckBoxInner" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         </ResourceDictionary>
 
     </Application.Resources>

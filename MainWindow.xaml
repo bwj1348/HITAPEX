@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:HITAPEX.ViewModels"
         xmlns:ctrl="clr-namespace:HITAPEX.Controls"
+        xmlns:views="clr-namespace:HITAPEX.Views"
         xmlns:lex="clr-namespace:HITAPEX.Helpers"
         xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
         mc:Ignorable="d"
@@ -304,5 +305,6 @@
         </Grid>
         
         <ctrl:ModalDialog x:Name="GlobalDialog" Panel.ZIndex="1000"/>
+        <views:LoginPopup x:Name="LoginPopupDialog" Panel.ZIndex="1001"/>
     </Grid>
 </Window>

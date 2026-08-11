@@ -219,4 +219,48 @@ public class PedalPresetSnapshot
             return true;
         }
     }
+
+    /// <summary>校验参数值是否在合法范围内，返回错误消息列表（空列表表示通过）</summary>
+    public List<string> Validate()
+    {
+        var errors = new List<string>();
+
+        void InRange(string name, int value, int min, int max)
+        {
+            if (value < min || value > max)
+                errors.Add($"{name}: {value}, 允许范围 [{min}, {max}]");
+        }
+
+        void InRangeByte(string name, byte value, byte min, byte max)
+            => InRange(name, value, min, max);
+
+        InRange("ClutchCurveType", ClutchCurveType, 1, 5);
+        InRangeByte("ClutchDirection", ClutchDirection, 0, 1);
+        InRangeByte("ClutchPoint1Y", ClutchPoint1Y, 0, 100); InRangeByte("ClutchPoint1X", ClutchPoint1X, 0, 100);
+        InRangeByte("ClutchPoint2Y", ClutchPoint2Y, 0, 100); InRangeByte("ClutchPoint2X", ClutchPoint2X, 0, 100);
+        InRangeByte("ClutchPoint3Y", ClutchPoint3Y, 0, 100); InRangeByte("ClutchPoint3X", ClutchPoint3X, 0, 100);
+        InRangeByte("ClutchPoint4Y", ClutchPoint4Y, 0, 100); InRangeByte("ClutchPoint4X", ClutchPoint4X, 0, 100);
+        InRangeByte("ClutchDeadZoneFront", ClutchDeadZoneFront, 0, 15);
+        InRangeByte("ClutchDeadZoneRear", ClutchDeadZoneRear, 0, 15);
+
+        InRange("BrakeCurveType", BrakeCurveType, 1, 5);
+        InRangeByte("BrakeDirection", BrakeDirection, 0, 1);
+        InRangeByte("BrakePoint1Y", BrakePoint1Y, 0, 100); InRangeByte("BrakePoint1X", BrakePoint1X, 0, 100);
+        InRangeByte("BrakePoint2Y", BrakePoint2Y, 0, 100); InRangeByte("BrakePoint2X", BrakePoint2X, 0, 100);
+        InRangeByte("BrakePoint3Y", BrakePoint3Y, 0, 100); InRangeByte("BrakePoint3X", BrakePoint3X, 0, 100);
+        InRangeByte("BrakePoint4Y", BrakePoint4Y, 0, 100); InRangeByte("BrakePoint4X", BrakePoint4X, 0, 100);
+        InRangeByte("BrakeDeadZoneFront", BrakeDeadZoneFront, 0, 15);
+        InRangeByte("BrakeDeadZoneRear", BrakeDeadZoneRear, 0, 15);
+
+        InRange("ThrottleCurveType", ThrottleCurveType, 1, 5);
+        InRangeByte("ThrottleDirection", ThrottleDirection, 0, 1);
+        InRangeByte("ThrottlePoint1Y", ThrottlePoint1Y, 0, 100); InRangeByte("ThrottlePoint1X", ThrottlePoint1X, 0, 100);
+        InRangeByte("ThrottlePoint2Y", ThrottlePoint2Y, 0, 100); InRangeByte("ThrottlePoint2X", ThrottlePoint2X, 0, 100);
+        InRangeByte("ThrottlePoint3Y", ThrottlePoint3Y, 0, 100); InRangeByte("ThrottlePoint3X", ThrottlePoint3X, 0, 100);
+        InRangeByte("ThrottlePoint4Y", ThrottlePoint4Y, 0, 100); InRangeByte("ThrottlePoint4X", ThrottlePoint4X, 0, 100);
+        InRangeByte("ThrottleDeadZoneFront", ThrottleDeadZoneFront, 0, 15);
+        InRangeByte("ThrottleDeadZoneRear", ThrottleDeadZoneRear, 0, 15);
+
+        return errors;
+    }
 }

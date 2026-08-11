@@ -1267,9 +1267,13 @@ public partial class SteeringWheelParameterControl : UserControl
         try
         {
             var snapshot = _appliedPresetParameters ?? CaptureCurrentParameters();
+            var games = App.PresetService?.LoadPersonalPresets(DeviceType.Wheel)
+                .FirstOrDefault(p => string.Equals(p.Name, _currentPresetName, StringComparison.OrdinalIgnoreCase))
+                ?.Games ?? [];
             var exportItem = new PresetItem
             {
                 Name = _currentPresetName,
+                Games = games,
                 WheelParameters = snapshot,
                 IsPersonal = true,
                 DeviceType = DeviceType.Wheel

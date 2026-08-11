@@ -12,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Threading;
@@ -80,7 +81,89 @@ public partial class SettingsUserControl : UserControl
         InitializeComponent();
         SetupKeyboardNavigation();
         InitializeDeviceList();
+        SetupPlaceholderBehavior();
+        UpdateConfirmButtonWidths();
         LocalizationService.Instance.PropertyChanged += OnLocalizationChanged;
+    }
+
+    /// <summary>
+    /// 根据当前语言设置确认/取消按钮的固定宽度。中文 122，英文 146。
+    /// </summary>
+    private void UpdateConfirmButtonWidths()
+    {
+        var lang = LocalizationService.Instance.CurrentLanguage;
+        double width = lang == "zh-CN" ? 122 : 146;
+
+        ConfirmUsernameBtn.Width = width;
+        CancelUsernameBtn.Width = width;
+        ConfirmPasswordBtn.Width = width;
+        CancelPasswordBtn.Width = width;
+        //ConfirmEmailBtn.Width = width;
+        //CancelEmailBtn.Width = width;
+        ConfirmLogoutBtn.Width = width;
+        CancelLogoutBtn.Width = width;
+    }
+
+    /// <summary>
+    /// 为 TextBox 和 PasswordBox 设置 placeholder 行为：
+    /// 有内容时隐藏占位文本，无内容时显示占位文本。
+    /// </summary>
+    private void SetupPlaceholderBehavior()
+    {
+        // TextBox placeholder pairs
+        SetupTextBoxPlaceholder(NewUsernameTextBox); // NewUsernameTextBox has no separate placeholder TextBlock - uses Text property
+        //SetupTextBoxPlaceholder(NewEmailTextBox);
+        //SetupTextBoxPlaceholder(VerificationCodeTextBox);
+
+        // PasswordBox placeholder pairs
+        SetupPasswordBoxPlaceholder(CurrentPasswordBox, CurrentPasswordPlaceholder);
+        SetupPasswordBoxPlaceholder(NewPasswordBox, NewPasswordPlaceholder);
+        SetupPasswordBoxPlaceholder(ConfirmNewPasswordBox, ConfirmNewPasswordPlaceholder);
+    }
+
+    internal static void SetupTextBoxPlaceholder(TextBox textBox)
+    {
+        // For TextBoxes using Text as placeholder: clear on focus, restore on lost focus if empty
+        textBox.GotFocus += (s, e) =>
+        {
+            if (textBox.Text == LocalizationService.Instance["Settings.NewUsernamePlaceholder"]
+                || textBox.Text == LocalizationService.Instance["Settings.NewEmailPlaceholder"]
+                || textBox.Text == LocalizationService.Instance["Settings.VerificationCodePlaceholder"])
+            {
+                textBox.Text = string.Empty;
+                textBox.Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238));
+            }
+        };
+        textBox.LostFocus += (s, e) =>
+        {
+            if (string.IsNullOrWhiteSpace(textBox.Text))
+            {
+                textBox.Foreground = new SolidColorBrush(Color.FromArgb(0x99, 238, 238, 238));
+                // Restore placeholder - determine which one
+                if (textBox.Name == "NewUsernameTextBox")
+                    textBox.Text = LocalizationService.Instance["Settings.NewUsernamePlaceholder"];
+                else if (textBox.Name == "NewEmailTextBox")
+                    textBox.Text = LocalizationService.Instance["Settings.NewEmailPlaceholder"];
+                else if (textBox.Name == "VerificationCodeTextBox")
+                    textBox.Text = LocalizationService.Instance["Settings.VerificationCodePlaceholder"];
+            }
+        };
+    }
+
+    private static void SetupPasswordBoxPlaceholder(PasswordBox passwordBox, TextBlock placeholder)
+    {
+        passwordBox.PasswordChanged += (s, e) =>
+        {
+            placeholder.Visibility = string.IsNullOrEmpty(passwordBox.Password)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        };
+        passwordBox.GotFocus += (s, e) => placeholder.Visibility = Visibility.Collapsed;
+        passwordBox.LostFocus += (s, e) =>
+        {
+            if (string.IsNullOrEmpty(passwordBox.Password))
+                placeholder.Visibility = Visibility.Visible;
+        };
     }
 
     /// <summary>
@@ -105,6 +188,7 @@ public partial class SettingsUserControl : UserControl
             UpdateProgress(100, false);
             UpdateLastCheckTimeDisplay();
             UpdateFirmwareLastCheckTimeDisplay();
+            UpdateConfirmButtonWidths();
 
             // 如果之前已检查过固件，重新构建列表以显示正确语言的标签
             if (_hasCheckedFirmware)
@@ -807,11 +891,13 @@ public partial class SettingsUserControl : UserControl
 
         SystemSettingsContent.Visibility = Visibility.Collapsed;
         FirmwareUpdateContent.Visibility = Visibility.Collapsed;
+        AccountSettingsContent.Visibility = Visibility.Collapsed;
 
         Grid? targetContent = tabName switch
         {
             "SystemSettings" => SystemSettingsContent,
             "FirmwareUpdate" => FirmwareUpdateContent,
+            "AccountSettings" => AccountSettingsContent,
             _ => SystemSettingsContent
         };
 
@@ -829,6 +915,282 @@ public partial class SettingsUserControl : UserControl
             await Task.Delay(300); // 等待选项卡切换动画完成
             await CheckFirmwareUpdatesAsync();
         }
+    }
+
+    /// <summary>
+    /// 头像按钮点击：打开文件对话框允许用户从本地选择图片替换头像。
+    /// </summary>
+    private void AvatarButton_Click(object sender, RoutedEventArgs e)
+    {
+        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = LocalizationService.Instance["Settings.SelectAvatar"],
+            Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All Files (*.*)|*.*"
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(openFileDialog.FileName);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                AvatarButton.Content = bitmap;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SettingsUI] 加载头像失败: {ex.Message}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 清除输入框内容（通过 Tag 定位 x:Name），清除后自动聚焦以激活编辑状态。
+    /// </summary>
+    private void ClearInputButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string elementName)
+        {
+            var element = FindName(elementName);
+            if (element is TextBox textBox)
+            {
+                textBox.Text = string.Empty;
+                textBox.Focus();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 清除密码框内容（通过 Tag 定位页面区域，再定位对应的 PasswordBox），
+    /// 同时清除密码可见模式下叠加的明文 TextBox 并恢复 PasswordBox 可见状态。
+    /// </summary>
+    private void ClearPasswordInput_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string tag)
+        {
+            PasswordBox? passwordBox = tag switch
+            {
+                "CurrentPassword" => CurrentPasswordBox,
+                "NewPassword" => NewPasswordBox,
+                "ConfirmNewPassword" => ConfirmNewPasswordBox,
+                _ => null
+            };
+
+            // 清除密码可见模式下叠加的明文 TextBox
+            var overlayTag = $"overlay_{tag}";
+            Panel? parent = null;
+            if (passwordBox != null)
+            {
+                passwordBox.Password = string.Empty;
+                // 恢复 PasswordBox 可见（如果之前被可见模式隐藏了）
+                passwordBox.Visibility = Visibility.Visible;
+                passwordBox.Focus();
+
+                parent = VisualTreeHelper.GetParent(passwordBox) as Panel;
+            }
+
+            if (parent != null)
+            {
+                var overlays = parent.Children.OfType<TextBox>()
+                    .Where(tb => tb.Tag is string s && s == overlayTag).ToList();
+                foreach (var ov in overlays)
+                    parent.Children.Remove(ov);
+            }
+
+            // 恢复密码可见按钮的 EyeClosed/EyeOpen 图标状态
+            Button? eyeBtn = tag switch
+            {
+                "CurrentPassword" => CurrentPasswordEyeBtn,
+                "NewPassword" => NewPasswordEyeBtn,
+                _ => null
+            };
+            if (eyeBtn != null)
+            {
+                var eyeClosed = eyeBtn.Template?.FindName("EyeClosed", eyeBtn) as System.Windows.Shapes.Path;
+                var eyeOpen = eyeBtn.Template?.FindName("EyeOpen", eyeBtn) as System.Windows.Shapes.Path;
+                if (eyeClosed != null) eyeClosed.Visibility = Visibility.Visible;
+                if (eyeOpen != null) eyeOpen.Visibility = Visibility.Collapsed;
+            }
+
+            // 清除后焦点已在 PasswordBox 中，应隐藏 placeholder
+            TextBlock? placeholder = tag switch
+            {
+                "CurrentPassword" => CurrentPasswordPlaceholder,
+                "NewPassword" => NewPasswordPlaceholder,
+                "ConfirmNewPassword" => ConfirmNewPasswordPlaceholder,
+                _ => null
+            };
+            if (placeholder != null)
+                placeholder.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    /// <summary>
+    /// 切换密码可见性：在 PasswordBox 的密码掩码和明文之间切换。
+    /// 通过 Tag 定位对应区域的 EyeClosed/EyeOpen 路径和 PasswordBox。
+    /// </summary>
+    /// <summary>
+    /// 切换密码可见性：通过点击按钮切换图标并在 PasswordBox 上叠加/移除明文 TextBox。
+    /// </summary>
+    private void TogglePasswordVisibility_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not string tag) return;
+
+        // 定位对应区域的 PasswordBox 和占位 TextBlock
+        PasswordBox? pwdBox = tag switch
+        {
+            "CurrentPassword" => CurrentPasswordBox,
+            "NewPassword" => NewPasswordBox,
+            "ConfirmNewPassword" => ConfirmNewPasswordBox,
+            _ => null
+        };
+        TextBlock? placeholder = tag switch
+        {
+            "CurrentPassword" => CurrentPasswordPlaceholder,
+            "NewPassword" => NewPasswordPlaceholder,
+            "ConfirmNewPassword" => ConfirmNewPasswordPlaceholder,
+            _ => null
+        };
+        if (pwdBox == null) return;
+
+        // 找到按钮模板中的 EyeClosed / EyeOpen 路径
+        var eyeClosed = FindTemplateChild<System.Windows.Shapes.Path>(btn, "EyeClosed");
+        var eyeOpen = FindTemplateChild<System.Windows.Shapes.Path>(btn, "EyeOpen");
+
+        bool currentlyHidden = eyeClosed != null && eyeClosed.Visibility == Visibility.Visible;
+
+        if (currentlyHidden)
+        {
+            // 切换为可见：隐藏密码掩码，显示明文 TextBox
+            if (eyeClosed != null) eyeClosed.Visibility = Visibility.Collapsed;
+            if (eyeOpen != null) eyeOpen.Visibility = Visibility.Visible;
+
+            // 在 PasswordBox 父容器上叠加一个 TextBox
+            var parent = VisualTreeHelper.GetParent(pwdBox) as Grid;
+            if (parent != null)
+            {
+                var existingOverlay = parent.Children.OfType<TextBox>()
+                    .FirstOrDefault(tb => tb.Tag is string s && s == $"overlay_{tag}");
+                if (existingOverlay == null)
+                {
+                    var overlay = new TextBox
+                    {
+                        Text = pwdBox.Password,
+                        Tag = $"overlay_{tag}",
+                        Background = Brushes.Transparent,
+                        BorderThickness = new Thickness(0),
+                        Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+                        CaretBrush = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+                        FontSize = 15,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(16, 0, 0, 0)
+                    };
+                    // 同步文本
+                    overlay.TextChanged += (_, _) => pwdBox.Password = overlay.Text;
+                    overlay.GotFocus += (_, _) => { if (placeholder != null) placeholder.Visibility = Visibility.Collapsed; };
+                    overlay.LostFocus += (_, _) => { if (string.IsNullOrEmpty(overlay.Text) && placeholder != null) placeholder.Visibility = Visibility.Visible; };
+                    Grid.SetColumn(overlay, 0);
+                    parent.Children.Add(overlay);
+                }
+                pwdBox.Visibility = Visibility.Collapsed;
+            }
+        }
+        else
+        {
+            // 切换为隐藏：恢复密码掩码
+            if (eyeClosed != null) eyeClosed.Visibility = Visibility.Visible;
+            if (eyeOpen != null) eyeOpen.Visibility = Visibility.Collapsed;
+
+            pwdBox.Password = GetPasswordOverlayText(tag) ?? pwdBox.Password;
+            pwdBox.Visibility = Visibility.Visible;
+
+            // 移除叠加的 TextBox
+            var parent = VisualTreeHelper.GetParent(pwdBox) as Grid;
+            if (parent != null)
+            {
+                var overlays = parent.Children.OfType<TextBox>()
+                    .Where(tb => tb.Tag is string s && s == $"overlay_{tag}").ToList();
+                foreach (var ov in overlays)
+                    parent.Children.Remove(ov);
+            }
+        }
+
+        if (placeholder != null)
+            placeholder.Visibility = string.IsNullOrEmpty(pwdBox.Password) ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private string? GetPasswordOverlayText(string tag)
+    {
+        return tag switch
+        {
+            "CurrentPassword" => CurrentPasswordBox.Password,
+            "NewPassword" => NewPasswordBox.Password,
+            "ConfirmNewPassword" => ConfirmNewPasswordBox.Password,
+            _ => null
+        };
+    }
+
+    private static T? FindTemplateChild<T>(Control control, string name) where T : FrameworkElement
+    {
+        return control.Template?.FindName(name, control) as T;
+    }
+
+    /// <summary>
+    /// 确认修改用户名。
+    /// </summary>
+    private void ConfirmChangeUsername_Click(object sender, RoutedEventArgs e)
+    {
+    }
+
+    /// <summary>
+    /// 确认修改密码。
+    /// </summary>
+    private void ConfirmChangePassword_Click(object sender, RoutedEventArgs e)
+    {
+    }
+
+    /// <summary>
+    /// 确认修改邮箱。
+    /// </summary>
+    private void ConfirmChangeEmail_Click(object sender, RoutedEventArgs e)
+    {
+    }
+
+    /// <summary>
+    /// 取消修改操作（收起对应区域）。
+    /// </summary>
+    private void CancelChange_Click(object sender, RoutedEventArgs e)
+    {
+    }
+
+    /// <summary>
+    /// 点击"立即登录"按钮，弹出登录对话框。
+    /// </summary>
+    private void LoginNowButton_Click(object sender, RoutedEventArgs e)
+    {
+        var parentWindow = Window.GetWindow(this);
+        if (parentWindow is MainWindow mainWindow)
+        {
+            mainWindow.LoginPopupDialog.Show();
+        }
+    }
+
+    /// <summary>
+    /// 确认退出登录。
+    /// </summary>
+    private void ConfirmLogout_Click(object sender, RoutedEventArgs e)
+    {
+    }
+
+    /// <summary>
+    /// 获取验证码。
+    /// </summary>
+    private void GetVerificationCode_Click(object sender, RoutedEventArgs e)
+    {
     }
 
     private void AutoStartCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -1657,6 +2019,57 @@ public partial class SettingsUserControl : UserControl
 
             if (!_isUpdating && !_keepProgressHidden)
                 pg.Clip = Geometry.Parse($"M-100,0 L{w:F3},0 L{w:F3},21 L{w - 6:F3},27 L-100,27 Z");
+        }
+    }
+
+    /// <summary>
+    /// 输入框边框 Grid 的 SizeChanged 事件处理。
+    /// 根据实际宽度动态计算 Path 几何体，保持左上角和右下角 6px 倒角不变。
+    /// 形状参考检查更新按钮：M{W},5 H11 L5,11 V{H-1} H{W-6} L{W},{H-7} V5 Z
+    /// </summary>
+    private void InputBorder_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        var h = grid.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+
+        // 倒角尺寸固定 6px；左下角有 1.8px 小台阶
+        var geom = $"M{w:F3},5 H11 L5,11 V{h - 1:F3} H6.8 H{w - 6:F3} L{w:F3},{h - 7:F3} V5 Z";
+
+        // 取 Grid 的第一个 Path 子元素
+        foreach (var child in grid.Children)
+        {
+            if (child is System.Windows.Shapes.Path path)
+            {
+                path.Data = Geometry.Parse(geom);
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 确认/取消按钮边框 Grid 的 SizeChanged 事件处理。
+    /// 根据实际宽度动态计算 Path 几何体，保持两端 6px 倒角不变。
+    /// 原始固定形状：M0 5.78571V27H{W-6}L{W} 21.2143V0H6Z
+    /// </summary>
+    private void ConfirmButtonBg_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (sender is not Grid grid) return;
+        var w = grid.ActualWidth;
+        var h = grid.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+
+        // 两端倒角固定 6×6，水平段占剩余宽度
+        var geom = $"M0,{5.78571:F4} V{h:F4} H{w - 6:F4} L{w:F4},{21.2143:F4} V0 H6 Z";
+
+        foreach (var child in grid.Children)
+        {
+            if (child is System.Windows.Shapes.Path path)
+            {
+                path.Data = Geometry.Parse(geom);
+                break;
+            }
         }
     }
 }

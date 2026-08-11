@@ -208,4 +208,74 @@ public class WheelPresetSnapshot
             return true;
         }
     }
+
+    /// <summary>校验参数值是否在合法范围内，返回错误消息列表（空列表表示通过）</summary>
+    public List<string> Validate()
+    {
+        var errors = new List<string>();
+
+        void InRange(string name, int value, int min, int max)
+        {
+            if (value < min || value > max)
+                errors.Add($"{name}: {value}, 允许范围 [{min}, {max}]");
+        }
+
+        void CheckArrayLen(string name, Array arr, int expected)
+        {
+            if (arr.Length != expected)
+                errors.Add($"{name}: 数组长度 {arr.Length}, 期望 {expected}");
+        }
+
+        // 全局设置
+        InRange("GlobalKeyColor", GlobalKeyColor, 0, 8);
+        InRange("KeyBrightness", KeyBrightness, 0, 100);
+        InRange("RpmBrightness", RpmBrightness, 0, 100);
+        InRange("SleepLightDuration", SleepLightDuration, 0, 5);
+        InRange("StandbyLightEffect", StandbyLightEffect, 0, 1);
+        InRange("GlobalFlashSpeed", GlobalFlashSpeed, 0, 5);
+
+        // 14 个按键参数
+        CheckArrayLen("ButtonColors", ButtonColors, 14);
+        CheckArrayLen("ButtonTelemetryEnabled", ButtonTelemetryEnabled, 14);
+        CheckArrayLen("ButtonTelemetryLightEffect", ButtonTelemetryLightEffect, 14);
+        CheckArrayLen("ButtonTelemetryFunc", ButtonTelemetryFunc, 14);
+        CheckArrayLen("ButtonTelemetryTriggerColor", ButtonTelemetryTriggerColor, 14);
+        CheckArrayLen("ButtonSpeeds", ButtonSpeeds, 14);
+
+        for (int i = 0; i < 14; i++)
+        {
+            InRange($"ButtonColors[{i}]", ButtonColors[i], 0, 8);
+            InRange($"ButtonTelemetryLightEffect[{i}]", ButtonTelemetryLightEffect[i], 0, 1);
+            InRange($"ButtonTelemetryFunc[{i}]", ButtonTelemetryFunc[i], 0, 6);
+            InRange($"ButtonTelemetryTriggerColor[{i}]", ButtonTelemetryTriggerColor[i], 0, 8);
+            InRange($"ButtonSpeeds[{i}]", ButtonSpeeds[i], 0, 5);
+        }
+
+        // 12 个转速灯
+        CheckArrayLen("RpmColors", RpmColors, 12);
+        CheckArrayLen("RpmValues", RpmValues, 12);
+
+        for (int i = 0; i < 12; i++)
+        {
+            InRange($"RpmColors[{i}]", RpmColors[i], 0, 8);
+            var rpmVal = (int)RpmValues[i];
+            InRange($"RpmValues[{i}]", rpmVal, 0, 100);
+        }
+
+        InRange("RpmCapValue", (int)RpmCapValue, 0, 100);
+        InRange("RpmCurveType", RpmCurveType, 0, 3);
+        InRange("RpmDisplayMode", RpmDisplayMode, 0, 1);
+        InRange("RpmLightMode", RpmLightMode, 0, 2);
+        InRange("RpmStrobeMode", RpmStrobeMode, 0, 2);
+        InRange("RpmStrobeColor", RpmStrobeColor, 0, 8);
+        InRange("RpmSpeed", RpmSpeed, 0, 5);
+        InRange("RpmBaseLightMode", RpmBaseLightMode, 0, 2);
+        InRange("RpmBaseLightSpeed", RpmBaseLightSpeed, 0, 5);
+
+        // 拨片
+        InRange("ClutchMode", ClutchMode, 0, 2);
+        InRange("ClutchPointValue", (int)ClutchPointValue, 0, 100);
+
+        return errors;
+    }
 }

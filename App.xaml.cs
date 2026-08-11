@@ -144,6 +144,9 @@ public partial class App : Application
         FirmwareApi = new FirmwareApiService();
         ClientInstallerApi = new ClientInstallerApiService();
         PresetService = new PresetService();
+
+        // 后台异步刷新官方预设缓存（fire-and-forget，不阻塞启动）
+        _ = Task.Run(() => PresetService.EnsureOfficialPresetsRefreshedAsync());
         TelemetryService = new TelemetryService();
         GameDataService = new GameDataService();
 

@@ -568,9 +568,9 @@
                     <ItemsControl x:Name="PresetItemsControl" HorizontalAlignment="Left"/>
                 </ScrollViewer>
 
-                <!-- 滚动条（跨越第三行和第四行） -->
+                <!-- 滚动条（仅第四行，与预设列表对齐） -->
                 <ScrollBar x:Name="PresetScrollBar"
-                           Grid.Row="2" Grid.RowSpan="2"
+                           Grid.Row="3"
                            HorizontalAlignment="Right"
                            Width="3"
                            Orientation="Vertical"
@@ -579,9 +579,11 @@
                            LargeChange="10"
                            Scroll="PresetScrollBar_Scroll"/>
 
-                <!-- 第三行：选项卡（官方预设 / 个人预设，位于滚动条上方） -->
+                <!-- 第三行：选项卡（官方预设 / 个人预设 / 云预设，位于滚动条上方） -->
                 <Grid Grid.Row="2" Margin="0,0,0,25">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -642,6 +644,40 @@
                         <Border x:Name="TabPersonalUnderline" Height="3" Background="#C60E0E"
                                 HorizontalAlignment="Center" Visibility="Collapsed"
                                 Width="{Binding ElementName=TabPersonalRow, Path=ActualWidth}">
+                            <Border.RenderTransform>
+                                <SkewTransform AngleX="-45"/>
+                            </Border.RenderTransform>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- 分隔竖线 -->
+                    <Rectangle Grid.Column="3" Width="1" Height="32"
+                               Fill="#4DEEEEEE" VerticalAlignment="Center"
+                               Margin="10,0,10,0"/>
+
+                    <!-- 云预设 -->
+                    <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                        <StackPanel x:Name="TabCloudRow" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  StrokeLineJoin="Round" VerticalAlignment="Center"
+                                  Margin="6,0,6,0">
+                                <Path.Data>
+                                    <GeometryGroup>
+                                        <PathGeometry Figures="M8.13281 9.36719V16.749"/>
+                                        <PathGeometry Figures="M5.67188 11.8278L8.13328 9.36719L10.5947 11.8278"/>
+                                        <PathGeometry Figures="M14.9031 10.1063C15.3602 9.84264 15.7555 9.48406 16.0622 9.05474C16.369 8.62543 16.5801 8.13535 16.6814 7.61756C16.7827 7.09977 16.7717 6.56629 16.6493 6.05309C16.5268 5.53989 16.2957 5.05889 15.9716 4.64253C15.6475 4.22616 15.2378 3.88411 14.7702 3.63942C14.3026 3.39473 13.788 3.2531 13.2611 3.22407C12.7341 3.19504 12.207 3.27929 11.7154 3.47113C11.2237 3.66298 10.779 3.95796 10.411 4.3362C10.0884 3.19181 9.36218 2.2029 8.36671 1.55226C7.37124 0.901618 6.1738 0.633254 4.99575 0.796778C3.8177 0.960301 2.7387 1.54465 1.95822 2.44181C1.17774 3.33897 0.748552 4.48826 0.750004 5.67722C0.750876 6.79572 1.13286 7.88055 1.83302 8.75298"/>
+                                    </GeometryGroup>
+                                </Path.Data>
+                            </Path>
+                            <Button x:Name="TabCloud" Content="{lex:Loc Preset.CloudPresets}"
+                                    Style="{StaticResource TabButtonStyle}"
+                                    FontSize="{lex:LocFontSize Preset.TabFontSize}"
+                                    Click="TabCloud_Click" Margin="0,0,10,0"/>
+                        </StackPanel>
+                        <Border x:Name="TabCloudUnderline" Height="3" Background="#C60E0E"
+                                HorizontalAlignment="Center" Visibility="Collapsed"
+                                Width="{Binding ElementName=TabCloudRow, Path=ActualWidth}">
                             <Border.RenderTransform>
                                 <SkewTransform AngleX="-45"/>
                             </Border.RenderTransform>

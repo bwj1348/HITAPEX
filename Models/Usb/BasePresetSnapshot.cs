@@ -112,4 +112,35 @@ public class BasePresetSnapshot
             return true;
         }
     }
+
+    /// <summary>校验参数值是否在合法范围内，返回错误消息列表（空列表表示通过）</summary>
+    public List<string> Validate()
+    {
+        var errors = new List<string>();
+
+        void InRange(string name, int value, int min, int max)
+        {
+            if (value < min || value > max)
+                errors.Add($"{name}: {value}, 允许范围 [{min}, {max}]");
+        }
+
+        InRange("MaxSteeringAngle", MaxSteeringAngle, 0, 65535);
+        InRange("LimitRigidity", LimitRigidity, 0, 100);
+        InRange("MaxSpeed", MaxSpeed, 0, 100);
+        InRange("SmoothLevel", SmoothLevel, 0, 100);
+        InRange("ForceStrength", ForceStrength, 0, 100);
+        InRange("MechInertia", MechInertia, 0, 100);
+        InRange("MechCentering", MechCentering, 0, 100);
+        InRange("MechDamping", MechDamping, 0, 100);
+        InRange("MechFriction", MechFriction, 0, 100);
+        InRange("GameInertia", GameInertia, 0, 100);
+        InRange("GameElastic", GameElastic, 0, 100);
+        InRange("GameDamping", GameDamping, 0, 100);
+        InRange("GameFriction", GameFriction, 0, 100);
+        InRange("GameInertiaStr", GameInertiaStr, 0, 100);
+        InRange("HandsOffProtect", HandsOffProtect, 0, 100);
+        InRange("ForceReverse", ForceReverse, 0, 1);
+
+        return errors;
+    }
 }

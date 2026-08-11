@@ -39,11 +39,14 @@ public partial class PresetListPopup : UserControl
     /// <summary>所有游戏类别项（用于下拉框筛选）</summary>
     private readonly List<string> _allGameItems = new();
 
-    /// <summary>当前显示的是官方预设选项卡还是个人预设选项卡</summary>
-    private bool _isOfficialTab = true;
+    /// <summary>选项卡类型</summary>
+    private enum TabType { Official, Personal, Cloud }
 
-    /// <summary>当前选中的游戏类别筛选条件</summary>
-    private string _currentCategory = LocalizationService.Instance["Preset.All"];
+    /// <summary>当前显示的选项卡</summary>
+    private TabType _currentTab = TabType.Official;
+
+    /// <summary>当前选中的游戏类别筛选条件，null 表示"全部"不过滤</summary>
+    private string? _currentCategory;
 
     /// <summary>当前被选中的预设项</summary>
     private PresetItem? _selectedPreset;
@@ -147,7 +150,7 @@ public partial class PresetListPopup : UserControl
                 {
                     _personalPresets[idx] = edited;
                     SavePersonalPresets();
-                    if (!_isOfficialTab) RenderPresetList();
+                    if (_currentTab == TabType.Personal) RenderPresetList();
                 }
             }
             RemoveEditPopup(editPopup);
@@ -545,7 +548,7 @@ public partial class PresetListPopup : UserControl
     /// <summary>切换到官方预设选项卡</summary>
     private void TabOfficial_Click(object sender, RoutedEventArgs e)
     {
-        _isOfficialTab = true;
+        _currentTab = TabType.Official;
         DeselectCurrentItem();
         UpdateTabVisuals();
         UpdateBottomButtons();
@@ -555,7 +558,17 @@ public partial class PresetListPopup : UserControl
     /// <summary>切换到个人预设选项卡</summary>
     private void TabPersonal_Click(object sender, RoutedEventArgs e)
     {
-        _isOfficialTab = false;
+        _currentTab = TabType.Personal;
+        DeselectCurrentItem();
+        UpdateTabVisuals();
+        UpdateBottomButtons();
+        RenderPresetList();
+    }
+
+    /// <summary>切换到云预设选项卡</summary>
+    private void TabCloud_Click(object sender, RoutedEventArgs e)
+    {
+        _currentTab = TabType.Cloud;
         DeselectCurrentItem();
         UpdateTabVisuals();
         UpdateBottomButtons();
@@ -565,14 +578,15 @@ public partial class PresetListPopup : UserControl
     /// <summary>更新选项卡下划线可见性，标识当前选中的选项卡</summary>
     private void UpdateTabVisuals()
     {
-        TabOfficialUnderline.Visibility = _isOfficialTab ? Visibility.Visible : Visibility.Collapsed;
-        TabPersonalUnderline.Visibility = _isOfficialTab ? Visibility.Collapsed : Visibility.Visible;
+        TabOfficialUnderline.Visibility = _currentTab == TabType.Official ? Visibility.Visible : Visibility.Collapsed;
+        TabPersonalUnderline.Visibility = _currentTab == TabType.Personal ? Visibility.Visible : Visibility.Collapsed;
+        TabCloudUnderline.Visibility = _currentTab == TabType.Cloud ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    /// <summary>个人选项卡显示导入按钮，官方选项卡隐藏导入按钮</summary>
+    /// <summary>个人和云预设选项卡显示导入按钮，官方选项卡隐藏导入按钮</summary>
     private void UpdateBottomButtons()
     {
-        ImportButton.Visibility = _isOfficialTab ? Visibility.Collapsed : Visibility.Visible;
+        ImportButton.Visibility = _currentTab == TabType.Official ? Visibility.Collapsed : Visibility.Visible;
     }
 
     // ══════════════════════════════════════════
@@ -584,16 +598,16 @@ public partial class PresetListPopup : UserControl
     {
         PresetItemsControl.Items.Clear();
 
-        var source = _isOfficialTab ? _officialPresets : _personalPresets;
-        var filtered = _currentCategory == LocalizationService.Instance["Preset.All"]
+        List<PresetItem> source = _currentTab switch { TabType.Official => _officialPresets, TabType.Personal => _personalPresets, TabType.Cloud => [], _ => _officialPresets };
+        var filtered = _currentCategory == null
             ? source
             : source.Where(p => p.Games.Contains(_currentCategory)).ToList();
 
         foreach (var preset in filtered)
         {
-            PresetItemsControl.Items.Add(_isOfficialTab
-                ? CreatePresetItem(preset)
-                : CreatePersonalPresetItem(preset));
+            PresetItemsControl.Items.Add(_currentTab == TabType.Personal
+                ? CreatePersonalPresetItem(preset)
+                : CreatePresetItem(preset));
         }
 
         Dispatcher.BeginInvoke(new Action(SyncScrollBar), System.Windows.Threading.DispatcherPriority.Loaded);
@@ -1161,12 +1175,12 @@ public partial class PresetListPopup : UserControl
         var selected = CategoryComboBox.SelectedItem?.ToString();
         if (string.IsNullOrEmpty(selected))
         {
-            _currentCategory = LocalizationService.Instance["Preset.All"];
+            _currentCategory = null;
             return;
         }
         // 从 "Assetto Corsa Competizione (ACC)" 中提取括号内的简称 "ACC"
         var match = System.Text.RegularExpressions.Regex.Match(selected, @"\(([^)]+)\)");
-        _currentCategory = match.Success ? match.Groups[1].Value : selected;
+        _currentCategory = match.Success ? match.Groups[1].Value : null;
     }
 
     /// <summary>点击筛选按钮，重新渲染预设列表</summary>
@@ -1178,7 +1192,7 @@ public partial class PresetListPopup : UserControl
     /// <summary>点击取消按钮，重置游戏筛选为"全部"</summary>
     private void CancelButton_Click(object sender, RoutedEventArgs e)
     {
-        _currentCategory = LocalizationService.Instance["Preset.All"];
+        _currentCategory = null;
         CategoryComboBox.SelectedIndex = -1;
         ShowContentSiteOrWatermark();
         RenderPresetList();
@@ -1196,6 +1210,12 @@ public partial class PresetListPopup : UserControl
     /// <summary>点击导入按钮，打开文件对话框选择 JSON 预设文件导入</summary>
     private void ImportButton_Click(object sender, RoutedEventArgs e)
     {
+        DoImportWithRetry();
+    }
+
+    /// <summary>执行导入流程，失败时弹窗提供重试和取消选项</summary>
+    private void DoImportWithRetry()
+    {
         var dlg = new Microsoft.Win32.OpenFileDialog
         {
             Title = LocalizationService.Instance["Preset.ImportPreset"],
@@ -1203,21 +1223,45 @@ public partial class PresetListPopup : UserControl
             DefaultExt = ".json"
         };
 
-        if (dlg.ShowDialog() == true)
+        if (dlg.ShowDialog() != true) return;
+
+        var imported = App.PresetService?.ImportPreset(dlg.FileName);
+        if (imported != null)
         {
-            var imported = App.PresetService?.ImportPreset(dlg.FileName);
-            if (imported != null)
+            // 校验设备类型：导入的预设必须与当前弹窗的设备类型一致
+            if (imported.DeviceType != DeviceType)
             {
-                imported.DeviceType = DeviceType;
-                _personalPresets.Add(imported);
-                SavePersonalPresets();
-                RenderPresetList();
+                var actual = GetDeviceTypeDisplayName(imported.DeviceType);
+                ShowImportErrorDialog(
+                    string.Format(LocalizationService.Instance["Preset.ImportDeviceTypeMismatch"], actual),
+                    () => DoImportWithRetry());
+                return;
             }
-            else
+
+            // 检查名称是否与已有个人预设重复，重复则弹窗确认是否覆盖
+            var existing = _personalPresets.FirstOrDefault(p =>
+                string.Equals(p.Name, imported.Name, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
             {
-                MessageBox.Show(LocalizationService.Instance["Preset.ImportFailedMessage"], LocalizationService.Instance["Preset.ImportFailed"],
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                ShowImportOverwriteDialog(imported.Name, () =>
+                {
+                    _personalPresets.Remove(existing);
+                    _personalPresets.Add(imported);
+                    SavePersonalPresets();
+                    RenderPresetList();
+                });
+                return;
             }
+
+            _personalPresets.Add(imported);
+            SavePersonalPresets();
+            RenderPresetList();
+        }
+        else
+        {
+            ShowImportErrorDialog(
+                LocalizationService.Instance["Preset.ImportFailedMessage"],
+                () => DoImportWithRetry());
         }
     }
 
@@ -1230,7 +1274,7 @@ public partial class PresetListPopup : UserControl
     {
         _personalPresets.Clear();
         _personalPresets.AddRange(presets);
-        if (!_isOfficialTab) RenderPresetList();
+        if (_currentTab == TabType.Personal) RenderPresetList();
     }
 
     /// <summary>从外部设置官方预设列表数据</summary>
@@ -1238,7 +1282,7 @@ public partial class PresetListPopup : UserControl
     {
         _officialPresets.Clear();
         _officialPresets.AddRange(presets);
-        if (_isOfficialTab) RenderPresetList();
+        if (_currentTab == TabType.Official) RenderPresetList();
     }
 
     /// <summary>从外部设置个人预设列表数据</summary>
@@ -1246,21 +1290,21 @@ public partial class PresetListPopup : UserControl
     {
         _personalPresets.Clear();
         _personalPresets.AddRange(presets);
-        if (!_isOfficialTab) RenderPresetList();
+        if (_currentTab == TabType.Personal) RenderPresetList();
     }
 
     /// <summary>从外部添加一条个人预设</summary>
     public void AddPersonalPreset(PresetItem preset)
     {
         _personalPresets.Add(preset);
-        if (!_isOfficialTab) RenderPresetList();
+        if (_currentTab == TabType.Personal) RenderPresetList();
     }
 
     /// <summary>从外部移除一条个人预设</summary>
     public void RemovePersonalPreset(PresetItem preset)
     {
         _personalPresets.Remove(preset);
-        if (!_isOfficialTab) RenderPresetList();
+        if (_currentTab == TabType.Personal) RenderPresetList();
     }
 
     /// <summary>
@@ -1314,16 +1358,16 @@ public partial class PresetListPopup : UserControl
         if (preset == null) return;
 
         // 切换到对应的 Tab
-        if (isPersonal && _isOfficialTab)
+        if (isPersonal && _currentTab != TabType.Personal)
         {
-            _isOfficialTab = false;
+            _currentTab = TabType.Personal;
             UpdateTabVisuals();
             UpdateBottomButtons();
             RenderPresetList();
         }
-        else if (!isPersonal && !_isOfficialTab)
+        else if (!isPersonal && _currentTab != TabType.Official)
         {
-            _isOfficialTab = true;
+            _currentTab = TabType.Official;
             UpdateTabVisuals();
             UpdateBottomButtons();
             RenderPresetList();
@@ -1593,6 +1637,78 @@ public partial class PresetListPopup : UserControl
         timer.Start();
     }
 
+    /// <summary>显示导入失败对话框，提供重试和取消按钮</summary>
+    private void ShowImportErrorDialog(string message, Action? onRetry)
+    {
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.ImportFailed"];
+        dialog.ShowIcon = true;
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = message,
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontWeight = FontWeights.Regular
+        };
+
+        dialog.AddButton(LocalizationService.Instance["Common.Retry"], (_, _) =>
+        {
+            dialog.Hide();
+            onRetry?.Invoke();
+        }, isPrimary: true);
+
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
+
+    /// <summary>显示导入时同名覆盖确认对话框</summary>
+    private void ShowImportOverwriteDialog(string presetName, Action onConfirm)
+    {
+        if (Window.GetWindow(this) is not HITAPEX.MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.ImportOverwriteTitle"];
+        dialog.ShowIcon = true;
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
+        {
+            Text = string.Format(LocalizationService.Instance["Preset.ImportOverwriteMessage"], presetName),
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            FontWeight = FontWeights.Regular
+        };
+
+        dialog.AddButton(LocalizationService.Instance["Common.Save"], (_, _) =>
+        {
+            dialog.Hide();
+            onConfirm();
+        }, isPrimary: true);
+
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
+        {
+            dialog.Hide();
+        }, isPrimary: false);
+
+        dialog.Show();
+    }
+
     /// <summary>显示导出失败对话框，提供重试和取消选项</summary>
     private void ShowExportFailedDialog(Action? onRetry)
     {
@@ -1664,6 +1780,19 @@ public partial class PresetListPopup : UserControl
         path.Height = h;
         // 切角偏移 9px（与原始形状 M325...M5... 倾斜一致）
         path.Data = Geometry.Parse($"M{w},0 H9 L0,9 V{h} H{w - 9} L{w},{h - 9} V0 Z");
+    }
+
+    /// <summary>将 DeviceType 枚举值转为设备类型显示名称</summary>
+    private static string GetDeviceTypeDisplayName(Models.Usb.DeviceType deviceType)
+    {
+        return deviceType switch
+        {
+            Models.Usb.DeviceType.Base => LocalizationService.Instance["Status.DeviceTypeBase"],
+            Models.Usb.DeviceType.Pedal => LocalizationService.Instance["Status.DeviceTypePedal"],
+            Models.Usb.DeviceType.Wheel => LocalizationService.Instance["Status.DeviceTypeWheel"],
+            Models.Usb.DeviceType.Shifter => LocalizationService.Instance["Status.DeviceTypeShifter"],
+            _ => deviceType.ToString()
+        };
     }
 
 }

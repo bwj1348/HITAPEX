@@ -196,22 +196,22 @@
 
         <!-- 弹窗主体：居中面板 -->
         <Border x:Name="PopupPanel"
-                Width="872" Height="639"
+                Width="872" Height="674"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Cursor="Arrow">
             <Grid>
                 <!-- 窗口边框形状 -->
-                <Path Data="M872 0H15L0 15V639H857L872 624V0Z"
+                <Path Data="M872 0H15L0 15V674H857L872 659V0Z"
                       Fill="#4A4A4A"
                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                 <!-- SVG 背景图案 -->
                 <svgc:SvgViewbox Source="/Assets/Group1265485081.svg"
-                                 Width="872" Height="639" Stretch="Fill"
+                                 Width="872" Height="674" Stretch="Fill"
                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                 <!-- 装饰性斜角边框 -->
-                <Path Data="M831 0V585L819 597H0V12L12 0H831Z"
+                <Path Data="M831.5 0.5V621.793L819.793 633.5H0.5V12.207L12.207 0.5H831.5Z"
                       Stroke="#EEEEEE" StrokeThickness="1"
                       Fill="Transparent" Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
@@ -221,6 +221,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
@@ -491,8 +492,16 @@
                         </Grid>
                     </Grid>
 
+                    <!-- 第四行：同步到云端 -->
+                    <CheckBox x:Name="SyncToCloudCheckBox"
+                              Grid.Row="3"
+                              Content="{lex:Loc Preset.SyncToCloud}"
+                              Style="{StaticResource SelectCheckBoxStyle}"
+                              Margin="0,0,0,20"
+                              VerticalAlignment="Center"/>
+
                     <!-- 第五行：操作按钮 -->
-                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,0,0,0" HorizontalAlignment="Center">
+                    <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,0" HorizontalAlignment="Center">
                         <Button x:Name="ConfirmButton" Content="{lex:Loc Common.Confirm}"
                                 Style="{StaticResource ConfirmButtonStyle}"
                                 HorizontalAlignment="Center" VerticalAlignment="Bottom"

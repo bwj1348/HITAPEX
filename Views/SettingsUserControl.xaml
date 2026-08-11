@@ -478,6 +478,13 @@
                              Checked="Tab_Checked"
                              Tag="FirmwareUpdate"
                              Margin="0,0,-8,0"/>
+                <RadioButton x:Name="AccountSettingsTab"
+                             Content="{lex:Loc Settings.AccountSettings}"
+                             Style="{StaticResource SettingsTabButtonStyle2}"
+                             GroupName="SettingsTabs"
+                             Checked="Tab_Checked"
+                             Tag="AccountSettings"
+                             Margin="3,0,-8,0"/>
             </StackPanel>
         </Grid>
 
@@ -486,7 +493,7 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Margin="0,20,0,0">
             <Grid x:Name="ContentContainer" Margin="0">
-                <Grid x:Name="SystemSettingsContent" Visibility="Visible">
+                <Grid x:Name="SystemSettingsContent" Visibility="Collapsed">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -960,6 +967,1015 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
+                </Grid>
+
+                <Grid x:Name="AccountSettingsContent" Visibility="Visible">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 左侧：用户资料 + 安全设置 -->
+                    <StackPanel Grid.Column="0">
+                        <!-- 用户资料 -->
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}" Margin="0,0,0,20">
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    </Grid>
+                                    <TextBlock Text="{lex:Loc Settings.UserProfile}" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+
+                                <!-- 未登录状态：默认头像 + 提示文本 -->
+                                <StackPanel x:Name="NotLoggedInProfilePanel"
+                                            Orientation="Horizontal" Margin="0,0,0,20" Visibility="Visible">
+                                    <Grid Width="116" Height="116">
+                                        <Path Data="M116 0H0V116H102.08L116 102.08V0Z"
+                                              Stretch="Fill"
+                                              Fill="#EEEEEE"/>
+                                        <Viewbox Width="53" Height="58"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center">
+                                            <Canvas Width="56" Height="58">
+                                                <Path Fill="#A1A1A1" Stroke="#A1A1A1"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                    <Path.Data>
+                                                        <GeometryGroup>
+                                                            <PathGeometry Figures="M27.6201 0.5C35.6283 0.5 42.12 6.99185 42.1201 15C42.1201 23.0082 35.6284 29.5 27.6201 29.5C19.612 29.4999 13.1201 23.0082 13.1201 15C13.1202 6.99192 19.612 0.500106 27.6201 0.5Z"/>
+                                                            <PathGeometry Figures="M27.6221 37.0801C33.6502 37.0801 39.5225 38.9944 44.3926 42.5469C49.2627 46.0995 52.8789 51.1074 54.7197 56.8477C54.7684 56.9997 54.7416 57.1659 54.6475 57.2949C54.5534 57.4237 54.4036 57.4999 54.2441 57.5H1C0.840285 57.5 0.689829 57.424 0.595703 57.2949C0.50169 57.166 0.474825 56.9996 0.523438 56.8477C2.36425 51.1074 5.98054 46.0995 10.8506 42.5469C15.7207 38.9942 21.5938 37.0801 27.6221 37.0801Z"/>
+                                                        </GeometryGroup>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                        </Viewbox>
+                                    </Grid>
+
+                                    <Grid Width="464" Height="116" Margin="20,0,0,0">
+                                        <Path Data="M5 16.4737V121H457L469 109.526V5H17L5 16.4737Z"
+                                              Stretch="Fill"
+                                              Fill="#33EEEEEE"/>
+                                        <StackPanel VerticalAlignment="Center" Margin="21,0,0,0">
+                                            <TextBlock Text="{lex:Loc Settings.NotLoggedIn}"
+                                                       Foreground="#EEEEEE"
+                                                       FontSize="16"
+                                                       FontWeight="Bold"/>
+                                            <TextBlock Text="{lex:Loc Settings.LoginToSync}"
+                                                       Foreground="#99EEEEEE"
+                                                       FontSize="16"
+                                                       FontWeight="Regular"
+                                                       Margin="0,10,0,0"/>
+                                            <TextBlock Text="{lex:Loc Settings.LoginFullFeatures}"
+                                                       Foreground="#99EEEEEE"
+                                                       FontSize="16"
+                                                       FontWeight="Regular"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- 已登录状态：用户头像 + 用户名/邮箱信息 -->
+                                <StackPanel x:Name="LoggedInProfilePanel"
+                                            Orientation="Horizontal" Margin="0,0,0,20"
+                                            Visibility="Collapsed">
+                                    <!-- 用户头像 116x116 + 悬停遮罩与编辑图标 -->
+                                    <Button x:Name="AvatarButton"
+                                            Width="116" Height="116"
+                                            Cursor="Hand"
+                                            Click="AvatarButton_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid Width="116" Height="116">
+                                                    <Path Data="M116 0H0V116H102.08L116 102.08V0Z"
+                                                          Stretch="Fill"
+                                                          Fill="#EEEEEE"/>
+                                                    <Image x:Name="AvatarImage"
+                                                           Source="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content}"
+                                                           Stretch="UniformToFill"
+                                                           Width="116" Height="116">
+                                                        <Image.Clip>
+                                                            <PathGeometry Figures="M116 0H0V116H102.08L116 102.08V0Z"/>
+                                                        </Image.Clip>
+                                                    </Image>
+                                                    <!-- 悬停遮罩 -->
+                                                    <Path x:Name="HoverOverlay"
+                                                          Data="M116 0H0V116H102.08L116 102.08V0Z"
+                                                          Stretch="Fill"
+                                                          Fill="#991B1B1B"
+                                                          Visibility="Collapsed"/>
+                                                    <!-- 编辑图标 -->
+                                                    <Viewbox x:Name="EditIcon"
+                                                             Width="53" Height="53"
+                                                             Visibility="Collapsed">
+                                                        <Canvas Width="53" Height="53">
+                                                            <Path Stroke="#EEEEEE" StrokeThickness="3"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M18.8064 18.8073C23.5859 18.8073 27.4605 14.933 27.4605 10.1537C27.4605 5.37438 23.5859 1.5 18.8064 1.5C14.0269 1.5 10.1523 5.37438 10.1523 10.1537C10.1523 14.933 14.0269 18.8073 18.8064 18.8073Z"/>
+                                                                        <PathGeometry Figures="M13.0388 47.653H1.5V41.8839C1.53062 38.9524 2.30378 36.0765 3.74726 33.5248C5.19075 30.9731 7.25746 28.8288 9.75435 27.2923C12.2512 25.7559 15.0968 24.8773 18.0254 24.7386C20.9539 24.6 23.8698 25.2059 26.5007 26.4996"/>
+                                                                        <PathGeometry Figures="M51.4998 32.2697L33.3839 50.3847L25.1914 51.5L26.3453 43.3079L44.4227 25.1929L51.4998 32.2697Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="HoverOverlay" Property="Visibility" Value="Visible"/>
+                                                        <Setter TargetName="EditIcon" Property="Visibility" Value="Visible"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- 用户名 / 邮箱信息（2行3列网格，列对齐） -->
+                                    <Grid Margin="20,0,0,0" VerticalAlignment="Top" Grid.IsSharedSizeScope="True" Width="464">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="IconCol"/>
+                                            <ColumnDefinition Width="Auto" SharedSizeGroup="LabelCol"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="10"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- 行0：用户名 -->
+                                        <Viewbox Grid.Row="0" Grid.Column="0"
+                                                 Width="14" Height="15"
+                                                 VerticalAlignment="Center"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="0,0,10,0">
+                                            <Canvas Width="14" Height="15">
+                                                <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                    <Path.Data>
+                                                        <GeometryGroup>
+                                                            <PathGeometry Figures="M6.92969 7.25C8.72461 7.25 10.1797 5.79493 10.1797 4C10.1797 2.20507 8.72461 0.75 6.92969 0.75C5.13476 0.75 3.67969 2.20507 3.67969 4C3.67969 5.79493 5.13476 7.25 6.92969 7.25Z"/>
+                                                            <PathGeometry Figures="M13.11 13.7503C12.6902 12.4412 11.8655 11.2992 10.7548 10.489C9.64409 9.67877 8.3048 9.24219 6.93 9.24219C5.5552 9.24219 4.21591 9.67877 3.10522 10.489C1.99453 11.2992 1.16982 12.4412 0.75 13.7503H13.11Z"/>
+                                                        </GeometryGroup>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Grid.Row="0" Grid.Column="1"
+                                                   Text="{lex:Loc Settings.Username}"
+                                                   Foreground="#EEEEEE"
+                                                   FontSize="16"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Left"
+                                                   Margin="0,0,10,0"/>
+                                        <Grid Grid.Row="0" Grid.Column="2"
+                                              Height="38"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,0,0"
+                                              SizeChanged="InputBorder_SizeChanged">
+                                            <Path Stretch="Fill"
+                                                  Fill="#33EEEEEE"/>
+                                            <TextBlock x:Name="UsernameText"
+                                                       Text="Racer"
+                                                       Foreground="#EEEEEE"
+                                                       FontSize="16"
+                                                       FontFamily="{StaticResource OrbitronFont}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="20,0,0,0"/>
+                                        </Grid>
+
+                                        <!-- 行1：邮箱 -->
+                                        <Viewbox Grid.Row="2" Grid.Column="0"
+                                                 Width="18" Height="14"
+                                                 VerticalAlignment="Center"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="0,0,10,0">
+                                            <Canvas Width="18" Height="14">
+                                                <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                    <Path.Data>
+                                                        <GeometryGroup>
+                                                            <PathGeometry Figures="M16.75 0.75V11.6591C16.75 12.2616 16.3918 12.75 15.95 12.75H1.55C1.10817 12.75 0.75 12.2616 0.75 11.6591V0.75L8.75 7.25L16.75 0.75Z"/>
+                                                            <PathGeometry Figures="M0.75 0.75H8.75045H16.75"/>
+                                                        </GeometryGroup>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Grid.Row="2" Grid.Column="1"
+                                                   Text="{lex:Loc Settings.Email}"
+                                                   Foreground="#EEEEEE"
+                                                   FontSize="16"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Left"
+                                                   Margin="0,0,10,0"/>
+                                        <Grid Grid.Row="2" Grid.Column="2"
+                                              Height="38"
+                                              VerticalAlignment="Center"
+                                              SizeChanged="InputBorder_SizeChanged">
+                                            <Path Stretch="Fill"
+                                                  Fill="#33EEEEEE"/>
+                                            <TextBlock x:Name="EmailText"
+                                                       Text="Racer@Mail.com"
+                                                       Foreground="#EEEEEE"
+                                                       FontSize="16"
+                                                       FontFamily="{StaticResource OrbitronFont}"
+                                                       VerticalAlignment="Center"
+                                                       Margin="20,0,0,0"/>
+                                        </Grid>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 安全设置 -->
+                        <Border>
+                            <StackPanel>
+                                <StackPanel Style="{StaticResource SectionTitleContainerStyle}" Margin="0,0,0,20">
+                                    <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                        <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                    </Grid>
+                                    <TextBlock Text="{lex:Loc Settings.SecuritySettings}" Style="{StaticResource SectionTitleStyle}"/>
+                                </StackPanel>
+
+                                <!-- 未登录状态 -->
+                                <Grid x:Name="NotLoggedInSecurityPanel" Width="600" Height="98" Visibility="Visible">
+                                    <Path Data="M5 16.4737V103H593L605 91.5263V5H17L5 16.4737Z"
+                                          Stretch="Fill"
+                                          Fill="#33EEEEEE"/>
+                                    <StackPanel VerticalAlignment="Center" Margin="21,0,0,0">
+                                        <TextBlock Text="{lex:Loc Settings.AccountSecurityTitle}"
+                                                   Foreground="#EEEEEE"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Left"/>
+                                        <TextBlock Text="{lex:Loc Settings.LoginSecurityOptions}"
+                                                   Foreground="#99EEEEEE"
+                                                   FontSize="16"
+                                                   FontWeight="Regular"
+                                                   MaxWidth="560"
+                                                   TextWrapping="Wrap"
+                                                   HorizontalAlignment="Left"
+                                                   Margin="0,10,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- 已登录状态 -->
+                                <!-- 已登录状态：12行2列网格 -->
+                                <Grid x:Name="LoggedInSecurityPanel" Visibility="Collapsed" Width="600">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Row 0: 修改用户名 标题 (span 2) -->
+                                    <StackPanel Grid.Row="0" Grid.ColumnSpan="2"
+                                                Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Viewbox Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <Canvas Width="15" Height="15">
+                                                <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                    <Path.Data>
+                                                        <GeometryGroup>
+                                                            <PathGeometry Figures="M0.75 13.75H11.7445"/>
+                                                            <PathGeometry Figures="M6.74751 10.2516L3.74902 10.7913L4.24877 7.75267L10.9754 1.04567C11.0683 0.95198 11.1788 0.877619 11.3006 0.826873C11.4224 0.776127 11.5531 0.75 11.685 0.75C11.817 0.75 11.9476 0.776127 12.0694 0.826873C12.1912 0.877619 12.3017 0.95198 12.3947 1.04567L13.4541 2.10519C13.5478 2.19811 13.6222 2.30867 13.6729 2.43047C13.7237 2.55228 13.7498 2.68292 13.7498 2.81488C13.7498 2.94683 13.7237 3.07748 13.6729 3.19928C13.6222 3.32109 13.5478 3.43164 13.4541 3.52456L6.74751 10.2516Z"/>
+                                                        </GeometryGroup>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="{lex:Loc Settings.ChangeUsername}"
+                                                   Foreground="#EEEEEE" FontSize="16" FontWeight="Bold"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <!-- Row 1: 新用户名 -->
+                                    <TextBlock Grid.Row="1" Grid.Column="0"
+                                               Text="{lex:Loc Settings.NewUsername}"
+                                               Foreground="#EEEEEE" FontSize="16"
+                                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               Margin="0,0,10,10"/>
+                                    <Grid Grid.Row="1" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
+                                          Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
+                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <TextBox x:Name="NewUsernameTextBox"
+                                                 Text="{lex:Loc Settings.NewUsernamePlaceholder}"
+                                                 Foreground="#99EEEEEE" FontSize="16"
+                                                 CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
+                                                 VerticalAlignment="Center" Margin="15,0,40,0"/>
+                                        <Button Width="17" Height="17"
+                                                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,15,0"
+                                                Cursor="Hand" Click="ClearInputButton_Click" Tag="NewUsernameTextBox">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Canvas Width="17" Height="17" Background="Transparent">
+                                                        <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                            <Path.Data>
+                                                                <GeometryGroup>
+                                                                    <PathGeometry Figures="M10.695 5.80371L5.80273 10.696"/>
+                                                                    <PathGeometry Figures="M5.80273 5.80371L10.695 10.696"/>
+                                                                    <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                                </GeometryGroup>
+                                                            </Path.Data>
+                                                        </Path>
+                                                    </Canvas>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Row 2: 修改用户名 确认/取消 -->
+                                    <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal"
+                                                HorizontalAlignment="Center" Margin="0,0,0,20">
+                                        <Button x:Name="ConfirmUsernameBtn" Height="27" Cursor="Hand" Margin="0,0,100,0"
+                                                Click="ConfirmChangeUsername_Click">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid Height="27" MinWidth="122"
+                                                          SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                        <Path Stretch="Fill" Fill="{StaticResource TabSelectedGradient}"/>
+                                                        <TextBlock Text="{lex:Loc Settings.ConfirmChange}"
+                                                                   Foreground="#FFFFFF" FontSize="16" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Margin="8,0"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Button x:Name="CancelUsernameBtn" Height="27" Cursor="Hand"
+                                                Click="CancelChange_Click" Tag="ChangeUsername">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid Height="27" MinWidth="122"
+                                                          SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                        <Path Stretch="Fill" Fill="#CC3B3B3B"/>
+                                                        <TextBlock Text="{lex:Loc Settings.CancelChange}"
+                                                                   Foreground="#EEEEEE" FontSize="16" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Margin="8,0"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Row 3: 修改密码 标题 (span 2) -->
+                                    <StackPanel Grid.Row="3" Grid.ColumnSpan="2"
+                                                Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Viewbox Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <Canvas Width="15" Height="15">
+                                                <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                    <Path.Data>
+                                                        <GeometryGroup>
+                                                            <PathGeometry Figures="M0.75 13.75H11.7445"/>
+                                                            <PathGeometry Figures="M6.74751 10.2516L3.74902 10.7913L4.24877 7.75267L10.9754 1.04567C11.0683 0.95198 11.1788 0.877619 11.3006 0.826873C11.4224 0.776127 11.5531 0.75 11.685 0.75C11.817 0.75 11.9476 0.776127 12.0694 0.826873C12.1912 0.877619 12.3017 0.95198 12.3947 1.04567L13.4541 2.10519C13.5478 2.19811 13.6222 2.30867 13.6729 2.43047C13.7237 2.55228 13.7498 2.68292 13.7498 2.81488C13.7498 2.94683 13.7237 3.07748 13.6729 3.19928C13.6222 3.32109 13.5478 3.43164 13.4541 3.52456L6.74751 10.2516Z"/>
+                                                        </GeometryGroup>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="{lex:Loc Settings.ChangePassword}"
+                                                   Foreground="#EEEEEE" FontSize="16" FontWeight="Bold"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+
+                                    <!-- Row 4: 当前密码 -->
+                                    <TextBlock Grid.Row="4" Grid.Column="0"
+                                               Text="{lex:Loc Settings.CurrentPassword}"
+                                               Foreground="#EEEEEE" FontSize="16"
+                                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               Margin="0,0,10,10"/>
+                                    <Grid Grid.Row="4" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
+                                          Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
+                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <PasswordBox x:Name="CurrentPasswordBox"
+                                                         Background="Transparent" BorderThickness="0"
+                                                         Foreground="#99EEEEEE" CaretBrush="#EEEEEE" FontSize="16"
+                                                         VerticalAlignment="Center" Margin="15,0,0,0"/>
+                                            <TextBlock x:Name="CurrentPasswordPlaceholder" Grid.Column="0"
+                                                       Text="{lex:Loc Settings.CurrentPasswordPlaceholder}"
+                                                       Foreground="#99EEEEEE" FontSize="16"
+                                                       VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
+                                            <Button x:Name="CurrentPasswordEyeBtn" Grid.Column="1"
+                                                    Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
+                                                    Cursor="Hand" Click="TogglePasswordVisibility_Click"
+                                                    Tag="CurrentPassword">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Width="20" Height="17" Background="Transparent">
+                                                            <Path x:Name="EyeClosed" Stretch="Uniform"
+                                                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M16.8108 6.06787C17.329 6.53151 17.7654 6.98151 18.0927 7.33605C18.3188 7.58662 18.444 7.91216 18.444 8.24969C18.444 8.58722 18.3188 8.91276 18.0927 9.16333C16.6608 10.7042 13.4018 13.7042 9.59721 13.7042H9.05176"/>
+                                                                        <PathGeometry Figures="M5.3286 12.5181C3.74901 11.6335 2.32175 10.5009 1.10133 9.16359C0.87518 8.91302 0.75 8.58749 0.75 8.24996C0.75 7.91243 0.87518 7.58689 1.10133 7.33632C2.53314 5.79541 5.79224 2.79541 9.59678 2.79541C11.0965 2.82675 12.5642 3.23472 13.865 3.98177"/>
+                                                                        <PathGeometry Figures="M17.0967 0.75L2.09668 15.75"/>
+                                                                        <PathGeometry Figures="M7.67369 10.1729C7.16152 9.66383 6.87219 8.97237 6.86914 8.25022C6.86914 7.5269 7.15648 6.83321 7.66794 6.32175C8.1794 5.81029 8.8731 5.52295 9.59641 5.52295C10.3186 5.52599 11.01 5.81533 11.5191 6.32749"/>
+                                                                        <PathGeometry Figures="M11.9691 9.61377C11.7263 10.0287 11.3782 10.3721 10.96 10.6092"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                            <Path x:Name="EyeOpen" Stretch="Uniform"
+                                                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                                  Visibility="Collapsed">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M17.4124 5.11291C17.6297 5.35366 17.75 5.66644 17.75 5.99074C17.75 6.31504 17.6297 6.62781 17.4124 6.86856C16.0368 8.34907 12.9054 11.2315 9.25 11.2315C5.59459 11.2315 2.46325 8.34907 1.08755 6.86856C0.870273 6.62781 0.75 6.31504 0.75 5.99074C0.75 5.66644 0.870273 5.35366 1.08755 5.11291C2.46325 3.6324 5.59459 0.75 9.25 0.75C12.9054 0.75 16.0368 3.6324 17.4124 5.11291Z"/>
+                                                                        <PathGeometry Figures="M9.25025 8.61134C10.6974 8.61134 11.8706 7.43816 11.8706 5.99097C11.8706 4.54378 10.6974 3.37061 9.25025 3.37061C7.80306 3.37061 6.62988 4.54378 6.62988 5.99097C6.62988 7.43816 7.80306 8.61134 9.25025 8.61134Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <Button Grid.Column="2"
+                                                    Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,15,0"
+                                                    Cursor="Hand" Click="ClearPasswordInput_Click" Tag="CurrentPassword">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Canvas Width="17" Height="17" Background="Transparent">
+                                                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M10.6946 5.80371L5.80225 10.696"/>
+                                                                        <PathGeometry Figures="M5.80225 5.80371L10.6946 10.696"/>
+                                                                        <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Canvas>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+
+                                    <!-- Row 5: 新密码 -->
+                                    <TextBlock Grid.Row="5" Grid.Column="0"
+                                               Text="{lex:Loc Settings.NewPassword}"
+                                               Foreground="#EEEEEE" FontSize="16"
+                                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               Margin="0,0,10,10"/>
+                                    <Grid Grid.Row="5" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
+                                          Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
+                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <PasswordBox x:Name="NewPasswordBox"
+                                                         Background="Transparent" BorderThickness="0"
+                                                         Foreground="#99EEEEEE" CaretBrush="#EEEEEE" FontSize="16"
+                                                         VerticalAlignment="Center" Margin="15,0,0,0"/>
+                                            <TextBlock x:Name="NewPasswordPlaceholder" Grid.Column="0"
+                                                       Text="{lex:Loc Settings.NewPasswordPlaceholder}"
+                                                       Foreground="#99EEEEEE" FontSize="16"
+                                                       VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
+                                            <Button x:Name="NewPasswordEyeBtn" Grid.Column="1"
+                                                    Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
+                                                    Cursor="Hand" Click="TogglePasswordVisibility_Click"
+                                                    Tag="NewPassword">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Width="20" Height="17" Background="Transparent">
+                                                            <Path x:Name="EyeClosed" Stretch="Uniform"
+                                                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M16.8108 6.06787C17.329 6.53151 17.7654 6.98151 18.0927 7.33605C18.3188 7.58662 18.444 7.91216 18.444 8.24969C18.444 8.58722 18.3188 8.91276 18.0927 9.16333C16.6608 10.7042 13.4018 13.7042 9.59721 13.7042H9.05176"/>
+                                                                        <PathGeometry Figures="M5.3286 12.5181C3.74901 11.6335 2.32175 10.5009 1.10133 9.16359C0.87518 8.91302 0.75 8.58749 0.75 8.24996C0.75 7.91243 0.87518 7.58689 1.10133 7.33632C2.53314 5.79541 5.79224 2.79541 9.59678 2.79541C11.0965 2.82675 12.5642 3.23472 13.865 3.98177"/>
+                                                                        <PathGeometry Figures="M17.0967 0.75L2.09668 15.75"/>
+                                                                        <PathGeometry Figures="M7.67369 10.1729C7.16152 9.66383 6.87219 8.97237 6.86914 8.25022C6.86914 7.5269 7.15648 6.83321 7.66794 6.32175C8.1794 5.81029 8.8731 5.52295 9.59641 5.52295C10.3186 5.52599 11.01 5.81533 11.5191 6.32749"/>
+                                                                        <PathGeometry Figures="M11.9691 9.61377C11.7263 10.0287 11.3782 10.3721 10.96 10.6092"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                            <Path x:Name="EyeOpen" Stretch="Uniform"
+                                                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                                  Visibility="Collapsed">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M17.4124 5.11291C17.6297 5.35366 17.75 5.66644 17.75 5.99074C17.75 6.31504 17.6297 6.62781 17.4124 6.86856C16.0368 8.34907 12.9054 11.2315 9.25 11.2315C5.59459 11.2315 2.46325 8.34907 1.08755 6.86856C0.870273 6.62781 0.75 6.31504 0.75 5.99074C0.75 5.66644 0.870273 5.35366 1.08755 5.11291C2.46325 3.6324 5.59459 0.75 9.25 0.75C12.9054 0.75 16.0368 3.6324 17.4124 5.11291Z"/>
+                                                                        <PathGeometry Figures="M9.25025 8.61134C10.6974 8.61134 11.8706 7.43816 11.8706 5.99097C11.8706 4.54378 10.6974 3.37061 9.25025 3.37061C7.80306 3.37061 6.62988 4.54378 6.62988 5.99097C6.62988 7.43816 7.80306 8.61134 9.25025 8.61134Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <Button Grid.Column="2"
+                                                    Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,15,0"
+                                                    Cursor="Hand" Click="ClearPasswordInput_Click" Tag="NewPassword">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Canvas Width="17" Height="17" Background="Transparent">
+                                                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M10.6946 5.80371L5.80225 10.696"/>
+                                                                        <PathGeometry Figures="M5.80225 5.80371L10.6946 10.696"/>
+                                                                        <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Canvas>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+
+                                    <!-- Row 6: 确认新密码 -->
+                                    <TextBlock Grid.Row="6" Grid.Column="0"
+                                               Text="{lex:Loc Settings.ConfirmNewPassword}"
+                                               Foreground="#EEEEEE" FontSize="16"
+                                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               Margin="0,0,10,10"/>
+                                    <Grid Grid.Row="6" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
+                                          Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
+                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <PasswordBox x:Name="ConfirmNewPasswordBox"
+                                                         Background="Transparent" BorderThickness="0"
+                                                         Foreground="#99EEEEEE" CaretBrush="#EEEEEE" FontSize="16"
+                                                         VerticalAlignment="Center" Margin="15,0,0,0"/>
+                                            <TextBlock x:Name="ConfirmNewPasswordPlaceholder" Grid.Column="0"
+                                                       Text="{lex:Loc Settings.ConfirmNewPasswordPlaceholder}"
+                                                       Foreground="#99EEEEEE" FontSize="16"
+                                                       VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
+                                            <Button Grid.Column="1"
+                                                    Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
+                                                    Cursor="Hand" Click="TogglePasswordVisibility_Click"
+                                                    Tag="ConfirmNewPassword">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Grid Width="20" Height="17" Background="Transparent">
+                                                            <Path x:Name="EyeClosed" Stretch="Uniform"
+                                                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M16.8108 6.06787C17.329 6.53151 17.7654 6.98151 18.0927 7.33605C18.3188 7.58662 18.444 7.91216 18.444 8.24969C18.444 8.58722 18.3188 8.91276 18.0927 9.16333C16.6608 10.7042 13.4018 13.7042 9.59721 13.7042H9.05176"/>
+                                                                        <PathGeometry Figures="M5.3286 12.5181C3.74901 11.6335 2.32175 10.5009 1.10133 9.16359C0.87518 8.91302 0.75 8.58749 0.75 8.24996C0.75 7.91243 0.87518 7.58689 1.10133 7.33632C2.53314 5.79541 5.79224 2.79541 9.59678 2.79541C11.0965 2.82675 12.5642 3.23472 13.865 3.98177"/>
+                                                                        <PathGeometry Figures="M17.0967 0.75L2.09668 15.75"/>
+                                                                        <PathGeometry Figures="M7.67369 10.1729C7.16152 9.66383 6.87219 8.97237 6.86914 8.25022C6.86914 7.5269 7.15648 6.83321 7.66794 6.32175C8.1794 5.81029 8.8731 5.52295 9.59641 5.52295C10.3186 5.52599 11.01 5.81533 11.5191 6.32749"/>
+                                                                        <PathGeometry Figures="M11.9691 9.61377C11.7263 10.0287 11.3782 10.3721 10.96 10.6092"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                            <Path x:Name="EyeOpen" Stretch="Uniform"
+                                                                  Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                                  Visibility="Collapsed">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M17.4124 5.11291C17.6297 5.35366 17.75 5.66644 17.75 5.99074C17.75 6.31504 17.6297 6.62781 17.4124 6.86856C16.0368 8.34907 12.9054 11.2315 9.25 11.2315C5.59459 11.2315 2.46325 8.34907 1.08755 6.86856C0.870273 6.62781 0.75 6.31504 0.75 5.99074C0.75 5.66644 0.870273 5.35366 1.08755 5.11291C2.46325 3.6324 5.59459 0.75 9.25 0.75C12.9054 0.75 16.0368 3.6324 17.4124 5.11291Z"/>
+                                                                        <PathGeometry Figures="M9.25025 8.61134C10.6974 8.61134 11.8706 7.43816 11.8706 5.99097C11.8706 4.54378 10.6974 3.37061 9.25025 3.37061C7.80306 3.37061 6.62988 4.54378 6.62988 5.99097C6.62988 7.43816 7.80306 8.61134 9.25025 8.61134Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Grid>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                            <Button Grid.Column="2"
+                                                    Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,15,0"
+                                                    Cursor="Hand" Click="ClearPasswordInput_Click" Tag="ConfirmNewPassword">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Canvas Width="17" Height="17" Background="Transparent">
+                                                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M10.6946 5.80371L5.80225 10.696"/>
+                                                                        <PathGeometry Figures="M5.80225 5.80371L10.6946 10.696"/>
+                                                                        <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Canvas>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+
+                                    <!-- Row 7: 修改密码 确认/取消 -->
+                                    <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal"
+                                                HorizontalAlignment="Center" Margin="0,0,0,20">
+                                        <Button x:Name="ConfirmPasswordBtn" Height="27" Cursor="Hand" Margin="0,0,100,0"
+                                                Click="ConfirmChangePassword_Click">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid Height="27" MinWidth="122"
+                                                          SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                        <Path Stretch="Fill" Fill="{StaticResource TabSelectedGradient}"/>
+                                                        <TextBlock Text="{lex:Loc Settings.ConfirmChange}"
+                                                                   Foreground="#FFFFFF" FontSize="16" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Margin="8,0"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Button x:Name="CancelPasswordBtn" Height="27" Cursor="Hand"
+                                                Click="CancelChange_Click" Tag="ChangePassword">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid Height="27" MinWidth="122"
+                                                          SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                        <Path Stretch="Fill" Fill="#CC3B3B3B"/>
+                                                        <TextBlock Text="{lex:Loc Settings.CancelChange}"
+                                                                   Foreground="#EEEEEE" FontSize="16" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Margin="8,0"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <!-- Row 8: 修改邮箱 标题 (span 2) -->
+                                    <!--<StackPanel Grid.Row="8" Grid.ColumnSpan="2"
+                                                Orientation="Horizontal" Margin="0,0,0,10">
+                                        <Viewbox Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,10,0">
+                                            <Canvas Width="15" Height="15">
+                                                <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                    <Path.Data>
+                                                        <GeometryGroup>
+                                                            <PathGeometry Figures="M0.75 13.75H11.7445"/>
+                                                            <PathGeometry Figures="M6.74751 10.2516L3.74902 10.7913L4.24877 7.75267L10.9754 1.04567C11.0683 0.95198 11.1788 0.877619 11.3006 0.826873C11.4224 0.776127 11.5531 0.75 11.685 0.75C11.817 0.75 11.9476 0.776127 12.0694 0.826873C12.1912 0.877619 12.3017 0.95198 12.3947 1.04567L13.4541 2.10519C13.5478 2.19811 13.6222 2.30867 13.6729 2.43047C13.7237 2.55228 13.7498 2.68292 13.7498 2.81488C13.7498 2.94683 13.7237 3.07748 13.6729 3.19928C13.6222 3.32109 13.5478 3.43164 13.4541 3.52456L6.74751 10.2516Z"/>
+                                                        </GeometryGroup>
+                                                    </Path.Data>
+                                                </Path>
+                                            </Canvas>
+                                        </Viewbox>
+                                        <TextBlock Text="{lex:Loc Settings.ChangeEmail}"
+                                                   Foreground="#EEEEEE" FontSize="16" FontWeight="Bold"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>-->
+
+                                    <!-- Row 9: 新邮箱 -->
+                                    <!--<TextBlock Grid.Row="9" Grid.Column="0"
+                                               Text="{lex:Loc Settings.NewEmail}"
+                                               Foreground="#EEEEEE" FontSize="16"
+                                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               Margin="0,0,10,10"/>
+                                    <Grid Grid.Row="9" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
+                                          Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
+                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <TextBox x:Name="NewEmailTextBox"
+                                                 Text="{lex:Loc Settings.NewEmailPlaceholder}"
+                                                 Foreground="#99EEEEEE" FontSize="16"
+                                                 CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
+                                                 VerticalAlignment="Center" Margin="15,0,40,0"/>
+                                        <Button Width="17" Height="17"
+                                                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,15,0"
+                                                Cursor="Hand" Click="ClearInputButton_Click" Tag="NewEmailTextBox">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Canvas Width="17" Height="17" Background="Transparent">
+                                                        <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                            <Path.Data>
+                                                                <GeometryGroup>
+                                                                    <PathGeometry Figures="M10.6946 5.80371L5.80225 10.696"/>
+                                                                    <PathGeometry Figures="M5.80225 5.80371L10.6946 10.696"/>
+                                                                    <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                                </GeometryGroup>
+                                                            </Path.Data>
+                                                        </Path>
+                                                    </Canvas>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>-->
+
+                                    <!-- Row 10: 验证码（输入框+获取按钮一起在Column 1） -->
+                                    <!--<TextBlock Grid.Row="10" Grid.Column="0"
+                                               Text="{lex:Loc Settings.VerificationCode}"
+                                               Foreground="#EEEEEE" FontSize="16"
+                                               VerticalAlignment="Center" HorizontalAlignment="Left"
+                                               Margin="0,0,10,10"/>
+                                    <Grid Grid.Row="10" Grid.Column="1" Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid Grid.Column="0" MaxWidth="390" Height="38" HorizontalAlignment="Right"
+                                              SizeChanged="InputBorder_SizeChanged">
+                                            <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                            <TextBox x:Name="VerificationCodeTextBox"
+                                                     Text="{lex:Loc Settings.VerificationCodePlaceholder}"
+                                                     Foreground="#99EEEEEE" FontSize="16"
+                                                     CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
+                                                     VerticalAlignment="Center" Margin="15,0,40,0"/>
+                                            <Button Width="17" Height="17"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,15,0"
+                                                    Cursor="Hand" Click="ClearInputButton_Click" Tag="VerificationCodeTextBox">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Canvas Width="17" Height="17" Background="Transparent">
+                                                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M10.6946 5.80371L5.80225 10.696"/>
+                                                                        <PathGeometry Figures="M5.80225 5.80371L10.6946 10.696"/>
+                                                                        <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Canvas>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                        <Button Grid.Column="1" Width="110" Height="38" Cursor="Hand" Margin="10,0,0,0"
+                                                Click="GetVerificationCode_Click">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid Width="110" Height="38">
+                                                        <Path Data="M115.001 5.08038L11 5.00018L5 11.0002V43.0002H6.8L109.001 43.0804L115.001 37.0804V5.08038Z"
+                                                              Stretch="Fill" Fill="{StaticResource TabSelectedGradient}"/>
+                                                        <TextBlock Text="{lex:Loc Settings.GetVerificationCode}"
+                                                                   Foreground="#FFFFFF" FontSize="16" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>-->
+
+                                    <!-- Row 11: 修改邮箱 确认/取消 -->
+                                    <!--<StackPanel Grid.Row="11" Grid.ColumnSpan="2" Orientation="Horizontal"
+                                                HorizontalAlignment="Center" Margin="0,0,0,0">
+                                        <Button x:Name="ConfirmEmailBtn" Height="27" Cursor="Hand" Margin="0,0,100,0"
+                                                Click="ConfirmChangeEmail_Click">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid Height="27" MinWidth="122"
+                                                          SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                        <Path Stretch="Fill" Fill="{StaticResource TabSelectedGradient}"/>
+                                                        <TextBlock Text="{lex:Loc Settings.ConfirmChange}"
+                                                                   Foreground="#FFFFFF" FontSize="16" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Margin="8,0"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                        <Button x:Name="CancelEmailBtn" Height="27" Cursor="Hand"
+                                                Click="CancelChange_Click" Tag="ChangeEmail">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Grid Height="27" MinWidth="122"
+                                                          SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                        <Path Stretch="Fill" Fill="#CC3B3B3B"/>
+                                                        <TextBlock Text="{lex:Loc Settings.CancelChange}"
+                                                                   Foreground="#EEEEEE" FontSize="16" FontWeight="Bold"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                   Margin="8,0"/>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>-->
+                                </Grid>
+                            </StackPanel>
+                                </Border>
+                    </StackPanel>
+
+                    <!-- 右侧：账户管理 -->
+                    <Border Grid.Column="1" Margin="102,0,0,0" VerticalAlignment="Top">
+                        <StackPanel>
+                            <StackPanel Style="{StaticResource SectionTitleContainerStyle}" Margin="0,0,0,20">
+                                <Grid Width="8" Height="26" Effect="{StaticResource TitleIconShadow}">
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z" Fill="{StaticResource TabSelectedGradient}"/>
+                                </Grid>
+                                <TextBlock Text="{lex:Loc Settings.AccountManagement}" Style="{StaticResource SectionTitleStyle}"/>
+                            </StackPanel>
+
+                            <!-- 未登录状态 -->
+                            <StackPanel x:Name="NotLoggedInAccountPanel" Visibility="Visible">
+                                <!-- 登录账户图标+文字 -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Viewbox Width="16" Height="17"
+                                             Margin="0,0,10,0"
+                                             VerticalAlignment="Center">
+                                        <Canvas Width="16" Height="17">
+                                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                <Path.Data>
+                                                    <GeometryGroup>
+                                                        <PathGeometry Figures="M11.1346 12.2885V14.5962C11.1346 14.9022 11.013 15.1957 10.7967 15.412C10.5803 15.6284 10.2868 15.75 9.98077 15.75H1.90385C1.59783 15.75 1.30434 15.6284 1.08795 15.412C0.871566 15.1957 0.75 14.9022 0.75 14.5962V1.90385C0.75 1.59783 0.871566 1.30434 1.08795 1.08795C1.30434 0.871566 1.59783 0.75 1.90385 0.75H9.98077C10.2868 0.75 10.5803 0.871566 10.7967 1.08795C11.013 1.30434 11.1346 1.59783 11.1346 1.90385V4.21154"/>
+                                                        <PathGeometry Figures="M14.75 8.25H6.67308"/>
+                                                        <PathGeometry Figures="M8.98242 5.94238L6.67473 8.25008L8.98242 10.5578"/>
+                                                    </GeometryGroup>
+                                                </Path.Data>
+                                            </Path>
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock Text="{lex:Loc Settings.LoginAccountLabel}"
+                                               Foreground="#EEEEEE"
+                                               FontSize="16"
+                                               FontWeight="Regular"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- 登录/注册提示文本边框 -->
+                                <Grid Width="600" Height="98" Margin="0,0,0,10">
+                                    <Path Data="M5 16.4737V103H593L605 91.5263V5H17L5 16.4737Z"
+                                          Stretch="Fill"
+                                          Fill="#33EEEEEE"/>
+                                    <StackPanel VerticalAlignment="Center" Margin="21,0,0,0">
+                                        <TextBlock Text="{lex:Loc Settings.LoginRegisterPrompt}"
+                                                   Foreground="#EEEEEE"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Left"/>
+                                        <TextBlock Text="{lex:Loc Settings.LoginSyncPrompt}"
+                                                   Foreground="#99EEEEEE"
+                                                   FontSize="16"
+                                                   FontWeight="Regular"
+                                                   MaxWidth="560"
+                                                   TextWrapping="Wrap"
+                                                   HorizontalAlignment="Left"
+                                                   Margin="0,10,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- 立即登录按钮 -->
+                                <Button Width="140" Height="27"
+                                        Cursor="Hand"
+                                        HorizontalAlignment="Center"
+                                        Click="LoginNowButton_Click">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Grid Width="140" Height="27">
+                                                <Path Data="M0 5.78571V27H134L140 21.2143V0H6L0 5.78571Z"
+                                                      Stretch="Fill"
+                                                      Fill="{StaticResource TabSelectedGradient}"
+                                                      Stroke="Transparent"
+                                                      StrokeThickness="0"/>
+                                                <StackPanel Orientation="Horizontal"
+                                                            HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center">
+                                                    <Viewbox Width="14" Height="14"
+                                                             Margin="0,0,10,0">
+                                                        <Canvas Width="16" Height="17">
+                                                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                                <Path.Data>
+                                                                    <GeometryGroup>
+                                                                        <PathGeometry Figures="M7.88086 8.25C9.95193 8.25 11.6309 6.57107 11.6309 4.5C11.6309 2.42893 9.95193 0.75 7.88086 0.75C5.80979 0.75 4.13086 2.42893 4.13086 4.5C4.13086 6.57107 5.80979 8.25 7.88086 8.25Z"/>
+                                                                        <PathGeometry Figures="M15.0115 15.7505C14.5271 14.24 13.5755 12.9223 12.294 11.9874C11.0124 11.0526 9.46708 10.5488 7.88077 10.5488C6.29446 10.5488 4.74912 11.0526 3.46756 11.9874C2.18599 12.9223 1.23441 14.24 0.75 15.7505H15.0115Z"/>
+                                                                    </GeometryGroup>
+                                                                </Path.Data>
+                                                            </Path>
+                                                        </Canvas>
+                                                    </Viewbox>
+                                                    <TextBlock Text="{lex:Loc Settings.LoginNow}"
+                                                               Foreground="#EEEEEE"
+                                                               FontSize="16"
+                                                               FontWeight="Bold"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+
+                            <!-- 已登录状态 -->
+                            <StackPanel x:Name="LoggedInAccountPanel" Visibility="Collapsed">
+                                <!-- 退出登录图标+文字 -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <Viewbox Width="17" Height="17"
+                                             Margin="0,0,10,0"
+                                             VerticalAlignment="Center">
+                                        <Canvas Width="17" Height="17">
+                                            <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                <Path.Data>
+                                                    <GeometryGroup>
+                                                        <PathGeometry Figures="M11.1346 12.2885V14.5962C11.1346 14.9022 11.013 15.1957 10.7967 15.412C10.5803 15.6284 10.2868 15.75 9.98077 15.75H1.90385C1.59783 15.75 1.30434 15.6284 1.08795 15.412C0.871566 15.1957 0.75 14.9022 0.75 14.5962V1.90385C0.75 1.59783 0.871566 1.30434 1.08795 1.08795C1.30434 0.871566 1.59783 0.75 1.90385 0.75H9.98077C10.2868 0.75 10.5803 0.871566 10.7967 1.08795C11.013 1.30434 11.1346 1.59783 11.1346 1.90385V4.21154"/>
+                                                        <PathGeometry Figures="M7.67383 8.25H15.7508"/>
+                                                        <PathGeometry Figures="M13.4414 5.94238L15.7491 8.25008L13.4414 10.5578"/>
+                                                    </GeometryGroup>
+                                                </Path.Data>
+                                            </Path>
+                                        </Canvas>
+                                    </Viewbox>
+                                    <TextBlock Text="{lex:Loc Settings.Logout}"
+                                               Foreground="#EEEEEE"
+                                               FontSize="16"
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- 退出确认文本边框 -->
+                                <Grid Width="600" Height="98" Margin="0,0,0,10">
+                                    <Path Data="M5 16.4737V103H593L605 91.5263V5H17L5 16.4737Z"
+                                          Stretch="Fill"
+                                          Fill="#33EEEEEE"/>
+                                    <StackPanel VerticalAlignment="Center" Margin="21,0,21,0">
+                                        <TextBlock Text="{lex:Loc Settings.LogoutConfirmPrompt}"
+                                                   Foreground="#EEEEEE"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"/>
+                                        <TextBlock Text="{lex:Loc Settings.LogoutConfirmHint}"
+                                                   Foreground="#99EEEEEE"
+                                                   FontSize="16"
+                                                   FontWeight="Regular"
+                                                   MaxWidth="559"
+                                                   TextWrapping="WrapWithOverflow"
+                                                   Margin="0,14,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- 确认退出 / 取消 按钮 -->
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button x:Name="ConfirmLogoutBtn" Height="27" Cursor="Hand" Margin="0,0,100,0"
+                                            Click="ConfirmLogout_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid Height="27" MinWidth="122"
+                                                      SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                    <Path Stretch="Fill"
+                                                          Fill="{StaticResource TabSelectedGradient}"/>
+                                                    <TextBlock Text="{lex:Loc Settings.ConfirmLogout}"
+                                                               Foreground="#FFFFFF"
+                                                               FontSize="16"
+                                                               FontWeight="Bold"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                    <Button x:Name="CancelLogoutBtn" Height="27" Cursor="Hand"
+                                            Click="CancelChange_Click" Tag="Logout">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid Height="27" MinWidth="122"
+                                                      SizeChanged="ConfirmButtonBg_SizeChanged">
+                                                    <Path Stretch="Fill"
+                                                          Fill="#CC3B3B3B"/>
+                                                    <TextBlock Text="{lex:Loc Settings.CancelChange}"
+                                                               Foreground="#EEEEEE"
+                                                               FontSize="16"
+                                                               FontWeight="Bold"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               Margin="0,0"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Grid>
         </ScrollViewer>

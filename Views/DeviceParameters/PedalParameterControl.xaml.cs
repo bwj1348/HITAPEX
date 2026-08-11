@@ -1021,9 +1021,13 @@ public partial class PedalParameterControl : UserControl
         try
         {
             var snapshot = _appliedPresetParameters ?? CaptureCurrentParameters();
+            var games = App.PresetService?.LoadPersonalPresets(Models.Usb.DeviceType.Pedal)
+                .FirstOrDefault(p => string.Equals(p.Name, _currentPresetName, StringComparison.OrdinalIgnoreCase))
+                ?.Games ?? [];
             var exportItem = new PresetItem
             {
                 Name = _currentPresetName,
+                Games = games,
                 PedalParameters = snapshot,
                 IsPersonal = true,
                 DeviceType = Models.Usb.DeviceType.Pedal
