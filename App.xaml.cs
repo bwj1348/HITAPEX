@@ -20,6 +20,7 @@ public partial class App : Application
     public static FirmwareApiService? FirmwareApi { get; private set; }
     public static ClientInstallerApiService? ClientInstallerApi { get; private set; }
     public static PresetService? PresetService { get; private set; }
+    public static UserApiService? UserApi { get; private set; }
     public static TelemetryService? TelemetryService { get; private set; }
     public static GameDataService? GameDataService { get; private set; }
 
@@ -144,6 +145,17 @@ public partial class App : Application
         FirmwareApi = new FirmwareApiService();
         ClientInstallerApi = new ClientInstallerApiService();
         PresetService = new PresetService();
+        UserApi = new UserApiService();
+
+        // 后台异步恢复登录态（fire-and-forget，不阻塞启动）
+        _ = Task.Run(async () =>
+        {
+            var restored = await UserApi.TryRestoreSessionAsync();
+            // 登录/续期接口返回的 user 不含头像，需拉取 users/me 补齐完整资料
+            if (restored)
+                await UserApi.RefreshCurrentUserAsync();
+            Debug.WriteLine($"[App] 登录态恢复结果: {restored}, CurrentUser={UserApi.CurrentUser?.Username}");
+        });
 
         // 后台异步刷新官方预设缓存（fire-and-forget，不阻塞启动）
         _ = Task.Run(() => PresetService.EnsureOfficialPresetsRefreshedAsync());

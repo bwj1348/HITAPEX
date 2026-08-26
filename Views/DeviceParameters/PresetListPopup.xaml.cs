@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,6 +13,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using HITAPEX.Models.Usb;
 using HITAPEX.Services;
+using HITAPEX.Services.Data.Api;
 using SharpVectors.Converters;
 
 namespace HITAPEX.Views.DeviceParameters;
@@ -35,6 +38,9 @@ public partial class PresetListPopup : UserControl
 
     /// <summary>个人预设列表（可编辑、删除、导出）</summary>
     private readonly List<PresetItem> _personalPresets = new();
+
+    /// <summary>云预设列表（从服务器加载，登录后可见；可编辑、删除、导出）</summary>
+    private readonly List<PresetItem> _cloudPresets = new();
 
     /// <summary>所有游戏类别项（用于下拉框筛选）</summary>
     private readonly List<string> _allGameItems = new();
@@ -112,6 +118,10 @@ public partial class PresetListPopup : UserControl
         InitializeComponent();
         // 推迟实际初始化到 Loaded 事件，确保 XAML 模板已应用
         Loaded += OnLoaded;
+
+        // 监听登录状态变化：登录/退出时刷新云预设的"未登录引导"显示
+        if (App.UserApi != null)
+            App.UserApi.LoginStateChanged += OnLoginStateChanged;
     }
 
     /// <summary>首次加载时初始化 ComboBox、加载预设数据、创建共享详情弹窗并渲染列表</summary>
@@ -124,6 +134,7 @@ public partial class PresetListPopup : UserControl
         InitCategoryComboBox();
         LoadPresets();
         InitSharedDetailPopup();
+        UpdateBottomButtons();
         RenderPresetList();
         // 滚动条同步：ScrollViewer 滚动时更新自定义滚动条
         PresetScrollViewer.ScrollChanged += PresetScrollViewer_ScrollChanged;
@@ -139,19 +150,33 @@ public partial class PresetListPopup : UserControl
         var editPopup = new EditPresetPopup();
         editPopup.Tag = preset.Name;
         editPopup.DeviceType = DeviceType;
-        editPopup.EditConfirmed += (_, edited) =>
+        editPopup.EditConfirmed += async (_, edited) =>
         {
             var originalName = editPopup.Tag?.ToString();
-            if (!string.IsNullOrEmpty(originalName))
+            bool isCloud = _currentTab == TabType.Cloud;
+            var list = isCloud ? _cloudPresets : _personalPresets;
+
+            var idx = list.FindIndex(p =>
+                string.Equals(p.Name, originalName, StringComparison.OrdinalIgnoreCase));
+            if (idx >= 0)
             {
-                var idx = _personalPresets.FindIndex(p =>
-                    string.Equals(p.Name, originalName, StringComparison.OrdinalIgnoreCase));
-                if (idx >= 0)
+                list[idx] = edited;
+
+                if (isCloud)
                 {
-                    _personalPresets[idx] = edited;
-                    SavePersonalPresets();
-                    if (_currentTab == TabType.Personal) RenderPresetList();
+                    // 云预设：始终同步到云端（走更新，凭已有 documentId）
+                    edited.SyncToCloud = true;
+                    await SyncPresetToCloudAsync(edited);
                 }
+                else
+                {
+                    // 个人预设：勾选"同步至云端"时同步（有 documentId 则更新，否则新建）
+                    if (edited.SyncToCloud)
+                        await SyncPresetToCloudAsync(edited);
+                    SavePersonalPresets();
+                }
+
+                RenderPresetList();
             }
             RemoveEditPopup(editPopup);
         };
@@ -161,8 +186,38 @@ public partial class PresetListPopup : UserControl
         if (Content is Panel rootPanel)
             rootPanel.Children.Add(editPopup);
 
-        editPopup.BeginEdit(preset, _personalPresets.Select(p => p.Name));
+        var names = (_currentTab == TabType.Cloud ? _cloudPresets : _personalPresets)
+            .Select(p => p.Name);
+        editPopup.BeginEdit(preset, names);
         editPopup.Show();
+    }
+
+    /// <summary>把预设同步到云端，失败时提示用户</summary>
+    private async Task SyncPresetToCloudAsync(PresetItem preset)
+    {
+        var ok = await PresetCloudSyncHelper.SyncToCloudAsync(preset);
+        if (!ok)
+        {
+            Debug.WriteLine($"[PresetListPopup] 同步预设到云端失败: {preset.Name}");
+            MessageBox.Show(LocalizationService.Instance["Preset.CloudSyncFailed"] ?? "同步到云端失败，请稍后重试",
+                "云预设", MessageBoxButton.OK);
+        }
+    }
+
+    /// <summary>删除云端预设，成功从列表移除并刷新，失败提示用户</summary>
+    private async Task DeleteCloudPresetAsync(PresetItem preset)
+    {
+        if (string.IsNullOrEmpty(preset.CloudDocumentId)) return;
+        var result = await App.UserApi!.DeletePresetAsync(preset.CloudDocumentId);
+        if (result.IsSuccess)
+        {
+            _cloudPresets.Remove(preset);
+            RenderPresetList();
+        }
+        else
+        {
+            MessageBox.Show(result.ErrorMessage ?? "删除失败", "云预设", MessageBoxButton.OK);
+        }
     }
 
     /// <summary>从根面板移除编辑弹窗</summary>
@@ -193,6 +248,33 @@ public partial class PresetListPopup : UserControl
     // ══════════════════════════════════════════
     //  数据加载
     // ══════════════════════════════════════════
+
+    /// <summary>
+    /// 从服务器加载当前用户的云预设列表。未登录时清空列表。
+    /// 只负责加载数据，渲染由调用方（TabCloud_Click / OnLoginStateChanged）完成。
+    /// </summary>
+    private async Task LoadCloudPresetsAsync()
+    {
+        _cloudPresets.Clear();
+        if (App.UserApi?.IsLoggedIn != true)
+            return;
+
+        var result = await App.UserApi.GetPresetsAsync();
+        if (result.IsSuccess && result.Data != null)
+        {
+            foreach (var entry in result.Data)
+            {
+                var preset = PresetCloudSyncHelper.FromCloudEntry(entry);
+                // 只保留与当前弹窗设备类别一致的云预设（不同设备参数的预设列表弹窗各显示各的）
+                if (preset != null && preset.DeviceType == DeviceType)
+                    _cloudPresets.Add(preset);
+            }
+        }
+        else
+        {
+            Debug.WriteLine($"[PresetListPopup] 加载云预设失败: {result.ErrorMessage}");
+        }
+    }
 
     /// <summary>从 PresetService 加载官方预设和个人预设数据</summary>
     private void LoadPresets()
@@ -565,13 +647,14 @@ public partial class PresetListPopup : UserControl
         RenderPresetList();
     }
 
-    /// <summary>切换到云预设选项卡</summary>
-    private void TabCloud_Click(object sender, RoutedEventArgs e)
+    /// <summary>切换到云预设选项卡：已登录则从服务器加载云预设列表</summary>
+    private async void TabCloud_Click(object sender, RoutedEventArgs e)
     {
         _currentTab = TabType.Cloud;
         DeselectCurrentItem();
         UpdateTabVisuals();
         UpdateBottomButtons();
+        await LoadCloudPresetsAsync();
         RenderPresetList();
     }
 
@@ -583,10 +666,58 @@ public partial class PresetListPopup : UserControl
         TabCloudUnderline.Visibility = _currentTab == TabType.Cloud ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    /// <summary>个人和云预设选项卡显示导入按钮，官方选项卡隐藏导入按钮</summary>
+    /// <summary>
+    /// 更新底部按钮（导入 / 应用）显示：
+    /// - 官方 / 云预设选项卡隐藏导入按钮；
+    /// - 云预设选项卡未登录时同时隐藏应用按钮；
+    /// - 其余情况两者都显示。
+    /// </summary>
     private void UpdateBottomButtons()
     {
-        ImportButton.Visibility = _currentTab == TabType.Official ? Visibility.Collapsed : Visibility.Visible;
+        bool cloudNotLoggedIn = _currentTab == TabType.Cloud && (App.UserApi?.IsLoggedIn != true);
+
+        ImportButton.Visibility = _currentTab is TabType.Official or TabType.Cloud
+            ? Visibility.Collapsed : Visibility.Visible;
+        ApplyButton.Visibility = cloudNotLoggedIn ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    /// <summary>
+    /// 登录状态变化回调。事件可能来自后台线程（会话恢复），需封送到 UI 线程刷新。
+    /// 登录/退出后刷新底部按钮、重新加载云预设并渲染列表（云预设选项卡会随之切换"未登录引导"的显示）。
+    /// </summary>
+    private void OnLoginStateChanged()
+    {
+        Dispatcher.Invoke(async () =>
+        {
+            if (_isInitialized)
+            {
+                UpdateBottomButtons();
+                await LoadCloudPresetsAsync();
+                RenderPresetList();
+            }
+        });
+    }
+
+    /// <summary>
+    /// 更新云预设"未登录引导"的显示：
+    /// 当处于云预设选项卡且未登录时，显示引导内容（云图标 + 文案 + 立即登录按钮），
+    /// 并隐藏空的预设列表和滚动条；否则恢复预设列表显示。
+    /// </summary>
+    private void UpdateCloudLoginPrompt()
+    {
+        bool showPrompt = _currentTab == TabType.Cloud && (App.UserApi?.IsLoggedIn != true);
+        CloudLoginPrompt.Visibility = showPrompt ? Visibility.Visible : Visibility.Collapsed;
+        PresetItemsControl.Visibility = showPrompt ? Visibility.Collapsed : Visibility.Visible;
+        if (showPrompt)
+            PresetScrollBar.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>云预设"立即登录"按钮：打开主窗口的登录弹窗</summary>
+    private void CloudLoginNow_Click(object sender, RoutedEventArgs e)
+    {
+        var parentWindow = Window.GetWindow(this);
+        if (parentWindow is HITAPEX.MainWindow mainWindow)
+            mainWindow.LoginPopupDialog.Show();
     }
 
     // ══════════════════════════════════════════
@@ -598,17 +729,20 @@ public partial class PresetListPopup : UserControl
     {
         PresetItemsControl.Items.Clear();
 
-        List<PresetItem> source = _currentTab switch { TabType.Official => _officialPresets, TabType.Personal => _personalPresets, TabType.Cloud => [], _ => _officialPresets };
+        List<PresetItem> source = _currentTab switch { TabType.Official => _officialPresets, TabType.Personal => _personalPresets, TabType.Cloud => _cloudPresets, _ => _officialPresets };
         var filtered = _currentCategory == null
             ? source
             : source.Where(p => p.Games.Contains(_currentCategory)).ToList();
 
         foreach (var preset in filtered)
         {
-            PresetItemsControl.Items.Add(_currentTab == TabType.Personal
+            // 个人预设和云预设共用个人样式（含删除 / 导出 / 编辑三个操作按钮）
+            PresetItemsControl.Items.Add(_currentTab is TabType.Personal or TabType.Cloud
                 ? CreatePersonalPresetItem(preset)
                 : CreatePresetItem(preset));
         }
+
+        UpdateCloudLoginPrompt();
 
         Dispatcher.BeginInvoke(new Action(SyncScrollBar), System.Windows.Threading.DispatcherPriority.Loaded);
     }
@@ -1285,6 +1419,15 @@ public partial class PresetListPopup : UserControl
         if (_currentTab == TabType.Official) RenderPresetList();
     }
 
+    /// <summary>判断指定名称是否属于当前云预设列表（供参数界面判断导出按钮可用性）</summary>
+    public bool IsCloudPreset(string name)
+        => _cloudPresets.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>按名称查找预设（先个人预设，再云预设），供参数界面导出时获取游戏列表等完整数据</summary>
+    public PresetItem? FindPreset(string name)
+        => _personalPresets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
+        ?? _cloudPresets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+
     /// <summary>从外部设置个人预设列表数据</summary>
     public void SetPersonalPresets(IEnumerable<PresetItem> presets)
     {
@@ -1484,12 +1627,19 @@ public partial class PresetListPopup : UserControl
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        dialog.AddButton(LocalizationService.Instance["Common.Delete"], (_, _) =>
+        dialog.AddButton(LocalizationService.Instance["Common.Delete"], async (_, _) =>
         {
             dialog.Hide();
-            _personalPresets.Remove(preset);
-            SavePersonalPresets();
-            RenderPresetList();
+            if (_currentTab == TabType.Cloud)
+            {
+                await DeleteCloudPresetAsync(preset);
+            }
+            else
+            {
+                _personalPresets.Remove(preset);
+                SavePersonalPresets();
+                RenderPresetList();
+            }
         }, isPrimary: true);
 
         dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) =>
@@ -1824,4 +1974,79 @@ public class PresetItem
 
     /// <summary>踏板预设参数快照</summary>
     public Models.Usb.PedalPresetSnapshot? PedalParameters { get; set; }
+
+    /// <summary>是否同步到云端（另存为 / 编辑弹窗中勾选"同步至云端"时保存）</summary>
+    public bool SyncToCloud { get; set; }
+
+    /// <summary>
+    /// 云端预设的 documentId（已同步过则用于更新已有云预设；为空表示尚未同步，首次同步为新增）。
+    /// </summary>
+    public string? CloudDocumentId { get; set; }
+}
+
+/// <summary>
+/// 云预设同步辅助 —— 负责 PresetItem 与云端 config_data 的互转，以及"新增 / 更新"云预设的判断与同步。
+/// 供预设列表弹窗和另存为流程共用，避免重复逻辑。
+/// </summary>
+public static class PresetCloudSyncHelper
+{
+    private static readonly JsonSerializerOptions s_jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    /// <summary>把 PresetItem 转为可发送到服务端的 config_data 对象</summary>
+    public static UserPresetConfigData BuildConfigData(PresetItem preset) => new()
+    {
+        Name = preset.Name,
+        Games = preset.Games,
+        DeviceType = (int)preset.DeviceType,
+        PedalParameters = preset.PedalParameters,
+        WheelParameters = preset.WheelParameters,
+        BaseParameters = preset.BaseParameters
+    };
+
+    /// <summary>把云端条目（UserPresetEntry）转为本地 PresetItem；解析失败返回 null</summary>
+    public static PresetItem? FromCloudEntry(UserPresetEntry entry)
+    {
+        if (entry.ConfigData is not JsonElement el || el.ValueKind != JsonValueKind.Object)
+            return null;
+        var data = el.Deserialize<UserPresetConfigData>(s_jsonOptions);
+        if (data == null) return null;
+        return new PresetItem
+        {
+            Name = data.Name,
+            Games = data.Games ?? new List<string>(),
+            DeviceType = (Models.Usb.DeviceType)data.DeviceType,
+            PedalParameters = data.PedalParameters,
+            WheelParameters = data.WheelParameters,
+            BaseParameters = data.BaseParameters,
+            SyncToCloud = true,
+            CloudDocumentId = entry.DocumentId
+        };
+    }
+
+    /// <summary>
+    /// 同步预设到云端：已有 CloudDocumentId 则更新，否则新建。
+    /// 成功后把服务端返回的 documentId 写回 preset，供后续再次编辑时走更新。
+    /// </summary>
+    public static async Task<bool> SyncToCloudAsync(PresetItem preset)
+    {
+        if (App.UserApi?.IsLoggedIn != true) return false;
+        var configData = BuildConfigData(preset);
+
+        ApiResult<UserPresetEntry?> result;
+        if (!string.IsNullOrEmpty(preset.CloudDocumentId))
+            result = await App.UserApi.UpdatePresetAsync(preset.CloudDocumentId, configData);
+        else
+            result = await App.UserApi.CreatePresetAsync(configData);
+
+        if (result.IsSuccess && result.Data != null)
+        {
+            preset.CloudDocumentId = result.Data.DocumentId;
+            preset.SyncToCloud = true;
+            return true;
+        }
+        return false;
+    }
 }

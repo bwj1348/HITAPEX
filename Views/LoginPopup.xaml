@@ -4,7 +4,29 @@
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:lex="clr-namespace:HITAPEX.Helpers"
              x:Name="LoginPopupRoot"
-             Visibility="Visible">
+             Visibility="Collapsed">
+
+    <UserControl.Resources>
+        <!-- 错误提示模板：警告图标 + 错误文本，样式与账户设置一致（#C60E0E） -->
+        <ControlTemplate x:Key="LoginErrorOverlayTemplate" TargetType="ContentControl">
+            <StackPanel Orientation="Horizontal">
+                <Viewbox Width="17" Height="17" Margin="0,0,10,0" Stretch="Uniform">
+                    <Canvas Width="17" Height="17">
+                        <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Data="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                        <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                              Data="M8.28809 4.25V8.28846"/>
+                        <Path Fill="#C60E0E"
+                              Data="M8.28718 11.9425C8.73326 11.9425 9.09488 11.5809 9.09488 11.1348C9.09488 10.6888 8.73326 10.3271 8.28718 10.3271C7.84111 10.3271 7.47949 10.6888 7.47949 11.1348C7.47949 11.5809 7.84111 11.9425 8.28718 11.9425Z"/>
+                    </Canvas>
+                </Viewbox>
+                <TextBlock Text="{TemplateBinding Content}"
+                           Foreground="#C60E0E" FontSize="16" VerticalAlignment="Center"/>
+            </StackPanel>
+        </ControlTemplate>
+    </UserControl.Resources>
 
     <!-- 半透明遮罩层 -->
     <Grid>
@@ -80,7 +102,9 @@
                                            Foreground="#EEEEEE" FontSize="16"
                                            Margin="0,0,0,10"/>
                                 <Grid Height="38"
-                                      SizeChanged="InputBorder_SizeChanged">
+                                      SizeChanged="InputBorder_SizeChanged"
+                                      Tag="LoginEmailErrorOverlay"
+                                      PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                     <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                     <TextBox x:Name="LoginEmailTextBox"
                                          Text="{lex:Loc Login.EmailPlaceholder}"
@@ -89,6 +113,10 @@
                                          VerticalAlignment="Center" Margin="15,0,40,0"
                                          GotFocus="LoginEmailTextBox_GotFocus"
                                          LostFocus="LoginEmailTextBox_LostFocus"/>
+                                <ContentControl x:Name="LoginEmailErrorOverlay"
+                                                Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
                                 <Button Width="17" Height="17"
                                         HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"
                                         Cursor="Hand" Click="ClearLoginInput_Click" Tag="LoginEmailTextBox">
@@ -120,7 +148,9 @@
                                            Foreground="#EEEEEE" FontSize="16"
                                            Margin="0,0,0,10"/>
                                 <Grid Height="38"
-                                      SizeChanged="InputBorder_SizeChanged">
+                                      SizeChanged="InputBorder_SizeChanged"
+                                      Tag="LoginPasswordErrorOverlay"
+                                      PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                     <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -139,6 +169,11 @@
                                                Text="{lex:Loc Login.PasswordPlaceholder}"
                                                Foreground="#99EEEEEE" FontSize="16"
                                                VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
+                                        <ContentControl x:Name="LoginPasswordErrorOverlay"
+                                                        Grid.Column="0"
+                                                        Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                        Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
                                         <Button x:Name="LoginPasswordEyeBtn" Grid.Column="1"
                                             Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
                                             Cursor="Hand" Click="ToggleLoginPasswordVisibility_Click">
@@ -202,7 +237,11 @@
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
                             <CheckBox x:Name="AgreementCheckBox"
                                       Style="{DynamicResource CheckBoxStyle}"
-                                      Margin="0,3,0,0" VerticalAlignment="Top"/>
+                                      Margin="0,3,0,0" VerticalAlignment="Top">
+                                <CheckBox.RenderTransform>
+                                    <TranslateTransform/>
+                                </CheckBox.RenderTransform>
+                            </CheckBox>
                             <TextBlock VerticalAlignment="Center" FontSize="16" MaxWidth="430" TextWrapping="Wrap">
                                 <Run Text="{lex:Loc Login.AgreementText1}" Foreground="#FFFFFF"/><Run Text="{lex:Loc Login.AgreementTerms}" Foreground="#C60E0E" Cursor="Hand" MouseDown="TermsLink_MouseDown"/><Run Text="{lex:Loc Login.AgreementAnd}" Foreground="#FFFFFF"/><Run Text="{lex:Loc Login.AgreementPrivacy}" Foreground="#C60E0E" Cursor="Hand" MouseDown="PrivacyLink_MouseDown"/>
                             </TextBlock>
@@ -333,7 +372,9 @@
                                            Foreground="#EEEEEE" FontSize="16"
                                            Margin="0,0,0,10"/>
                                 <Grid Height="38"
-                                      SizeChanged="InputBorder_SizeChanged">
+                                      SizeChanged="InputBorder_SizeChanged"
+                                      Tag="RegisterEmailErrorOverlay"
+                                      PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                     <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                     <TextBox x:Name="RegisterEmailTextBox"
                                          Text="{lex:Loc Login.EmailPlaceholder}"
@@ -342,6 +383,10 @@
                                          VerticalAlignment="Center" Margin="15,0,40,0"
                                          GotFocus="RegisterInput_GotFocus"
                                          LostFocus="RegisterInput_LostFocus"/>
+                                <ContentControl x:Name="RegisterEmailErrorOverlay"
+                                                Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
                                 <Button Width="17" Height="17"
                                         HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"
                                         Cursor="Hand" Click="ClearRegisterInput_Click" Tag="RegisterEmailTextBox">
@@ -373,95 +418,41 @@
                                            Foreground="#EEEEEE" FontSize="16"
                                            Margin="0,0,0,10"/>
                                 <Grid Height="38"
-                                      SizeChanged="InputBorder_SizeChanged">
-                                <Path Stretch="Fill" Fill="#33EEEEEE"/>
-                                <TextBox x:Name="RegisterUsernameTextBox"
+                                      SizeChanged="InputBorder_SizeChanged"
+                                      Tag="RegisterUsernameErrorOverlay"
+                                      PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
+                                    <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                    <TextBox x:Name="RegisterUsernameTextBox"
                                          Text="{lex:Loc Login.UsernamePlaceholder}"
                                          Foreground="#99EEEEEE" FontSize="16"
                                          CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
                                          VerticalAlignment="Center" Margin="15,0,40,0"
                                          GotFocus="RegisterInput_GotFocus"
                                          LostFocus="RegisterInput_LostFocus"/>
-                                <Button Width="17" Height="17"
+                                    <ContentControl x:Name="RegisterUsernameErrorOverlay"
+                                                Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
+                                    <Button Width="17" Height="17"
                                         HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"
                                         Cursor="Hand" Click="ClearRegisterInput_Click" Tag="RegisterUsernameTextBox">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Canvas Width="17" Height="17" Background="Transparent">
-                                                <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Canvas Width="17" Height="17" Background="Transparent">
+                                                    <Path Stroke="#EEEEEE" StrokeThickness="1.5"
                                                       StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
-                                                    <Path.Data>
-                                                        <GeometryGroup>
-                                                            <PathGeometry Figures="M10.695 5.80371L5.80273 10.696"/>
-                                                            <PathGeometry Figures="M5.80273 5.80371L10.695 10.696"/>
-                                                            <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
-                                                        </GeometryGroup>
-                                                    </Path.Data>
-                                                </Path>
-                                            </Canvas>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-                            </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- 验证码 -->
-                        <Border Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="{lex:Loc Login.VerificationCodeLabel}"
-                                           Foreground="#EEEEEE" FontSize="16"
-                                           Margin="0,0,0,10"/>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid Grid.Column="0" Height="38"
-                                          SizeChanged="InputBorder_SizeChanged">
-                                <Path Stretch="Fill" Fill="#33EEEEEE"/>
-                                <TextBox x:Name="RegisterVerificationCodeTextBox"
-                                         Text="{lex:Loc Settings.VerificationCodePlaceholder}"
-                                         Foreground="#99EEEEEE" FontSize="16"
-                                         CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
-                                         VerticalAlignment="Center" Margin="15,0,40,0"
-                                         GotFocus="RegisterInput_GotFocus"
-                                         LostFocus="RegisterInput_LostFocus"/>
-                                <Button Width="17" Height="17"
-                                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"
-                                        Cursor="Hand" Click="ClearRegisterInput_Click" Tag="RegisterVerificationCodeTextBox">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Canvas Width="17" Height="17" Background="Transparent">
-                                                <Path Stroke="#EEEEEE" StrokeThickness="1.5"
-                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
-                                                    <Path.Data>
-                                                        <GeometryGroup>
-                                                            <PathGeometry Figures="M10.695 5.80371L5.80273 10.696"/>
-                                                            <PathGeometry Figures="M5.80273 5.80371L10.695 10.696"/>
-                                                            <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
-                                                        </GeometryGroup>
-                                                    </Path.Data>
-                                                </Path>
-                                            </Canvas>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-                            </Grid>
-                                    <Button Grid.Column="1" Width="110" Height="38" Cursor="Hand" Margin="10,0,0,0"
-                                            Click="GetRegisterVerificationCode_Click">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Grid Width="110" Height="38">
-                                            <Path Data="M115.001 5.08038L11 5.00018L5 11.0002V43.0002H6.8L109.001 43.0804L115.001 37.0804V5.08038Z"
-                                                  Stretch="Fill" Fill="{StaticResource TabSelectedGradient}"/>
-                                            <TextBlock Text="{lex:Loc Settings.GetVerificationCode}"
-                                                       Foreground="#FFFFFF" FontSize="14" FontWeight="Bold"
-                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                                                        <Path.Data>
+                                                            <GeometryGroup>
+                                                                <PathGeometry Figures="M10.695 5.80371L5.80273 10.696"/>
+                                                                <PathGeometry Figures="M5.80273 5.80371L10.695 10.696"/>
+                                                                <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                            </GeometryGroup>
+                                                        </Path.Data>
+                                                    </Path>
+                                                </Canvas>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -473,7 +464,9 @@
                                            Foreground="#EEEEEE" FontSize="16"
                                            Margin="0,0,0,10"/>
                                 <Grid Height="38"
-                                      SizeChanged="InputBorder_SizeChanged">
+                                      SizeChanged="InputBorder_SizeChanged"
+                                      Tag="RegisterPasswordErrorOverlay"
+                                      PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                     <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -489,9 +482,14 @@
                                                  GotFocus="RegisterPasswordBox_GotFocus"
                                                  LostFocus="RegisterPasswordBox_LostFocus"/>
                                     <TextBlock x:Name="RegisterPasswordPlaceholder" Grid.Column="0"
-                                               Text="{lex:Loc Login.PasswordPlaceholder}"
+                                               Text="{lex:Loc Login.PasswordPlaceholder2}"
                                                Foreground="#99EEEEEE" FontSize="16"
                                                VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
+                                    <ContentControl x:Name="RegisterPasswordErrorOverlay"
+                                                    Grid.Column="0"
+                                                    Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
                                     <Button x:Name="RegisterPasswordEyeBtn" Grid.Column="1"
                                             Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
                                             Cursor="Hand" Click="ToggleRegisterPasswordVisibility_Click">
@@ -558,7 +556,9 @@
                                            Foreground="#EEEEEE" FontSize="16"
                                            Margin="0,0,0,10"/>
                                 <Grid Height="38"
-                                      SizeChanged="InputBorder_SizeChanged">
+                                      SizeChanged="InputBorder_SizeChanged"
+                                      Tag="RegisterConfirmPasswordErrorOverlay"
+                                      PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                 <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -577,7 +577,12 @@
                                                Text="{lex:Loc Login.ConfirmPasswordPlaceholder}"
                                                Foreground="#99EEEEEE" FontSize="16"
                                                VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
-                                    <Button Grid.Column="1"
+                                    <ContentControl x:Name="RegisterConfirmPasswordErrorOverlay"
+                                                    Grid.Column="0"
+                                                    Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
+                                    <Button x:Name="RegisterConfirmPasswordEyeBtn" Grid.Column="1"
                                             Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
                                             Cursor="Hand" Click="ToggleRegisterConfirmPasswordVisibility_Click">
                                         <Button.Template>
@@ -636,11 +641,81 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- 验证码 -->
+                        <Border Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="{lex:Loc Login.VerificationCodeLabel}"
+                                           Foreground="#EEEEEE" FontSize="16"
+                                           Margin="0,0,0,10"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0" Height="38"
+                                          SizeChanged="InputBorder_SizeChanged"
+                                          Tag="RegisterVerificationCodeErrorOverlay"
+                                          PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
+                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <TextBox x:Name="RegisterVerificationCodeTextBox"
+                                                 Text="{lex:Loc Settings.VerificationCodePlaceholder}"
+                                                 Foreground="#99EEEEEE" FontSize="16"
+                                                 CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
+                                                 VerticalAlignment="Center" Margin="15,0,40,0"
+                                                 GotFocus="RegisterInput_GotFocus"
+                                                 LostFocus="RegisterInput_LostFocus"/>
+                                        <ContentControl x:Name="RegisterVerificationCodeErrorOverlay"
+                                                        Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                        Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
+                                        <Button Width="17" Height="17"
+                                                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"
+                                                Cursor="Hand" Click="ClearRegisterInput_Click" Tag="RegisterVerificationCodeTextBox">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Canvas Width="17" Height="17" Background="Transparent">
+                                                        <Path Stroke="#EEEEEE" StrokeThickness="1.5"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                            <Path.Data>
+                                                                <GeometryGroup>
+                                                                    <PathGeometry Figures="M10.695 5.80371L5.80273 10.696"/>
+                                                                    <PathGeometry Figures="M5.80273 5.80371L10.695 10.696"/>
+                                                                    <PathGeometry Figures="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                                </GeometryGroup>
+                                                            </Path.Data>
+                                                        </Path>
+                                                    </Canvas>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                    <Button x:Name="GetRegisterCodeButton" Grid.Column="1" Width="110" Height="38" Cursor="Hand" Margin="10,0,0,0"
+                                            Click="GetRegisterVerificationCode_Click">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid Width="110" Height="38">
+                                                    <Path Data="M115.001 5.08038L11 5.00018L5 11.0002V43.0002H6.8L109.001 43.0804L115.001 37.0804V5.08038Z"
+                                                          Stretch="Fill" Fill="{StaticResource TabSelectedGradient}"/>
+                                                    <TextBlock x:Name="GetRegisterCodeText" Text="{lex:Loc Settings.GetVerificationCode}"
+                                                               Foreground="#FFFFFF" FontSize="16" FontWeight="Bold"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
                         <!-- 用户协议 -->
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <CheckBox x:Name="RegisterAgreementCheckBox"
                                       Style="{DynamicResource CheckBoxStyle}"
-                                      Margin="0,3,0,0" VerticalAlignment="Top"/>
+                                      Margin="0,3,0,0" VerticalAlignment="Top" Cursor="">
+                                <CheckBox.RenderTransform>
+                                    <TranslateTransform/>
+                                </CheckBox.RenderTransform>
+                            </CheckBox>
                             <TextBlock VerticalAlignment="Center" FontSize="16" MaxWidth="430" TextWrapping="Wrap">
                                 <Run Text="{lex:Loc Login.AgreementText1}" Foreground="#FFFFFF"/><Run Text="{lex:Loc Login.AgreementTerms}" Foreground="#C60E0E" Cursor="Hand" MouseDown="TermsLink_MouseDown"/><Run Text="{lex:Loc Login.AgreementAnd}" Foreground="#FFFFFF"/><Run Text="{lex:Loc Login.AgreementPrivacy}" Foreground="#C60E0E" Cursor="Hand" MouseDown="PrivacyLink_MouseDown"/>
                             </TextBlock>
@@ -762,7 +837,9 @@
                                 <StackPanel>
                                     <TextBlock Text="{lex:Loc Login.EmailLabel}"
                                                Foreground="#EEEEEE" FontSize="16" Margin="0,0,0,10"/>
-                                    <Grid Height="38" SizeChanged="InputBorder_SizeChanged">
+                                    <Grid Height="38" SizeChanged="InputBorder_SizeChanged"
+                                          Tag="ForgotPasswordEmailErrorOverlay"
+                                          PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                         <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                         <TextBox x:Name="ForgotPasswordEmailTextBox"
                                                  Text="{lex:Loc Login.EmailPlaceholder}"
@@ -771,6 +848,10 @@
                                                  VerticalAlignment="Center" Margin="15,0,40,0"
                                                  GotFocus="ForgotPasswordInput_GotFocus"
                                                  LostFocus="ForgotPasswordInput_LostFocus"/>
+                                        <ContentControl x:Name="ForgotPasswordEmailErrorOverlay"
+                                                        Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                        Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
                                         <Button Width="17" Height="17"
                                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"
                                                 Cursor="Hand" Click="ClearForgotPasswordInput_Click" Tag="ForgotPasswordEmailTextBox">
@@ -805,7 +886,9 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <Grid Grid.Column="0" Height="38" SizeChanged="InputBorder_SizeChanged">
+                                        <Grid Grid.Column="0" Height="38" SizeChanged="InputBorder_SizeChanged"
+                                              Tag="ForgotPasswordVerificationCodeErrorOverlay"
+                                              PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                             <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                             <TextBox x:Name="ForgotPasswordVerificationCodeTextBox"
                                                      Text="{lex:Loc Settings.VerificationCodePlaceholder}"
@@ -814,6 +897,10 @@
                                                      VerticalAlignment="Center" Margin="15,0,40,0"
                                                      GotFocus="ForgotPasswordInput_GotFocus"
                                                      LostFocus="ForgotPasswordInput_LostFocus"/>
+                                            <ContentControl x:Name="ForgotPasswordVerificationCodeErrorOverlay"
+                                                            Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                            Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
                                             <Button Width="17" Height="17"
                                                     HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0"
                                                     Cursor="Hand" Click="ClearForgotPasswordInput_Click" Tag="ForgotPasswordVerificationCodeTextBox">
@@ -835,15 +922,15 @@
                                                 </Button.Template>
                                             </Button>
                                         </Grid>
-                                        <Button Grid.Column="1" Width="110" Height="38" Cursor="Hand" Margin="10,0,0,0"
+                                        <Button x:Name="GetForgotPasswordCodeButton" Grid.Column="1" Width="110" Height="38" Cursor="Hand" Margin="10,0,0,0"
                                                 Click="GetForgotPasswordVerificationCode_Click">
                                             <Button.Template>
                                                 <ControlTemplate TargetType="Button">
                                                     <Grid Width="110" Height="38">
                                                         <Path Data="M115.001 5.08038L11 5.00018L5 11.0002V43.0002H6.8L109.001 43.0804L115.001 37.0804V5.08038Z"
                                                               Stretch="Fill" Fill="{StaticResource TabSelectedGradient}"/>
-                                                        <TextBlock Text="{lex:Loc Settings.GetVerificationCode}"
-                                                                   Foreground="#FFFFFF" FontSize="14" FontWeight="Bold"
+                                                        <TextBlock x:Name="GetForgotPasswordCodeText" Text="{lex:Loc Settings.GetVerificationCode}"
+                                                                   Foreground="#FFFFFF" FontSize="16" FontWeight="Bold"
                                                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Grid>
                                                 </ControlTemplate>
@@ -892,7 +979,9 @@
                                 <StackPanel>
                                     <TextBlock Text="{lex:Loc Login.NewPassword}"
                                                Foreground="#EEEEEE" FontSize="16" Margin="0,0,0,10"/>
-                                    <Grid Height="38" SizeChanged="InputBorder_SizeChanged">
+                                    <Grid Height="38" SizeChanged="InputBorder_SizeChanged"
+                                          Tag="ForgotNewPasswordErrorOverlay"
+                                          PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                         <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -911,6 +1000,11 @@
                                                        Text="{lex:Loc Login.NewPasswordPlaceholder}"
                                                        Foreground="#99EEEEEE" FontSize="16"
                                                        VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
+                                            <ContentControl x:Name="ForgotNewPasswordErrorOverlay"
+                                                            Grid.Column="0"
+                                                            Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                            Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
                                             <Button x:Name="ForgotNewPasswordEyeBtn" Grid.Column="1"
                                                     Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
                                                     Cursor="Hand" Click="ToggleForgotNewPasswordVisibility_Click">
@@ -974,7 +1068,9 @@
                                 <StackPanel>
                                     <TextBlock Text="{lex:Loc Login.ConfirmNewPassword}"
                                                Foreground="#EEEEEE" FontSize="16" Margin="0,0,0,10"/>
-                                    <Grid Height="38" SizeChanged="InputBorder_SizeChanged">
+                                    <Grid Height="38" SizeChanged="InputBorder_SizeChanged"
+                                          Tag="ForgotConfirmNewPasswordErrorOverlay"
+                                          PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown">
                                         <Path Stretch="Fill" Fill="#33EEEEEE"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -993,7 +1089,12 @@
                                                        Text="{lex:Loc Login.ConfirmNewPasswordPlaceholder}"
                                                        Foreground="#99EEEEEE" FontSize="16"
                                                        VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
-                                            <Button Grid.Column="1"
+                                            <ContentControl x:Name="ForgotConfirmNewPasswordErrorOverlay"
+                                                            Grid.Column="0"
+                                                            Template="{StaticResource LoginErrorOverlayTemplate}"
+                                                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                            Margin="15,0,0,0" IsHitTestVisible="False" Visibility="Collapsed"/>
+                                            <Button x:Name="ForgotConfirmNewPasswordEyeBtn" Grid.Column="1"
                                                     Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
                                                     Cursor="Hand" Click="ToggleForgotConfirmNewPasswordVisibility_Click">
                                                 <Button.Template>

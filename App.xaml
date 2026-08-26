@@ -32,7 +32,7 @@
             </Setter>
         </Style>
 
-        <FontFamily x:Key="OrbitronFont">./Assets/Fonts/#Orbitron</FontFamily>
+        <FontFamily x:Key="OrbitronFont">./Assets/Fonts/#Orbitron,Microsoft YaHei</FontFamily>
 
         <LinearGradientBrush x:Key="TabSelectedGradient" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#C60E0E" Offset="0"/>

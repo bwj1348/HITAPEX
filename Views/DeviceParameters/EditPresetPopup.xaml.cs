@@ -103,6 +103,7 @@ public partial class EditPresetPopup : UserControl
             _selectedGames.Add(g);
 
         PresetNameTextBox.Text = preset.Name;
+        SyncToCloudCheckBox.IsChecked = preset.SyncToCloud;
         UpdateCharCount();
         UpdateWatermark();
         BuildAllGamesList();
@@ -120,6 +121,7 @@ public partial class EditPresetPopup : UserControl
 
         _selectedGames.Clear();
         PresetNameTextBox.Text = string.Empty;
+        SyncToCloudCheckBox.IsChecked = false;
         UpdateCharCount();
         UpdateWatermark();
         BuildAllGamesList();
@@ -586,7 +588,10 @@ public partial class EditPresetPopup : UserControl
             PedalParameters = _originalPreset.PedalParameters,
             WheelParameters = _originalPreset.WheelParameters,
             BaseParameters = _originalPreset.BaseParameters,
-            DeviceType = DeviceType
+            DeviceType = DeviceType,
+            // 同步到云端：勾选则同步；CloudDocumentId 沿用原预设（编辑已同步预设时走更新，否则首次为新增）
+            SyncToCloud = SyncToCloudCheckBox.IsChecked == true,
+            CloudDocumentId = _originalPreset.CloudDocumentId
         };
 
         // 触发确认事件并关闭弹窗

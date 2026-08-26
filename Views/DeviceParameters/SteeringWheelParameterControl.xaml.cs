@@ -775,7 +775,7 @@ public partial class SteeringWheelParameterControl : UserControl
         var editPopup = new EditPresetPopup { DeviceType = DeviceType.Wheel };
         rootPanel.Children.Add(editPopup);
 
-        editPopup.EditConfirmed += (_, edited) =>
+        editPopup.EditConfirmed += async (_, edited) =>
         {
             var presetName = edited.Name;
             var newPreset = new PresetItem
@@ -784,11 +784,18 @@ public partial class SteeringWheelParameterControl : UserControl
                 Games = edited.Games,
                 WheelParameters = CaptureCurrentParameters(),
                 IsPersonal = true,
-                DeviceType = DeviceType.Wheel
+                DeviceType = DeviceType.Wheel,
+                SyncToCloud = edited.SyncToCloud,
+                CloudDocumentId = edited.CloudDocumentId
             };
 
             var currentPersonal = App.PresetService.LoadPersonalPresets(DeviceType.Wheel);
             currentPersonal.Add(newPreset);
+
+            // 勾选"同步至云端" → 创建云端预设（新预设无 documentId，走新增），返回的 documentId 写回本地一并保存
+            if (newPreset.SyncToCloud)
+                await PresetCloudSyncHelper.SyncToCloudAsync(newPreset);
+
             App.PresetService.SavePersonalPresets(currentPersonal, DeviceType.Wheel);
 
             var popup = GetPresetListPopup();
@@ -823,6 +830,11 @@ public partial class SteeringWheelParameterControl : UserControl
             return mainWindow.GetPresetListPopup(DeviceType.Wheel);
         return null;
     }
+
+    /// <summary>当前应用的是否为云预设（通过预设列表弹窗的云预设列表判断）</summary>
+    private bool IsAppliedPresetCloud()
+        => _currentPresetName != null
+           && GetPresetListPopup()?.IsCloudPreset(_currentPresetName) == true;
 
     /// <summary>
     /// 需要下发的协议包掩码（Flags 位标记），每个枚举位对应一条 USB 协议命令：
@@ -1145,7 +1157,7 @@ public partial class SteeringWheelParameterControl : UserControl
             }
         }
 
-        var isExportEnabled = _isAppliedPresetPersonal;
+        var isExportEnabled = _isAppliedPresetPersonal || IsAppliedPresetCloud();
         if (ExportButtonPath != null)
         {
             if (isExportEnabled)
@@ -1235,7 +1247,8 @@ public partial class SteeringWheelParameterControl : UserControl
 
     private void ExportButton_Click(object sender, MouseButtonEventArgs e)
     {
-        if (!_isAppliedPresetPersonal) return;
+        // 个人预设和云预设均可导出（官方预设不可）
+        if (!_isAppliedPresetPersonal && !IsAppliedPresetCloud()) return;
 
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
@@ -1267,9 +1280,12 @@ public partial class SteeringWheelParameterControl : UserControl
         try
         {
             var snapshot = _appliedPresetParameters ?? CaptureCurrentParameters();
+            // 游戏列表：个人预设从本地取，云预设从弹窗的云预设列表取，都取不到则为空
             var games = App.PresetService?.LoadPersonalPresets(DeviceType.Wheel)
                 .FirstOrDefault(p => string.Equals(p.Name, _currentPresetName, StringComparison.OrdinalIgnoreCase))
-                ?.Games ?? [];
+                ?.Games
+                ?? GetPresetListPopup()?.FindPreset(_currentPresetName)?.Games
+                ?? [];
             var exportItem = new PresetItem
             {
                 Name = _currentPresetName,

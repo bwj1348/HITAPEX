@@ -215,66 +215,54 @@
 
                         <Grid Grid.Row="1" Margin="0,0,0,37" HorizontalAlignment="Center">
                             <Grid Width="158" Height="68">
-                                <Canvas>
-                                    <Path Data="M158,0 L9,0" StrokeThickness="1" Stroke="#80EEEEEE">
-                                        
-                                    </Path>
-                                    <Path Data="M9,0 L0,9" StrokeThickness="1">
-                                        <Path.Stroke>
-                                            <LinearGradientBrush StartPoint="1,0" EndPoint="0,1">
-                                                <GradientStop Color="#80EEEEEE" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Path.Stroke>
-                                    </Path>
-                                    <Path Data="M0,9 L0,68" StrokeThickness="1">
-                                        <Path.Stroke>
-                                            <LinearGradientBrush StartPoint="0,1" EndPoint="0,0">
-                                                <GradientStop Color="#EEEEEE" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="0.1"/>
-                                            </LinearGradientBrush>
-                                        </Path.Stroke>
-                                    </Path>
-                                    <Path Data="M0,68 L149,68" StrokeThickness="1" Stroke="#EEEEEE">
-                                        <!--<Path.Stroke>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                <GradientStop Color="#FF333333" Offset="0"/>
-                                                <GradientStop Color="#FF666666" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Path.Stroke>-->
-                                    </Path>
-                                    <Path Data="M149,68 L157,60" StrokeThickness="1">
-                                        <Path.Stroke>
-                                            <LinearGradientBrush StartPoint="0,1" EndPoint="1,0">
-                                                <GradientStop Color="#EEEEEE" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="1"/>
-                                            </LinearGradientBrush>
-                                        </Path.Stroke>
-                                    </Path>
-                                    <Path Data="M157,60 L157,0" StrokeThickness="1">
-                                        <Path.Stroke>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                <GradientStop Color="#80EEEEEE" Offset="0"/>
-                                                <GradientStop Color="#101010" Offset="0.1"/>
-                                            </LinearGradientBrush>
-                                        </Path.Stroke>
-                                    </Path>
-                                </Canvas>
+                                <!-- 背景填充（线性渐变）+ 边框（#EEEEEE） -->
+                                <Path Data="M0 9V68H149L158 59V0H9L0 9Z"
+                                      Stretch="Fill"
+                                      Stroke="#33EEEEEE" StrokeThickness="1">
+                                    <Path.Fill>
+                                        <LinearGradientBrush StartPoint="0,33.9623" EndPoint="286.27,33.9623" MappingMode="Absolute">
+                                            <GradientStop Color="#33607079" Offset="0"/>
+                                            <GradientStop Color="#333F4A50" Offset="0.4375"/>
+                                            <GradientStop Color="#33282D30" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Path.Fill>
+                                </Path>
+
                                 <Grid Margin="11,16,11,16">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    
+
                                     <Grid Grid.Column="0" Width="36" Height="36">
+                                        <!-- 左侧图标区：未登录显示默认图标，登录后显示用户头像 -->
                                         <Grid Width="30" Height="30" HorizontalAlignment="Left" VerticalAlignment="Top">
-                                            <Image Source="/Assets/UserAvatar.png" Stretch="UniformToFill">
-                                                <Image.Clip>
-                                                    <PathGeometry Figures="M0,0 L30,0 L30,22 L22,30 L0,30 Z"/>
-                                                </Image.Clip>
-                                            </Image>
+                                            <Grid.Clip>
+                                                <PathGeometry Figures="M0,0 L30,0 L30,22 L22,30 L0,30 Z"/>
+                                            </Grid.Clip>
+                                            <!-- 默认图标（未登录）：#EEEEEE 背景 + 灰色人形 -->
+                                            <Grid x:Name="UserIconDefault" Background="#EEEEEE" Visibility="Visible">
+                                                <Viewbox Width="18" Height="18"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                         Stretch="Uniform">
+                                                    <Canvas Width="16" Height="17">
+                                                        <Path Fill="#A1A1A1" Stroke="#A1A1A1"
+                                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round">
+                                                            <Path.Data>
+                                                                <GeometryGroup>
+                                                                    <PathGeometry Figures="M7.6543 0.5C9.86345 0.5 11.6543 2.29085 11.6543 4.5C11.6543 6.70918 9.86347 8.5 7.6543 8.5C5.44515 8.49996 3.6543 6.70915 3.6543 4.5C3.65433 2.29088 5.44517 0.500037 7.6543 0.5Z"/>
+                                                                    <PathGeometry Figures="M7.65527 10.5C9.24174 10.5 10.7876 11.0035 12.0693 11.9385C13.351 12.8734 14.3026 14.1915 14.7871 15.7021C14.8359 15.8542 14.8089 16.0204 14.7148 16.1494C14.6207 16.2784 14.4703 16.3555 14.3105 16.3555H1C0.840285 16.3555 0.689829 16.2784 0.595703 16.1494C0.501788 16.0204 0.47471 15.8541 0.523438 15.7021C1.00791 14.1914 1.96048 12.8734 3.24219 11.9385C4.52376 11.0037 6.06903 10.5001 7.65527 10.5Z"/>
+                                                                </GeometryGroup>
+                                                            </Path.Data>
+                                                        </Path>
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Grid>
+                                            <!-- 用户头像（登录后） -->
+                                            <Image x:Name="UserAvatarImage" Source="/Assets/UserAvatar.png" Stretch="UniformToFill" Visibility="Collapsed"/>
                                         </Grid>
-                                        
+
+                                        <!-- 在线状态点 -->
                                         <Grid Width="8" Height="8" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,0,0">
                                             <Grid.LayoutTransform>
                                                 <RotateTransform Angle="45"/>
@@ -283,12 +271,11 @@
                                             <Rectangle Fill="#23C860" Margin="1.1"/>
                                         </Grid>
                                     </Grid>
-                                    
+
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="5,0,0,0">
-                                        <TextBlock Text="{lex:Loc Window.User}" FontSize="14" Foreground="#99EEEEEE" FontWeight="Bold"/>
-                                                   
-                                        <TextBlock Text="Alex_Racer" FontSize="14" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,2,0,0"
-                                                   FontFamily="{StaticResource OrbitronFont}"/>
+                                        <TextBlock x:Name="UserRoleText" Text="{lex:Loc Window.Guest}" FontSize="14" Foreground="#99EEEEEE" FontWeight="Bold"/>
+                                        <TextBlock x:Name="UserDisplayNameText" Text="{lex:Loc Window.GuestMode}" FontSize="14" Foreground="#EEEEEE" FontWeight="Bold" Margin="0,2,0,0"
+                                                   FontFamily="{StaticResource OrbitronFont}" TextTrimming="CharacterEllipsis"/>
                                     </StackPanel>
                                 </Grid>
                             </Grid>
@@ -305,6 +292,6 @@
         </Grid>
         
         <ctrl:ModalDialog x:Name="GlobalDialog" Panel.ZIndex="1000"/>
-        <views:LoginPopup x:Name="LoginPopupDialog" Panel.ZIndex="1001"/>
+        <views:LoginPopup x:Name="LoginPopupDialog" Panel.ZIndex="1001" Visibility="Collapsed"/>
     </Grid>
 </Window>

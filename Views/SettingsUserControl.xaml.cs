@@ -20,7 +20,9 @@ using Microsoft.Win32;
 using HITAPEX.Models;
 using HITAPEX.Models.Usb;
 using HITAPEX.Services;
+using HITAPEX.Services.Data.Api;
 using HITAPEX.Services.Usb;
+using SharpVectors.Converters;
 
 namespace HITAPEX.Views;
 
@@ -84,6 +86,19 @@ public partial class SettingsUserControl : UserControl
         SetupPlaceholderBehavior();
         UpdateConfirmButtonWidths();
         LocalizationService.Instance.PropertyChanged += OnLocalizationChanged;
+
+        // 监听登录状态变化
+        if (App.UserApi != null)
+            App.UserApi.LoginStateChanged += OnLoginStateChanged;
+    }
+
+    private void OnLoginStateChanged()
+    {
+        // 非阻塞封送：后台线程触发时排队刷新（启动阶段同步 Invoke 会阻塞恢复链），UI 线程直接刷新
+        if (Dispatcher.CheckAccess())
+            RefreshLoginState();
+        else
+            Dispatcher.BeginInvoke(RefreshLoginState);
     }
 
     /// <summary>
@@ -693,6 +708,8 @@ public partial class SettingsUserControl : UserControl
 
     private void SettingsUserControl_Loaded(object sender, RoutedEventArgs e)
     {
+        Debug.WriteLine($"[SettingsUI] Loaded: _firstLoaded={_firstLoaded}, IsLoggedIn={App.UserApi?.IsLoggedIn}");
+
         if (_firstLoaded)
         {
             _firstLoaded = false;
@@ -700,11 +717,13 @@ public partial class SettingsUserControl : UserControl
             UpdateLastCheckTimeDisplay();
             InitializeUpdateButton();
             UpdateFirmwareLastCheckTimeDisplay();
+            RefreshLoginState();
         }
         else
         {
-            // 切换回来时恢复按钮当前状态
+            // 切换回来时恢复按钮当前状态，同时刷新登录状态
             RestoreUpdateButtonState();
+            RefreshLoginState();
         }
     }
 
@@ -920,30 +939,49 @@ public partial class SettingsUserControl : UserControl
     /// <summary>
     /// 头像按钮点击：打开文件对话框允许用户从本地选择图片替换头像。
     /// </summary>
-    private void AvatarButton_Click(object sender, RoutedEventArgs e)
+    private async void AvatarButton_Click(object sender, RoutedEventArgs e)
     {
-        var openFileDialog = new Microsoft.Win32.OpenFileDialog
+        var openFileDialog = new OpenFileDialog
         {
             Title = LocalizationService.Instance["Settings.SelectAvatar"],
             Filter = "Image Files (*.png;*.jpg;*.jpeg;*.bmp)|*.png;*.jpg;*.jpeg;*.bmp|All Files (*.*)|*.*"
         };
 
-        if (openFileDialog.ShowDialog() == true)
-        {
-            try
-            {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(openFileDialog.FileName);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
+        if (openFileDialog.ShowDialog() != true) return;
 
-                AvatarButton.Content = bitmap;
-            }
-            catch (Exception ex)
+        // 先预览
+        try
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(openFileDialog.FileName);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            bitmap.Freeze();
+            AvatarButton.Content = bitmap;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsUI] 加载头像预览失败: {ex.Message}");
+        }
+
+        // 上传到服务器
+        if (App.UserApi?.IsLoggedIn == true)
+        {
+            var result = await App.UserApi.UploadAvatarAsync(openFileDialog.FileName);
+            if (result.IsSuccess)
             {
-                Debug.WriteLine($"[SettingsUI] 加载头像失败: {ex.Message}");
+                Debug.WriteLine("[SettingsUI] 头像上传成功");
+                // 更新本地缓存的用户信息，并通知主窗口等订阅者刷新（左下角头像同步）
+                if (result.Data != null)
+                {
+                    App.UserApi.CurrentUser = result.Data;
+                    App.UserApi.NotifyUserInfoChanged();
+                }
+            }
+            else
+            {
+                Debug.WriteLine($"[SettingsUI] 头像上传失败: {result.ErrorMessage}");
             }
         }
     }
@@ -1027,6 +1065,37 @@ public partial class SettingsUserControl : UserControl
             if (placeholder != null)
                 placeholder.Visibility = Visibility.Collapsed;
         }
+    }
+
+    /// <summary>
+    /// 重置密码框到初始状态：清空密码、移除明文可见浮层、恢复掩码可见、复位眼睛图标并显示占位水印。
+    /// </summary>
+    private void ResetPasswordField(PasswordBox pwdBox, string tag, TextBlock placeholder, Button? eyeBtn)
+    {
+        pwdBox.Password = string.Empty;
+        pwdBox.Visibility = Visibility.Visible;
+
+        // 移除密码可见模式下叠加的明文 TextBox
+        var overlayTag = $"overlay_{tag}";
+        if (VisualTreeHelper.GetParent(pwdBox) is Panel parent)
+        {
+            var overlays = parent.Children.OfType<TextBox>()
+                .Where(tb => tb.Tag is string s && s == overlayTag).ToList();
+            foreach (var ov in overlays)
+                parent.Children.Remove(ov);
+        }
+
+        // 复位眼睛图标为"闭合"
+        if (eyeBtn != null)
+        {
+            var eyeClosed = eyeBtn.Template?.FindName("EyeClosed", eyeBtn) as System.Windows.Shapes.Path;
+            var eyeOpen = eyeBtn.Template?.FindName("EyeOpen", eyeBtn) as System.Windows.Shapes.Path;
+            if (eyeClosed != null) eyeClosed.Visibility = Visibility.Visible;
+            if (eyeOpen != null) eyeOpen.Visibility = Visibility.Collapsed;
+        }
+
+        // 密码已清空 → 显示占位水印
+        if (placeholder != null) placeholder.Visibility = Visibility.Visible;
     }
 
     /// <summary>
@@ -1140,57 +1209,378 @@ public partial class SettingsUserControl : UserControl
     }
 
     /// <summary>
-    /// 确认修改用户名。
+    /// 确认修改用户名：先做客户端校验（2-20 字符），再调用接口；失败时输入框显示错误提示。
     /// </summary>
-    private void ConfirmChangeUsername_Click(object sender, RoutedEventArgs e)
+    private async void ConfirmChangeUsername_Click(object sender, RoutedEventArgs e)
     {
-    }
+        ClearInputError(UsernameInputPath, UsernameErrorOverlay);
+        if (App.UserApi == null || !App.UserApi.IsLoggedIn) return;
 
-    /// <summary>
-    /// 确认修改密码。
-    /// </summary>
-    private void ConfirmChangePassword_Click(object sender, RoutedEventArgs e)
-    {
-    }
-
-    /// <summary>
-    /// 确认修改邮箱。
-    /// </summary>
-    private void ConfirmChangeEmail_Click(object sender, RoutedEventArgs e)
-    {
-    }
-
-    /// <summary>
-    /// 取消修改操作（收起对应区域）。
-    /// </summary>
-    private void CancelChange_Click(object sender, RoutedEventArgs e)
-    {
-    }
-
-    /// <summary>
-    /// 点击"立即登录"按钮，弹出登录对话框。
-    /// </summary>
-    private void LoginNowButton_Click(object sender, RoutedEventArgs e)
-    {
-        var parentWindow = Window.GetWindow(this);
-        if (parentWindow is MainWindow mainWindow)
+        var text = NewUsernameTextBox.Text;
+        var placeholder = LocalizationService.Instance["Settings.NewUsernamePlaceholder"];
+        if (string.IsNullOrWhiteSpace(text) || text == placeholder)
         {
-            mainWindow.LoginPopupDialog.Show();
+            SetInputError(NewUsernameTextBox, UsernameInputPath, UsernameErrorOverlay, UsernameErrorText,
+                LocalizationService.Instance["Settings.ErrorUsernameLength"]);
+            return;
+        }
+        // 客户端校验：用户名 2-20 个字符
+        if (text.Length < 2 || text.Length > 20)
+        {
+            SetInputError(NewUsernameTextBox, UsernameInputPath, UsernameErrorOverlay, UsernameErrorText,
+                LocalizationService.Instance["Settings.ErrorUsernameLength"]);
+            return;
+        }
+
+        var result = await App.UserApi.UpdateUserAsync(username: text);
+        if (result.IsSuccess)
+        {
+            // 更新本地缓存的用户信息，避免后续（如修改密码触发登录状态刷新）读到旧用户名
+            if (result.Data != null)
+                App.UserApi.CurrentUser = result.Data;
+
+            UsernameText.Text = text;
+            NewUsernameTextBox.Text = placeholder;
+            NewUsernameTextBox.Foreground = new SolidColorBrush(Color.FromArgb(0x99, 238, 238, 238));
+
+            // 通知主窗口等订阅者刷新（左下角用户名同步）
+            App.UserApi.NotifyUserInfoChanged();
+            ShowResultToast(true, LocalizationService.Instance["Settings.ChangeSuccess"]);
+        }
+        else if (result.ErrorCode == "VALIDATION_USERNAME_LENGTH")
+        {
+            SetInputError(NewUsernameTextBox, UsernameInputPath, UsernameErrorOverlay, UsernameErrorText,
+                LocalizationService.Instance["Settings.ErrorUsernameLength"]);
+        }
+        else
+        {
+            // 其它错误（如用户名已被占用）→ 失败弹窗，文本固定为"修改失败"
+            ShowResultToast(false, LocalizationService.Instance["Settings.ChangeFailed"]);
         }
     }
 
     /// <summary>
-    /// 确认退出登录。
+    /// 确认修改密码：客户端校验新密码长度与两次一致，再调用接口；
+    /// 失败时按错误码在对应输入框显示错误提示。
     /// </summary>
-    private void ConfirmLogout_Click(object sender, RoutedEventArgs e)
+    private async void ConfirmChangePassword_Click(object sender, RoutedEventArgs e)
     {
+        ClearInputError(CurrentPasswordInputPath, CurrentPasswordErrorOverlay);
+        ClearInputError(NewPasswordInputPath, NewPasswordErrorOverlay);
+        ClearInputError(ConfirmPasswordInputPath, ConfirmPasswordErrorOverlay);
+        if (App.UserApi == null || !App.UserApi.IsLoggedIn) return;
+
+        var cur = CurrentPasswordBox.Password;
+        var nw = NewPasswordBox.Password;
+        var cf = ConfirmNewPasswordBox.Password;
+
+        // 客户端校验
+        if (nw.Length < 8)
+        {
+            SetInputError(NewPasswordBox, NewPasswordInputPath, NewPasswordErrorOverlay, NewPasswordErrorText,
+                LocalizationService.Instance["Settings.ErrorNewPasswordLength"]);
+            return;
+        }
+        if (nw != cf)
+        {
+            SetInputError(ConfirmNewPasswordBox, ConfirmPasswordInputPath, ConfirmPasswordErrorOverlay, ConfirmPasswordErrorText,
+                LocalizationService.Instance["Settings.ErrorPasswordMismatch"]);
+            return;
+        }
+
+        var result = await App.UserApi.ChangePasswordAsync(cur, nw, cf);
+        if (result.IsSuccess)
+        {
+            // 重置三个密码框：清空密码、移除明文浮层、复位眼睛图标、显示占位水印
+            ResetPasswordField(CurrentPasswordBox, "CurrentPassword", CurrentPasswordPlaceholder, CurrentPasswordEyeBtn);
+            ResetPasswordField(NewPasswordBox, "NewPassword", NewPasswordPlaceholder, NewPasswordEyeBtn);
+            ResetPasswordField(ConfirmNewPasswordBox, "ConfirmNewPassword", ConfirmNewPasswordPlaceholder, ConfirmNewPasswordEyeBtn);
+            ShowResultToast(true, LocalizationService.Instance["Settings.ChangeSuccess"]);
+        }
+        else if (result.ErrorCode == "AUTH_WRONG_PASSWORD")
+        {
+            // 当前密码错误 → 当前密码输入框
+            SetInputError(CurrentPasswordBox, CurrentPasswordInputPath, CurrentPasswordErrorOverlay, CurrentPasswordErrorText,
+                LocalizationService.Instance["Settings.ErrorCurrentPassword"]);
+        }
+        else if (result.ErrorCode == "VALIDATION_PASSWORD_LENGTH")
+        {
+            SetInputError(NewPasswordBox, NewPasswordInputPath, NewPasswordErrorOverlay, NewPasswordErrorText,
+                LocalizationService.Instance["Settings.ErrorNewPasswordLength"]);
+        }
+        else if (result.ErrorCode == "VALIDATION_PASSWORD_MISMATCH")
+        {
+            SetInputError(ConfirmNewPasswordBox, ConfirmPasswordInputPath, ConfirmPasswordErrorOverlay, ConfirmPasswordErrorText,
+                LocalizationService.Instance["Settings.ErrorPasswordMismatch"]);
+        }
+        else
+        {
+            // 其它错误（如新密码与原密码相同、token 失效等）→ 失败弹窗，文本固定为"修改失败"
+            Debug.WriteLine($"[SettingsUI] 修改密码失败: code={result.ErrorCode}, msg={result.ErrorMessage}");
+            ShowResultToast(false, LocalizationService.Instance["Settings.ChangeFailed"]);
+        }
     }
 
     /// <summary>
-    /// 获取验证码。
+    /// 确认修改邮箱。API 不直接支持修改邮箱，留空。
     /// </summary>
+    private void ConfirmChangeEmail_Click(object sender, RoutedEventArgs e) { }
+
+    /// <summary>
+    /// 取消修改操作，重置输入框并清除错误状态。
+    /// </summary>
+    private void CancelChange_Click(object sender, RoutedEventArgs e)
+    {
+        // 重置三个密码框（含明文可见浮层与眼睛图标）
+        ResetPasswordField(CurrentPasswordBox, "CurrentPassword", CurrentPasswordPlaceholder, CurrentPasswordEyeBtn);
+        ResetPasswordField(NewPasswordBox, "NewPassword", NewPasswordPlaceholder, NewPasswordEyeBtn);
+        ResetPasswordField(ConfirmNewPasswordBox, "ConfirmNewPassword", ConfirmNewPasswordPlaceholder, ConfirmNewPasswordEyeBtn);
+        NewUsernameTextBox.Text = LocalizationService.Instance["Settings.NewUsernamePlaceholder"];
+        NewUsernameTextBox.Foreground = new SolidColorBrush(Color.FromArgb(0x99, 238, 238, 238));
+
+        ClearInputError(UsernameInputPath, UsernameErrorOverlay);
+        ClearInputError(CurrentPasswordInputPath, CurrentPasswordErrorOverlay);
+        ClearInputError(NewPasswordInputPath, NewPasswordErrorOverlay);
+        ClearInputError(ConfirmPasswordInputPath, ConfirmPasswordErrorOverlay);
+    }
+
+    // ══════════════════════════════════════════
+    //  输入框错误提示辅助
+    // ══════════════════════════════════════════
+
+    private static readonly Brush s_inputNormalFill = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE));
+    private static readonly Brush s_inputErrorFill = new SolidColorBrush(Color.FromArgb(0x33, 0xC6, 0x0E, 0x0E));
+    private static readonly Brush s_inputErrorStroke = new SolidColorBrush(Color.FromArgb(0xCC, 0xC6, 0x0E, 0x0E));
+
+    /// <summary>
+    /// 显示输入框错误：清空输入框原有文本（避免与错误浮层重叠），
+    /// 设置红色边框（1px #CCC60E0E）+ 红色填充（#33C60E0E），
+    /// 并在输入文字区显示警告图标与错误信息（右侧按钮保留）。
+    /// </summary>
+    private void SetInputError(FrameworkElement input, System.Windows.Shapes.Path inputPath, StackPanel overlay, TextBlock errorText, string message)
+    {
+        // 清空输入框原有文本，避免与错误浮层文字重叠
+        if (input is TextBox tb) tb.Text = string.Empty;
+        else if (input is PasswordBox pb)
+        {
+            pb.Password = string.Empty;
+            // 密码清空后占位水印会自动显示（PasswordChanged），需一并隐藏避免与错误浮层重叠
+            if (ReferenceEquals(input, CurrentPasswordBox)) CurrentPasswordPlaceholder.Visibility = Visibility.Collapsed;
+            else if (ReferenceEquals(input, NewPasswordBox)) NewPasswordPlaceholder.Visibility = Visibility.Collapsed;
+            else if (ReferenceEquals(input, ConfirmNewPasswordBox)) ConfirmNewPasswordPlaceholder.Visibility = Visibility.Collapsed;
+        }
+
+        if (inputPath != null)
+        {
+            inputPath.Stroke = s_inputErrorStroke;
+            inputPath.StrokeThickness = 1;
+            inputPath.Fill = s_inputErrorFill;
+        }
+        if (errorText != null) errorText.Text = message;
+        if (overlay != null) overlay.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>清除输入框错误状态，恢复正常样式。</summary>
+    private void ClearInputError(System.Windows.Shapes.Path inputPath, StackPanel overlay)
+    {
+        if (inputPath != null)
+        {
+            inputPath.Stroke = null;
+            inputPath.StrokeThickness = 0;
+            inputPath.Fill = s_inputNormalFill;
+        }
+        if (overlay != null) overlay.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>点击输入框时清除对应输入框的错误提示。</summary>
+    private void Input_PreviewMouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (ReferenceEquals(sender, NewUsernameTextBox)) ClearInputError(UsernameInputPath, UsernameErrorOverlay);
+        else if (ReferenceEquals(sender, CurrentPasswordBox)) ClearInputError(CurrentPasswordInputPath, CurrentPasswordErrorOverlay);
+        else if (ReferenceEquals(sender, NewPasswordBox)) ClearInputError(NewPasswordInputPath, NewPasswordErrorOverlay);
+        else if (ReferenceEquals(sender, ConfirmNewPasswordBox)) ClearInputError(ConfirmPasswordInputPath, ConfirmPasswordErrorOverlay);
+    }
+
+    /// <summary>
+    /// 显示修改成功 / 失败的 Toast（仿 PedalParameterControl 的 ShowSuccessToast）：
+    /// 成功用绿色对勾图标，失败用红色感叹号图标，1 秒后自动消失。
+    /// </summary>
+    private void ShowResultToast(bool success, string message)
+    {
+        var rootPanel = (Window.GetWindow(this)?.Content as Panel);
+        if (rootPanel == null) return;
+
+        var toast = new Grid
+        {
+            Width = 360,
+            Height = 100,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Panel.SetZIndex(toast, 2000);
+
+        // 背景形状
+        toast.Children.Add(new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M360 0H9L0 9V100H351L360 91V0Z"),
+            Fill = new SolidColorBrush(Color.FromRgb(0x4A, 0x4A, 0x4A)),
+            Stretch = Stretch.Fill
+        });
+
+        // SVG 装饰图形
+        toast.Children.Add(new SvgViewbox
+        {
+            Source = new Uri("/Assets/Group126548867.svg", UriKind.Relative),
+            Stretch = Stretch.Fill
+        });
+
+        // 边框
+        toast.Children.Add(new System.Windows.Shapes.Path
+        {
+            Width = 340,
+            Height = 80,
+            Data = Geometry.Parse("M339.5 0.5V73.793L333.793 79.5H0.5V6.20703L6.20703 0.5H339.5Z"),
+            Stroke = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            StrokeThickness = 1,
+            Stretch = Stretch.Fill
+        });
+
+        // 内容：图标 + 文字
+        var contentPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var iconCanvas = new Canvas { Width = 22, Height = 22 };
+        if (success)
+        {
+            // 绿色对勾
+            var green = new SolidColorBrush(Color.FromRgb(0x16, 0xC6, 0x42));
+            iconCanvas.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M6.13672 12.2886L9.29057 14.8117C9.37527 14.8814 9.47445 14.9314 9.5809 14.9581C9.68735 14.9847 9.79839 14.9872 9.90595 14.9655C10.0145 14.9452 10.1175 14.9016 10.2077 14.8379C10.298 14.7742 10.3735 14.6918 10.429 14.5963L15.3675 6.13477"),
+                Stroke = green, StrokeThickness = 1.5,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round
+            });
+            iconCanvas.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M10.75 20.75C16.2728 20.75 20.75 16.2728 20.75 10.75C20.75 5.22715 16.2728 0.75 10.75 0.75C5.22715 0.75 0.75 5.22715 0.75 10.75C0.75 16.2728 5.22715 20.75 10.75 20.75Z"),
+                Stroke = green, StrokeThickness = 1.5,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round
+            });
+        }
+        else
+        {
+            // 红色感叹号
+            var red = new SolidColorBrush(Color.FromRgb(0xC6, 0x0E, 0x0E));
+            iconCanvas.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M11 21C16.5228 21 21 16.5228 21 11C21 5.47715 16.5228 1 11 1C5.47715 1 1 5.47715 1 11C1 16.5228 5.47715 21 11 21Z"),
+                Stroke = red, StrokeThickness = 2,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round
+            });
+            iconCanvas.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M11.0508 5.66602V11.0506"),
+                Stroke = red, StrokeThickness = 2,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, StrokeLineJoin = PenLineJoin.Round
+            });
+            iconCanvas.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse("M11.0496 15.9234C11.6443 15.9234 12.1265 15.4412 12.1265 14.8465C12.1265 14.2517 11.6443 13.7695 11.0496 13.7695C10.4548 13.7695 9.97266 14.2517 9.97266 14.8465C9.97266 15.4412 10.4548 15.9234 11.0496 15.9234Z"),
+                Fill = red
+            });
+        }
+
+        var iconViewbox = new Viewbox { Width = 22, Height = 22, Margin = new Thickness(0, 0, 20, 0), Child = iconCanvas };
+        contentPanel.Children.Add(iconViewbox);
+
+        contentPanel.Children.Add(new TextBlock
+        {
+            Text = message,
+            FontSize = 30,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            FontWeight = FontWeights.Bold,
+            VerticalAlignment = VerticalAlignment.Center
+        });
+
+        toast.Children.Add(contentPanel);
+        rootPanel.Children.Add(toast);
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            if (rootPanel.Children.Contains(toast))
+                rootPanel.Children.Remove(toast);
+        };
+        timer.Start();
+    }
+
+    /// <summary>点击"立即登录"按钮，弹出登录对话框。</summary>
+    private void LoginNowButton_Click(object sender, RoutedEventArgs e)
+    {
+        var parentWindow = Window.GetWindow(this);
+        if (parentWindow is MainWindow mainWindow) mainWindow.LoginPopupDialog.Show();
+    }
+
+    /// <summary>确认退出登录：清除登录态并弹出"已退出账户"成功提示。</summary>
+    private void ConfirmLogout_Click(object sender, RoutedEventArgs e)
+    {
+        App.UserApi?.Logout();
+        RefreshLoginState();
+        ShowResultToast(true, LocalizationService.Instance["Settings.LoggedOut"]);
+    }
+
+    /// <summary>刷新登录/未登录 UI 显示状态（供外部调用，如登录成功后触发刷新）。</summary>
+    public void RefreshLoginState()
+    {
+        var isLoggedIn = App.UserApi?.IsLoggedIn == true;
+        var user = App.UserApi?.CurrentUser;
+        Debug.WriteLine($"[SettingsUI] RefreshLoginState: isLoggedIn={isLoggedIn}, CurrentUser={user?.Username}({user?.Email}), UserAccessToken长度={Properties.Settings.Default.UserAccessToken?.Length ?? 0}");
+        NotLoggedInProfilePanel.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
+        LoggedInProfilePanel.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        NotLoggedInSecurityPanel.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
+        LoggedInSecurityPanel.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        NotLoggedInAccountPanel.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
+        LoggedInAccountPanel.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+        if (isLoggedIn && user != null)
+        {
+            UsernameText.Text = user.Username;
+            EmailText.Text = user.Email;
+            LoadAvatarFromServer(user);
+            Debug.WriteLine($"[SettingsUI] 已填充用户名={UsernameText.Text}, 邮箱={EmailText.Text}");
+        }
+    }
+
+    /// <summary>从服务器加载当前用户头像到头像按钮（头像 URL 为相对路径，需拼接 API 基础地址）</summary>
+    private void LoadAvatarFromServer(UserInfo user)
+    {
+        var url = user.Image?.Url;
+        if (string.IsNullOrEmpty(url))
+        {
+            AvatarButton.Content = null;
+            return;
+        }
+        try
+        {
+            var fullUrl = UserApiService.BaseUrl + url;
+            var bitmap = new BitmapImage(new Uri(fullUrl));
+            bitmap.DecodeFailed += (_, _) => Debug.WriteLine($"[SettingsUI] 头像解码失败: {fullUrl}");
+            AvatarButton.Content = bitmap;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsUI] 加载头像失败: {ex.Message}");
+        }
+    }
+
+    /// <summary>获取验证码。</summary>
     private void GetVerificationCode_Click(object sender, RoutedEventArgs e)
     {
+        if (App.UserApi == null) return;
     }
 
     private void AutoStartCheckBox_Changed(object sender, RoutedEventArgs e)

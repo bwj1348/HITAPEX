@@ -1,6 +1,11 @@
 {
   "Name": "asdafafghbf",
-  "Games": [],
+  "Games": [
+    "AC EVO",
+    "ACC",
+    "DR2.0",
+    "F1"
+  ],
   "IsPersonal": true,
   "DeviceType": 2,
   "BaseParameters": null,
@@ -18,15 +23,15 @@
     "clutchPoint4X": 80,
     "clutchDeadZoneFront": 0,
     "clutchDeadZoneRear": 0,
-    "brakeCurveType": 1,
+    "brakeCurveType": 3,
     "brakeDirection": 0,
-    "brakePoint1Y": 50,
+    "brakePoint1Y": 28,
     "brakePoint1X": 20,
-    "brakePoint2Y": 50,
+    "brakePoint2Y": 52,
     "brakePoint2X": 40,
-    "brakePoint3Y": 50,
+    "brakePoint3Y": 71,
     "brakePoint3X": 60,
-    "brakePoint4Y": 50,
+    "brakePoint4Y": 86,
     "brakePoint4X": 80,
     "brakeDeadZoneFront": 0,
     "brakeDeadZoneRear": 0,
@@ -42,5 +47,7 @@
     "throttlePoint4X": 80,
     "throttleDeadZoneFront": 0,
     "throttleDeadZoneRear": 0
-  }
+  },
+  "SyncToCloud": false,
+  "CloudDocumentId": null
 }

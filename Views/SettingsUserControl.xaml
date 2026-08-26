@@ -493,7 +493,7 @@
                       HorizontalScrollBarVisibility="Disabled"
                       Margin="0,20,0,0">
             <Grid x:Name="ContentContainer" Margin="0">
-                <Grid x:Name="SystemSettingsContent" Visibility="Collapsed">
+                <Grid x:Name="SystemSettingsContent" Visibility="Visible">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -969,7 +969,7 @@
                     </StackPanel>
                 </Grid>
 
-                <Grid x:Name="AccountSettingsContent" Visibility="Visible">
+                <Grid x:Name="AccountSettingsContent" Visibility="Collapsed">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -1271,12 +1271,13 @@
                                                Margin="0,0,10,10"/>
                                     <Grid Grid.Row="1" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
                                           Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
-                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <Path x:Name="UsernameInputPath" Stretch="Fill" Fill="#33EEEEEE"/>
                                         <TextBox x:Name="NewUsernameTextBox"
                                                  Text="{lex:Loc Settings.NewUsernamePlaceholder}"
                                                  Foreground="#99EEEEEE" FontSize="16"
                                                  CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
-                                                 VerticalAlignment="Center" Margin="15,0,40,0"/>
+                                                 VerticalAlignment="Center" Margin="15,0,40,0"
+                                                 PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown"/>
                                         <Button Width="17" Height="17"
                                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,15,0"
                                                 Cursor="Hand" Click="ClearInputButton_Click" Tag="NewUsernameTextBox">
@@ -1297,6 +1298,25 @@
                                                 </ControlTemplate>
                                             </Button.Template>
                                         </Button>
+                                        <!-- 错误提示浮层（只覆盖输入文字区，右侧清除按钮保留） -->
+                                        <StackPanel x:Name="UsernameErrorOverlay" Orientation="Horizontal"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="15,0,0,0"
+                                                    IsHitTestVisible="False" Visibility="Collapsed">
+                                            <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                                                <Canvas Width="17" Height="17">
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.28809 4.25V8.28846"/>
+                                                    <Path Fill="#C60E0E"
+                                                          Data="M8.28718 11.9425C8.73326 11.9425 9.09488 11.5809 9.09488 11.1348C9.09488 10.6888 8.73326 10.3271 8.28718 10.3271C7.84111 10.3271 7.47949 10.6888 7.47949 11.1348C7.47949 11.5809 7.84111 11.9425 8.28718 11.9425Z"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock x:Name="UsernameErrorText" Foreground="#C60E0E" FontSize="16" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </Grid>
 
                                     <!-- Row 2: 修改用户名 确认/取消 -->
@@ -1363,7 +1383,7 @@
                                                Margin="0,0,10,10"/>
                                     <Grid Grid.Row="4" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
                                           Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
-                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <Path x:Name="CurrentPasswordInputPath" Stretch="Fill" Fill="#33EEEEEE"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -1373,7 +1393,8 @@
                                             <PasswordBox x:Name="CurrentPasswordBox"
                                                          Background="Transparent" BorderThickness="0"
                                                          Foreground="#99EEEEEE" CaretBrush="#EEEEEE" FontSize="16"
-                                                         VerticalAlignment="Center" Margin="15,0,0,0"/>
+                                                         VerticalAlignment="Center" Margin="15,0,0,0"
+                                                         PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown"/>
                                             <TextBlock x:Name="CurrentPasswordPlaceholder" Grid.Column="0"
                                                        Text="{lex:Loc Settings.CurrentPasswordPlaceholder}"
                                                        Foreground="#99EEEEEE" FontSize="16"
@@ -1434,6 +1455,25 @@
                                                 </Button.Template>
                                             </Button>
                                         </Grid>
+                                        <!-- 错误提示浮层（只覆盖输入文字区，右侧眼睛/清除按钮保留） -->
+                                        <StackPanel x:Name="CurrentPasswordErrorOverlay" Orientation="Horizontal"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="15,0,0,0"
+                                                    IsHitTestVisible="False" Visibility="Collapsed">
+                                            <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                                                <Canvas Width="17" Height="17">
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.28809 4.25V8.28846"/>
+                                                    <Path Fill="#C60E0E"
+                                                          Data="M8.28718 11.9425C8.73326 11.9425 9.09488 11.5809 9.09488 11.1348C9.09488 10.6888 8.73326 10.3271 8.28718 10.3271C7.84111 10.3271 7.47949 10.6888 7.47949 11.1348C7.47949 11.5809 7.84111 11.9425 8.28718 11.9425Z"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock x:Name="CurrentPasswordErrorText" Foreground="#C60E0E" FontSize="16" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </Grid>
 
                                     <!-- Row 5: 新密码 -->
@@ -1444,7 +1484,7 @@
                                                Margin="0,0,10,10"/>
                                     <Grid Grid.Row="5" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
                                           Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
-                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <Path x:Name="NewPasswordInputPath" Stretch="Fill" Fill="#33EEEEEE"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -1454,7 +1494,8 @@
                                             <PasswordBox x:Name="NewPasswordBox"
                                                          Background="Transparent" BorderThickness="0"
                                                          Foreground="#99EEEEEE" CaretBrush="#EEEEEE" FontSize="16"
-                                                         VerticalAlignment="Center" Margin="15,0,0,0"/>
+                                                         VerticalAlignment="Center" Margin="15,0,0,0"
+                                                         PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown"/>
                                             <TextBlock x:Name="NewPasswordPlaceholder" Grid.Column="0"
                                                        Text="{lex:Loc Settings.NewPasswordPlaceholder}"
                                                        Foreground="#99EEEEEE" FontSize="16"
@@ -1515,6 +1556,25 @@
                                                 </Button.Template>
                                             </Button>
                                         </Grid>
+                                        <!-- 错误提示浮层 -->
+                                        <StackPanel x:Name="NewPasswordErrorOverlay" Orientation="Horizontal"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="15,0,0,0"
+                                                    IsHitTestVisible="False" Visibility="Collapsed">
+                                            <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                                                <Canvas Width="17" Height="17">
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.28809 4.25V8.28846"/>
+                                                    <Path Fill="#C60E0E"
+                                                          Data="M8.28718 11.9425C8.73326 11.9425 9.09488 11.5809 9.09488 11.1348C9.09488 10.6888 8.73326 10.3271 8.28718 10.3271C7.84111 10.3271 7.47949 10.6888 7.47949 11.1348C7.47949 11.5809 7.84111 11.9425 8.28718 11.9425Z"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock x:Name="NewPasswordErrorText" Foreground="#C60E0E" FontSize="16" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </Grid>
 
                                     <!-- Row 6: 确认新密码 -->
@@ -1525,7 +1585,7 @@
                                                Margin="0,0,10,10"/>
                                     <Grid Grid.Row="6" Grid.Column="1" MaxWidth="511" Height="38" HorizontalAlignment="Right"
                                           Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
-                                        <Path Stretch="Fill" Fill="#33EEEEEE"/>
+                                        <Path x:Name="ConfirmPasswordInputPath" Stretch="Fill" Fill="#33EEEEEE"/>
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
@@ -1535,12 +1595,13 @@
                                             <PasswordBox x:Name="ConfirmNewPasswordBox"
                                                          Background="Transparent" BorderThickness="0"
                                                          Foreground="#99EEEEEE" CaretBrush="#EEEEEE" FontSize="16"
-                                                         VerticalAlignment="Center" Margin="15,0,0,0"/>
+                                                         VerticalAlignment="Center" Margin="15,0,0,0"
+                                                         PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown"/>
                                             <TextBlock x:Name="ConfirmNewPasswordPlaceholder" Grid.Column="0"
                                                        Text="{lex:Loc Settings.ConfirmNewPasswordPlaceholder}"
                                                        Foreground="#99EEEEEE" FontSize="16"
                                                        VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
-                                            <Button Grid.Column="1"
+                                            <Button x:Name="ConfirmNewPasswordEyeBtn" Grid.Column="1"
                                                     Width="20" Height="17" VerticalAlignment="Center" Margin="10,0,8,0"
                                                     Cursor="Hand" Click="TogglePasswordVisibility_Click"
                                                     Tag="ConfirmNewPassword">
@@ -1596,6 +1657,25 @@
                                                 </Button.Template>
                                             </Button>
                                         </Grid>
+                                        <!-- 错误提示浮层 -->
+                                        <StackPanel x:Name="ConfirmPasswordErrorOverlay" Orientation="Horizontal"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                    Margin="15,0,0,0"
+                                                    IsHitTestVisible="False" Visibility="Collapsed">
+                                            <Viewbox Width="17" Height="17" Margin="0,0,10,0">
+                                                <Canvas Width="17" Height="17">
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.25 15.75C12.3921 15.75 15.75 12.3921 15.75 8.25C15.75 4.10786 12.3921 0.75 8.25 0.75C4.10786 0.75 0.75 4.10786 0.75 8.25C0.75 12.3921 4.10786 15.75 8.25 15.75Z"/>
+                                                    <Path Stroke="#C60E0E" StrokeThickness="1.5"
+                                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                                          Data="M8.28809 4.25V8.28846"/>
+                                                    <Path Fill="#C60E0E"
+                                                          Data="M8.28718 11.9425C8.73326 11.9425 9.09488 11.5809 9.09488 11.1348C9.09488 10.6888 8.73326 10.3271 8.28718 10.3271C7.84111 10.3271 7.47949 10.6888 7.47949 11.1348C7.47949 11.5809 7.84111 11.9425 8.28718 11.9425Z"/>
+                                                </Canvas>
+                                            </Viewbox>
+                                            <TextBlock x:Name="ConfirmPasswordErrorText" Foreground="#C60E0E" FontSize="16" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                     </Grid>
 
                                     <!-- Row 7: 修改密码 确认/取消 -->

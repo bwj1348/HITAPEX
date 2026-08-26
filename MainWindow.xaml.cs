@@ -1,12 +1,15 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using HITAPEX.Helpers;
 using HITAPEX.Models.Usb;
 using HITAPEX.Services;
+using HITAPEX.Services.Data.Api;
 using HITAPEX.ViewModels;
 using HITAPEX.Controls;
 using HITAPEX.Views;
@@ -109,7 +112,11 @@ public partial class MainWindow : Window
         // 4. 初始化系统托盘图标
         InitializeTrayIcon();
 
-        // 5. 订阅 Loaded 事件——窗口完成首次布局和渲染后执行一次性初始化
+        // 5. 订阅登录状态变化事件——登录/退出时实时刷新左下角用户信息区
+        if (App.UserApi != null)
+            App.UserApi.LoginStateChanged += OnLoginStateChanged;
+
+        // 6. 订阅 Loaded 事件——窗口完成首次布局和渲染后执行一次性初始化
         Loaded += OnMainWindowLoaded;
     }
 
@@ -140,6 +147,81 @@ public partial class MainWindow : Window
         if (App.UsbManager != null)
         {
             App.UsbManager.DeviceConnected += OnUsbDeviceConnectedForUpdateMode;
+        }
+
+        // ── 初始化左下角用户信息区（根据当前登录状态显示默认图标/头像、游客/用户文字） ──
+        RefreshLoginState();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    //  左下角用户信息区
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 登录状态变化回调。事件可能来自后台线程（会话恢复的 fire-and-forget 任务），
+    /// 必须封送到 UI 线程再刷新。用 BeginInvoke 非阻塞排队——启动阶段主线程消息泵尚未
+    /// 运行时，同步 Invoke 会阻塞后台线程，导致会话恢复链（users/me 拉取头像）卡住。
+    /// </summary>
+    private void OnLoginStateChanged()
+    {
+        if (Dispatcher.CheckAccess())
+            RefreshLoginState();
+        else
+            Dispatcher.BeginInvoke(RefreshLoginState);
+    }
+
+    /// <summary>
+    /// 刷新左下角用户信息区：
+    /// 图标 —— 未登录显示默认图标，登录后显示用户头像；
+    /// 角色文字 —— 未登录显示"游客"，登录后显示"用户"；
+    /// 名称 —— 未登录显示"Guest Mode"，登录后显示用户名。
+    /// </summary>
+    public void RefreshLoginState()
+    {
+        var isLoggedIn = App.UserApi?.IsLoggedIn == true;
+        var user = App.UserApi?.CurrentUser;
+
+        // 图标：未登录显示默认图标，登录后显示用户头像
+        UserIconDefault.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
+        UserAvatarImage.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
+
+        // 右侧上方文字：未登录"游客"，登录后"用户"
+        UserRoleText.Text = LocalizationService.Instance[isLoggedIn ? "Window.User" : "Window.Guest"];
+
+        // 下方名称：未登录"Guest Mode"，登录后显示用户名
+        UserDisplayNameText.Text = isLoggedIn && user != null && !string.IsNullOrEmpty(user.Username)
+            ? user.Username
+            : LocalizationService.Instance["Window.GuestMode"];
+
+        // 已登录时异步加载用户头像
+        if (isLoggedIn && user != null)
+            LoadUserAvatar(user);
+    }
+
+    /// <summary>
+    /// 加载用户头像到左下角图标区。
+    /// 头像 URL 是服务器返回的相对路径，需拼接 API 基础地址构成完整地址后异步加载。
+    /// </summary>
+    private void LoadUserAvatar(UserInfo user)
+    {
+        var relativeUrl = user.Image?.Url;
+        if (string.IsNullOrEmpty(relativeUrl))
+        {
+            UserAvatarImage.Source = null;
+            return;
+        }
+
+        try
+        {
+            var fullUrl = UserApiService.BaseUrl + relativeUrl;
+            var bitmap = new BitmapImage(new Uri(fullUrl));
+            bitmap.DecodeFailed += (_, _) =>
+                Debug.WriteLine($"[MainWindow] 用户头像解码失败: {fullUrl}");
+            UserAvatarImage.Source = bitmap;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[MainWindow] 加载用户头像失败: {ex.Message}");
         }
     }
 
@@ -559,6 +641,13 @@ public partial class MainWindow : Window
             _viewModel.SelectedNavigationItem = navItem;
         }
     }
+
+    /// <summary>
+    /// 获取当前可见的 SettingsUserControl（如果已创建并正在显示）。
+    /// 登录成功后 LoginPopup 调用此方法直接刷新登录状态。
+    /// </summary>
+    public SettingsUserControl? GetCurrentSettingsView()
+        => _viewModel.CurrentView as SettingsUserControl;
 
     // ════════════════════════════════════════════════════════════════
     //  窗口生命周期

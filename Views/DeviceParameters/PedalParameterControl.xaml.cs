@@ -945,7 +945,7 @@ public partial class PedalParameterControl : UserControl
         var editPopup = new EditPresetPopup { DeviceType = Models.Usb.DeviceType.Pedal };
         rootPanel.Children.Add(editPopup);
 
-        editPopup.EditConfirmed += (_, edited) =>
+        editPopup.EditConfirmed += async (_, edited) =>
         {
             var presetName = edited.Name;
             var newPreset = new PresetItem
@@ -954,11 +954,18 @@ public partial class PedalParameterControl : UserControl
                 Games = edited.Games,
                 PedalParameters = CaptureCurrentParameters(),
                 IsPersonal = true,
-                DeviceType = Models.Usb.DeviceType.Pedal
+                DeviceType = Models.Usb.DeviceType.Pedal,
+                SyncToCloud = edited.SyncToCloud,
+                CloudDocumentId = edited.CloudDocumentId
             };
 
             var currentPersonal = App.PresetService.LoadPersonalPresets(Models.Usb.DeviceType.Pedal);
             currentPersonal.Add(newPreset);
+
+            // 勾选"同步至云端" → 创建云端预设（新预设无 documentId，走新增），返回的 documentId 写回本地一并保存
+            if (newPreset.SyncToCloud)
+                await PresetCloudSyncHelper.SyncToCloudAsync(newPreset);
+
             App.PresetService.SavePersonalPresets(currentPersonal, Models.Usb.DeviceType.Pedal);
 
             var popup = GetPresetListPopup();
@@ -989,7 +996,8 @@ public partial class PedalParameterControl : UserControl
 
     private void ExportButton_Click(object sender, MouseButtonEventArgs e)
     {
-        if (!_isAppliedPresetPersonal) return;
+        // 个人预设和云预设均可导出（官方预设不可）
+        if (!_isAppliedPresetPersonal && !IsAppliedPresetCloud()) return;
 
         var dlg = new Microsoft.Win32.SaveFileDialog
         {
@@ -1021,9 +1029,12 @@ public partial class PedalParameterControl : UserControl
         try
         {
             var snapshot = _appliedPresetParameters ?? CaptureCurrentParameters();
+            // 游戏列表：个人预设从本地取，云预设从弹窗的云预设列表取，都取不到则为空
             var games = App.PresetService?.LoadPersonalPresets(Models.Usb.DeviceType.Pedal)
                 .FirstOrDefault(p => string.Equals(p.Name, _currentPresetName, StringComparison.OrdinalIgnoreCase))
-                ?.Games ?? [];
+                ?.Games
+                ?? GetPresetListPopup()?.FindPreset(_currentPresetName)?.Games
+                ?? [];
             var exportItem = new PresetItem
             {
                 Name = _currentPresetName,
@@ -1082,6 +1093,11 @@ public partial class PedalParameterControl : UserControl
             return mainWindow.GetPresetListPopup(Models.Usb.DeviceType.Pedal);
         return null;
     }
+
+    /// <summary>当前应用的是否为云预设（通过预设列表弹窗的云预设列表判断）</summary>
+    private bool IsAppliedPresetCloud()
+        => _currentPresetName != null
+           && GetPresetListPopup()?.IsCloudPreset(_currentPresetName) == true;
 
     private void PresetListButton_Click(object sender, MouseButtonEventArgs e)
     {
@@ -1205,7 +1221,7 @@ public partial class PedalParameterControl : UserControl
             }
         }
 
-        var isExportEnabled = _isAppliedPresetPersonal;
+        var isExportEnabled = _isAppliedPresetPersonal || IsAppliedPresetCloud();
         if (ExportButtonPath != null)
         {
             if (isExportEnabled)
