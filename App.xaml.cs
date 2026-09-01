@@ -68,6 +68,10 @@ public partial class App : Application
         var mainWindow = new MainWindow();
         SessionEnding += (_, _) => { IsSessionEnding = true; };
 
+        // Splash 仍在展示：主线程统一把可能导致首次卡顿的重型 UI 预热完毕，
+        // 全部完成后再关闭 Splash、显示主窗口，保证主界面与后续切换零卡顿
+        mainWindow.PreloadAndWarmUp();
+
         if (HITAPEX.Properties.Settings.Default.StartMinimizedToTray)
         {
             CloseSplash();

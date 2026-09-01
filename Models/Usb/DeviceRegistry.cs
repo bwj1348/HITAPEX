@@ -24,6 +24,13 @@ public static class DeviceRegistry
             NormalMode = new VidPidPair(0xFF86, 0xFF0C),
             UpdateMode = new VidPidPair(0xFF86, 0xFF0D),
         },
+        new DeviceDescriptor
+        {
+            ModelName = "A1基座",
+            DeviceType = DeviceType.Base,
+            NormalMode = new VidPidPair(0x1A86, 0xFE0C),
+            UpdateMode = new VidPidPair(0x1A86, 0xFE0D),
+        },
         // 后续新增设备在此注册，例如：
         // new DeviceDescriptor
         // {

@@ -411,7 +411,11 @@
         <Storyboard x:Key="FadeInStoryboard">
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
                              From="0" To="1"
-                             Duration="0:0:0.2"/>
+                             Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
 
         <Style x:Key="FirmwareListItemStyle" TargetType="ContentControl">
@@ -1273,11 +1277,14 @@
                                           Margin="0,0,0,10" SizeChanged="InputBorder_SizeChanged">
                                         <Path x:Name="UsernameInputPath" Stretch="Fill" Fill="#33EEEEEE"/>
                                         <TextBox x:Name="NewUsernameTextBox"
-                                                 Text="{lex:Loc Settings.NewUsernamePlaceholder}"
-                                                 Foreground="#99EEEEEE" FontSize="16"
+                                                 Foreground="#EEEEEE" FontSize="16"
                                                  CaretBrush="#EEEEEE" Background="Transparent" BorderThickness="0"
                                                  VerticalAlignment="Center" Margin="15,0,40,0"
                                                  PreviewMouseLeftButtonDown="Input_PreviewMouseLeftButtonDown"/>
+                                        <TextBlock x:Name="NewUsernamePlaceholder" Grid.Column="0"
+                                                   Text="{lex:Loc Settings.NewUsernamePlaceholder}"
+                                                   Foreground="#99EEEEEE" FontSize="16"
+                                                   VerticalAlignment="Center" Margin="15,0,0,0" IsHitTestVisible="False"/>
                                         <Button Width="17" Height="17"
                                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,15,0"
                                                 Cursor="Hand" Click="ClearInputButton_Click" Tag="NewUsernameTextBox">

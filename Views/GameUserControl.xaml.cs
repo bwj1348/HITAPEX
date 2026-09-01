@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using HITAPEX.Controls;
 using HITAPEX.Models;
 using HITAPEX.Models.Usb;
@@ -52,6 +53,9 @@ public partial class GameUserControl : UserControl
     private GameItem? _selectedGame;
     private GameDataService? _gameDataService;
     private CancellationTokenSource? _loadGamesCts;
+
+    /// <summary>遥测设置的 UDP 转发目标条目集合。</summary>
+    private readonly ObservableCollection<ForwardTargetRow> _forwardTargetRows = new();
     
     private DispatcherTimer? _telemetryAnimationTimer;
     private int _packetCount = 0;
@@ -62,6 +66,9 @@ public partial class GameUserControl : UserControl
     public GameUserControl()
     {
         InitializeComponent();
+
+        // 转发目标列表的数据源
+        ForwardTargetItemsControl.ItemsSource = _forwardTargetRows;
     }
 
     private void GameUserControl_Loaded(object sender, RoutedEventArgs e)
@@ -231,9 +238,10 @@ public partial class GameUserControl : UserControl
             CustomLaunchRadio.IsChecked = true;
             SteamLaunchRadio.IsChecked = false;
             CustomPathPanel.Visibility = Visibility.Visible;
-            CustomPathText.Text = !string.IsNullOrEmpty(game.LaunchPath)
-                ? game.LaunchPath
-                : LocalizationService.Instance["Game.SelectGamePath"];
+            if (!string.IsNullOrEmpty(game.LaunchPath))
+                CustomPathText.Text = game.LaunchPath;
+            else
+                SetCustomPathPlaceholder();
         }
         else
         {
@@ -260,6 +268,53 @@ public partial class GameUserControl : UserControl
             SetLaunchButtonBinding("Common.NotInstalled");
             TelemetryConfigButton.Visibility = Visibility.Collapsed;
         }
+
+        // 根据当前游戏是否需要 UDP 遥测配置，控制"遥测设置"选项卡的显示
+        UpdateTelemetrySettingsTabVisibility(game);
+    }
+
+    /// <summary>
+    /// 控制"遥测设置"选项卡的显示：仅对通过 UDP 传输遥测数据、需要配置端口的游戏显示。
+    /// </summary>
+    private void UpdateTelemetrySettingsTabVisibility(GameItem game)
+    {
+        var shouldShow = game.NeedUdpPortConfig;
+        TelemetrySettingsTabItem.Visibility = shouldShow ? Visibility.Visible : Visibility.Collapsed;
+
+        // 若隐藏的选项卡正处于选中状态，切回"设备配置"选项卡，避免空内容
+        if (!shouldShow && ConfigTabControl.SelectedItem == TelemetrySettingsTabItem)
+        {
+            ConfigTabControl.SelectedIndex = 0;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════
+    // 遥测设置 — UDP 转发目标：添加 / 删除
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// "添加转发目标"文本点击：新增一个空的转发目标条目。
+    /// </summary>
+    private void AddForwardTargetText_Click(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        _forwardTargetRows.Add(new ForwardTargetRow
+        {
+            Enabled = true,
+            Port = string.Empty,
+            Ip = string.Empty
+        });
+    }
+
+    /// <summary>
+    /// 删除按钮点击：移除所属转发目标条目。
+    /// </summary>
+    private void DeleteForwardTargetButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: ForwardTargetRow row })
+        {
+            _forwardTargetRows.Remove(row);
+        }
     }
 
     /// <summary>
@@ -272,6 +327,20 @@ public partial class GameUserControl : UserControl
         {
             Source = LocalizationService.Instance,
             Path = new PropertyPath($"[{locKey}]"),
+            Mode = BindingMode.OneWay
+        });
+    }
+
+    /// <summary>
+    /// 通过绑定设置自定义路径的占位提示文字（而非直接赋值），
+    /// 避免清除 XAML 中的 {lex:Loc} 绑定，保证语言切换时占位文字同步更新。
+    /// </summary>
+    private void SetCustomPathPlaceholder()
+    {
+        CustomPathText.SetBinding(TextBlock.TextProperty, new Binding
+        {
+            Source = LocalizationService.Instance,
+            Path = new PropertyPath("[Game.SelectGamePath]"),
             Mode = BindingMode.OneWay
         });
     }
@@ -599,7 +668,7 @@ public partial class GameUserControl : UserControl
             }
             else
             {
-                CustomPathText.Text = LocalizationService.Instance["Game.SelectGamePath"];
+                SetCustomPathPlaceholder();
             }
         }
         else
@@ -1567,4 +1636,46 @@ public partial class GameUserControl : UserControl
                 popup.SelectAndScrollToPreset(presetName);
         });
     }
+
+    private void ConfigTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+
+    }
+}
+
+/// <summary>
+/// 遥测设置中一个 UDP 转发目标条目的数据模型。
+/// 实现 INotifyPropertyChanged 以便实时反映用户的端口 / IP 输入。
+/// </summary>
+internal sealed class ForwardTargetRow : INotifyPropertyChanged
+{
+    private bool _enabled;
+    private string _port = string.Empty;
+    private string _ip = string.Empty;
+
+    /// <summary>该转发目标是否启用。</summary>
+    public bool Enabled
+    {
+        get => _enabled;
+        set { if (_enabled != value) { _enabled = value; OnPropertyChanged(); } }
+    }
+
+    /// <summary>转发目标端口号。</summary>
+    public string Port
+    {
+        get => _port;
+        set { if (_port != value) { _port = value; OnPropertyChanged(); } }
+    }
+
+    /// <summary>转发目标 IP 地址。</summary>
+    public string Ip
+    {
+        get => _ip;
+        set { if (_ip != value) { _ip = value; OnPropertyChanged(); } }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }

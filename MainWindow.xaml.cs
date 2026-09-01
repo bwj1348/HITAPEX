@@ -1,9 +1,13 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using HITAPEX.Helpers;
@@ -86,12 +90,51 @@ public partial class MainWindow : Window
         {
             popup = new PresetListPopup { DeviceType = deviceType };
             _presetListPopups[deviceType] = popup;
-            // 将弹窗添加到窗口的内容面板，使其成为视觉树的一部分
-            if (Content is Panel rootPanel)
-                rootPanel.Children.Add(popup);
         }
+        // 若弹窗尚未挂到窗口内容面板（含启动预热预创建的情况），在此补挂载
+        if (popup.Parent == null && Content is Panel rootPanel)
+            rootPanel.Children.Add(popup);
         popup.Show();
         return popup;
+    }
+
+    /// <summary>
+    /// 启动预热：在 Splash 展示期间，把运行时可能导致首次卡顿的重型 UI 全部提前完成构图，
+    /// 之后再显示主窗口。覆盖范围：
+    ///   1. 全部 5 个导航视图（Home / Device / Game / Help / Settings）——同一实例随后被导航复用；
+    ///   2. Device 视图内的三个设备参数子页面（基座 / 面盘 / 踏板）；
+    ///   3. 各类设备共用的预设列表弹窗（按设备类型缓存，同一实例随后被 ShowPresetListPopup 复用）。
+    /// 网络 / 磁盘类异步工作（登录态恢复、预设刷新、游戏列表）已是后台任务，不在此阻塞范围内。
+    /// </summary>
+    public void PreloadAndWarmUp()
+    {
+        var stopwatch = Stopwatch.StartNew();
+
+        // 1. 预创建 + 预热全部导航视图
+        foreach (var name in new[] { "Home", "Device", "Game", "Help", "Settings" })
+        {
+            UiPreloader.WarmUp(_viewModel.PreloadView(name));
+        }
+
+        // 2. 预热 Device 视图内的三个设备参数子页面
+        if (_viewModel.GetView("Device") is DeviceUserControl deviceView)
+        {
+            UiPreloader.WarmUp(deviceView.BaseControl);
+            UiPreloader.WarmUp(deviceView.SteeringWheelControl);
+            UiPreloader.WarmUp(deviceView.PedalControl);
+        }
+
+        // 3. 预创建 + 预热各类设备共用的预设列表弹窗
+        foreach (var type in new[] { DeviceType.Base, DeviceType.Wheel, DeviceType.Pedal, DeviceType.Shifter })
+        {
+            if (_presetListPopups.ContainsKey(type)) continue;
+            var popup = new PresetListPopup { DeviceType = type };
+            _presetListPopups[type] = popup;
+            UiPreloader.WarmUp(popup);
+        }
+
+        stopwatch.Stop();
+        Debug.WriteLine($"[MainWindow] UI 预热完成，耗时 {stopwatch.ElapsedMilliseconds}ms");
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -109,7 +152,10 @@ public partial class MainWindow : Window
         // 3. 加载 XAML 编译后的 BAML → 构建视觉树 → 初始化 x:Name 字段
         InitializeComponent();
 
-        // 4. 初始化系统托盘图标
+        // 4. 订阅视图切换事件：顶级页面切换时统一播放淡入动效
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+
+        // 5. 初始化系统托盘图标
         InitializeTrayIcon();
 
         // 5. 订阅登录状态变化事件——登录/退出时实时刷新左下角用户信息区
@@ -118,6 +164,27 @@ public partial class MainWindow : Window
 
         // 6. 订阅 Loaded 事件——窗口完成首次布局和渲染后执行一次性初始化
         Loaded += OnMainWindowLoaded;
+
+        // 7. 订阅窗口句柄初始化事件——用于挂载 Win32 窗口过程，监听 DPI 变化
+        SourceInitialized += OnSourceInitialized;
+    }
+
+    /// <summary>
+    /// 顶级页面切换的统一淡入动效：每当 <see cref="MainWindowViewModel.CurrentView"/> 变化，
+    /// 让新视图从透明淡入（与设备子页切换一致的视觉效果语言）。
+    /// 首次启动（构造时已选中 Home）不触发——此时尚未订阅。
+    /// </summary>
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainWindowViewModel.CurrentView)) return;
+        if (MainContentHost == null) return;
+
+        var fadeIn = FindResource("FadeInAnimation") as Storyboard;
+        if (fadeIn == null) return;
+
+        MainContentHost.BeginAnimation(OpacityProperty, null);
+        MainContentHost.Opacity = 0;
+        fadeIn.Begin(MainContentHost);
     }
 
     /// <summary>
@@ -151,7 +218,115 @@ public partial class MainWindow : Window
 
         // ── 初始化左下角用户信息区（根据当前登录状态显示默认图标/头像、游客/用户文字） ──
         RefreshLoginState();
+
+        // ── 自动缩放窗口内容以适配当前显示器工作区（1920×1200 @150% 等高分比场景） ──
+        ApplyAutoScale();
+
+        // ── 订阅语言切换：刷新左下角用户信息文本（角色"用户/游客"、名称） ──
+        LocalizationService.Instance.PropertyChanged += OnLocalizationChangedForUserInfo;
     }
+
+    // ════════════════════════════════════════════════════════════════
+    //  高分屏/显示缩放适配（display scaling）
+    //  窗口为固定像素布局（Width=1500 Height=950）设计。当当前显示器缩放比例较高时
+    // （例如 1920×1200 且系统推荐 150% 缩放），可用逻辑分辨率(DIP)只有 1280×800，
+    //  固定窗口会超出屏幕导致内容被截断。这里通过 LayoutTransform 把整个窗口内容
+    //  等比缩放到恰好铺满（不超过）当前显示器工作区，保证界面完整显示且布局不变形。
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>窗口设计基准尺寸（与 MainWindow.xaml 中 Width/Height 一致）</summary>
+    private const double DesignWidth = 1500;
+    private const double DesignHeight = 950;
+
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        var hwnd = new WindowInteropHelper(this).Handle;
+        if (HwndSource.FromHwnd(hwnd) is { } source)
+            source.AddHook(WndProc);
+    }
+
+    /// <summary>
+    /// Win32 窗口过程：监听 DPI/显示变化消息，触发界面重新缩放。
+    /// WM_DPICHANGED 在缩放比例/DPI 改变时发送；WM_DISPLAYCHANGE 在分辨率/显示器配置变化时发送。
+    /// </summary>
+    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        const int WM_DISPLAYCHANGE = 0x007E;
+        const int WM_DPICHANGED = 0x02E0;
+
+        if (msg == WM_DPICHANGED || msg == WM_DISPLAYCHANGE)
+            Dispatcher.BeginInvoke(ApplyAutoScale);
+
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// 依据当前窗口所在显示器的可用工作区，计算缩放比例并应用到根布局，
+    /// 同时按比例设置窗口宽高并居中。窗口四周保留 <see cref="ScaleMargin"/> 边距。
+    /// </summary>
+    private void ApplyAutoScale()
+    {
+        if (RootLayout == null) return;
+
+        // 四周各留边距（DIP），避免窗口贴边
+        const double ScaleMargin = 20;
+
+        var work = GetMonitorWorkAreaDips(this);              // 当前显示器工作区（DIP）
+        if (work.Width <= 0 || work.Height <= 0) return;
+
+        double availW = Math.Max(1, work.Width - ScaleMargin * 2);
+        double availH = Math.Max(1, work.Height - ScaleMargin * 2);
+
+        // 等比缩放：在扣除边距后的可用区域内取宽度/高度缩放比的最小值，且不超过 1.0
+        double scale = Math.Min(availW / DesignWidth, availH / DesignHeight);
+        scale = Math.Min(1.0, Math.Max(0.1, scale));
+
+        RootLayout.LayoutTransform = new ScaleTransform(scale, scale);
+
+        Width = DesignWidth * scale;
+        Height = DesignHeight * scale;
+
+        // WindowStartupLocation=CenterScreen 只在首次 Show 时生效，重设尺寸后手动居中
+        Left = work.Left + (work.Width - Width) / 2;
+        Top = work.Top + (work.Height - Height) / 2;
+    }
+
+    /// <summary>获取当前窗口所在显示器的可用工作区，换算为设备无关像素(DIP)。</summary>
+    private static System.Windows.Rect GetMonitorWorkAreaDips(Window window)
+    {
+        var dpi = VisualTreeHelper.GetDpi(window);
+        double sx = dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
+        double sy = dpi.DpiScaleY > 0 ? dpi.DpiScaleY : 1.0;
+
+        var hMonitor = MonitorFromWindow(new WindowInteropHelper(window).Handle, 2 /*MONITOR_DEFAULTTONEAREST*/);
+        var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+        bool ok = GetMonitorInfo(hMonitor, ref info);
+        RECT rc = ok ? info.rcWork : info.rcMonitor;
+
+        return new System.Windows.Rect(
+            rc.Left / sx,
+            rc.Top / sy,
+            (rc.Right - rc.Left) / sx,
+            (rc.Bottom - rc.Top) / sy);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RECT { public int Left, Top, Right, Bottom; }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MONITORINFO
+    {
+        public int cbSize;
+        public RECT rcMonitor;
+        public RECT rcWork;
+        public uint dwFlags;
+    }
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
     // ════════════════════════════════════════════════════════════════
     //  左下角用户信息区
@@ -185,6 +360,23 @@ public partial class MainWindow : Window
         UserIconDefault.Visibility = isLoggedIn ? Visibility.Collapsed : Visibility.Visible;
         UserAvatarImage.Visibility = isLoggedIn ? Visibility.Visible : Visibility.Collapsed;
 
+        // 角色/名称文本
+        UpdateUserInfoTexts();
+
+        // 已登录时异步加载用户头像
+        if (isLoggedIn && user != null)
+            LoadUserAvatar(user);
+    }
+
+    /// <summary>
+    /// 仅刷新左下角用户信息中的文本（角色"用户/游客"与名称），供语言切换时调用，
+    /// 不触发头像重载。
+    /// </summary>
+    private void UpdateUserInfoTexts()
+    {
+        var isLoggedIn = App.UserApi?.IsLoggedIn == true;
+        var user = App.UserApi?.CurrentUser;
+
         // 右侧上方文字：未登录"游客"，登录后"用户"
         UserRoleText.Text = LocalizationService.Instance[isLoggedIn ? "Window.User" : "Window.Guest"];
 
@@ -192,10 +384,13 @@ public partial class MainWindow : Window
         UserDisplayNameText.Text = isLoggedIn && user != null && !string.IsNullOrEmpty(user.Username)
             ? user.Username
             : LocalizationService.Instance["Window.GuestMode"];
+    }
 
-        // 已登录时异步加载用户头像
-        if (isLoggedIn && user != null)
-            LoadUserAvatar(user);
+    /// <summary>语言切换（PropertyChanged=null）时刷新左下角用户信息文本。</summary>
+    private void OnLocalizationChangedForUserInfo(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == null)
+            UpdateUserInfoTexts();
     }
 
     /// <summary>
@@ -513,22 +708,14 @@ public partial class MainWindow : Window
     // ════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// 自定义标题栏的鼠标左键事件：
-    /// 双击 → 切换最大化/还原；单击/拖拽 → 实现无边框窗口的拖拽移动。
-    /// 因为 WindowStyle="None" 隐藏了系统标题栏，必须手动实现这两个行为。
+    /// 自定义标题栏的鼠标左键按下事件：单击/拖拽实现无边框窗口的拖拽移动
+    /// （不响应双击——不切换最大化，双击仅执行拖拽的首次按下，不改变窗口状态）。
+    /// 因为 WindowStyle="None" 隐藏了系统标题栏，必须手动实现拖拽行为。
     /// </summary>
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (e.ClickCount == 2)
-        {
-            // 双击: 切换最大化/还原（模拟标准 Windows 窗口行为）
-            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-        }
-        else
-        {
-            // 单击/拖拽: WPF 内置的无边框窗口拖拽 API
-            DragMove();
-        }
+        // 单击/拖拽: WPF 内置的无边框窗口拖拽 API
+        DragMove();
     }
 
     /// <summary>最小化按钮点击 → 窗口最小化到任务栏</summary>

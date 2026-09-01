@@ -50,6 +50,9 @@ public class GameItem : INotifyPropertyChanged
     /// <summary>是否需要为该游戏部署遥测配置（DLL 注入、XML 修改、文件复制等）。true 时 GameUserControl 显示"配置"按钮</summary>
     public bool NeedsTelemetryConfig { get; set; }
 
+    /// <summary>是否通过 UDP 传输遥测数据、需要配置监听/转发 UDP 端口。true 时 GameUserControl 显示"遥测设置"选项卡</summary>
+    public bool NeedUdpPortConfig { get; set; }
+
     /// <summary>自定义启动路径（仅当 <see cref="LaunchMode"/> 为 CustomPath 时有效）。指向游戏可执行文件的完整路径</summary>
     public string LaunchPath { get; set; } = "";
 

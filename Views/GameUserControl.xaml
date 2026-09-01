@@ -110,6 +110,117 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- 遥测设置：与端口输入框同风格的文本输入样式（IP 地址输入框使用） -->
+        <Style x:Key="TelemetryUdpInputStyle" TargetType="TextBox">
+            <Setter Property="Width" Value="215"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontFamily" Value="{StaticResource OrbitronFont}"/>
+            <Setter Property="CaretBrush" Value="#EEEEEE"/>
+            <Setter Property="Padding" Value="10,0,10,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid Height="26">
+                            <Path Data="M5 11V31H231L237 25V5H11L5 11Z" Fill="#EEEEEE" Opacity="0.2" Stretch="Fill">
+                                <Path.Effect>
+                                    <DropShadowEffect Color="#000000" Opacity="0.25" BlurRadius="5" ShadowDepth="2"/>
+                                </Path.Effect>
+                            </Path>
+                            <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center" Background="Transparent"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 遥测设置：启用/禁用切换选择框（指定 SVG 图形） -->
+        <Style x:Key="TelemetryUdpToggleStyle" TargetType="CheckBox">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Grid Width="26" Height="26">
+                            <Path x:Name="BoxFill" Data="M6 0H26V20L20 26H0V6L6 0Z" Fill="#33EEEEEE" Stretch="Fill"/>
+                            <Path x:Name="BoxStroke" Data="M25.5 0.5V19.793L19.793 25.5H0.5V6.20703L6.20703 0.5H25.5Z" Stroke="#80EEEEEE" StrokeThickness="1" Stretch="Fill"/>
+                            <Path x:Name="CheckMark" Data="M7 12 L11 16 L19 8" Stroke="#EEEEEE" StrokeThickness="2"
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="BoxFill" Property="Fill" Value="#80C60E0E"/>
+                                <Setter TargetName="BoxStroke" Property="Stroke" Value="#C60E0E"/>
+                                <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 遥测设置：图标按钮（删除按钮）通用透明模板 -->
+        <Style x:Key="IconButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="16"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 遥测设置：单个转发目标的横向条目模板 -->
+        <DataTemplate x:Key="ForwardTargetRowTemplate">
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <CheckBox Grid.Column="0" VerticalAlignment="Center"
+                          IsChecked="{Binding Enabled}" Style="{StaticResource TelemetryUdpToggleStyle}"/>
+
+                <controls:PortStepperControl Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center"
+                                             Port="{Binding Port, UpdateSourceTrigger=PropertyChanged}" Width="215"/>
+
+                <TextBlock Grid.Column="2" Margin="10,0,0,0" VerticalAlignment="Center"
+                           Text="{lex:Loc TelemetryUdp.IpAddress}" FontSize="16" Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}"/>
+
+                <TextBox Grid.Column="3" Margin="10,0,0,0" VerticalAlignment="Center"
+                         Text="{Binding Ip, UpdateSourceTrigger=PropertyChanged}"
+                         Style="{StaticResource TelemetryUdpInputStyle}"/>
+
+                <Button Grid.Column="4" Margin="10,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"
+                        Style="{StaticResource IconButtonStyle}" Click="DeleteForwardTargetButton_Click"
+                        ToolTip="{lex:Loc Common.Delete}">
+                    <Path Width="13" Height="14" Stretch="Uniform"
+                          Data="M0.650024 3.41992H11.7269 M2.03455 3.41992H10.3422V11.7274C10.3422 11.9722 10.245 12.207 10.0719 12.3801C9.89876 12.5532 9.66398 12.6505 9.41916 12.6505H2.95762C2.71281 12.6505 2.47802 12.5532 2.30491 12.3801C2.1318 12.207 2.03455 11.9722 2.03455 11.7274V3.41992Z M3.88074 3.41955V2.95803C3.88074 2.346 4.12387 1.75905 4.55664 1.32628C4.98942 0.893516 5.57639 0.650391 6.18843 0.650391C6.80047 0.650391 7.38745 0.893516 7.82021 1.32628C8.25298 1.75905 8.49612 2.346 8.49612 2.95803V3.41955 M4.80383 5.26562V10.3424 M7.57312 5.26562V10.3424"
+                          Stroke="#EEEEEE" StrokeThickness="1.3"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                </Button>
+            </Grid>
+        </DataTemplate>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -156,9 +267,11 @@
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Height="82" Margin="0,0,0,20">
-                        <Canvas ClipToBounds="False">
+                        <Canvas Width="580" Height="82" HorizontalAlignment="Left" ClipToBounds="True">
                             <TextBlock x:Name="GameTitleText2" Text="" FontSize="64" FontWeight="Black" 
-                                       FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic" Margin="5,5,0,0">
+                                       FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic" Margin="5,5,0,0"
+                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Width="580"
+                                       lex:MarqueeBehavior.IsEnabled="True">
                                 <TextBlock.Effect>
                                     <DropShadowEffect Color="#FF003C" BlurRadius="5" ShadowDepth="0" Opacity="1"/>
                                 </TextBlock.Effect>
@@ -172,7 +285,8 @@
 
                             <TextBlock x:Name="GameTitleText" Text="" FontSize="64" FontWeight="Black" 
                                        Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" FontStyle="Italic"
-                                       TextTrimming="None" TextWrapping="NoWrap"/>
+                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Width="580" HorizontalAlignment="Left"
+                                       lex:MarqueeBehavior.IsEnabled="True"/>
                         </Canvas>
                     </Grid>
 
@@ -292,14 +406,14 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Column="1" Margin="10,0,0,0" Width="700">
+            <Border Grid.Column="1" Margin="10,0,0,0" Width="720">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <TabControl x:Name="ConfigTabControl" Grid.Row="0" Grid.RowSpan="2" Background="Transparent" BorderThickness="0">
+                    <TabControl x:Name="ConfigTabControl" Grid.Row="0" Grid.RowSpan="2" Background="Transparent" BorderThickness="0" SelectionChanged="ConfigTabControl_SelectionChanged">
                         <TabControl.Template>
                             <ControlTemplate TargetType="TabControl">
                                 <Grid>
@@ -320,7 +434,7 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="TabItem">
                                             <Grid x:Name="TabItemGrid" Margin="30,0,0,0" >
-                                                <Border x:Name="TabBorder" Background="Transparent" BorderThickness="0" MinWidth="133" Height="39" Padding="20,0" HorizontalAlignment="Center">
+                                                <Border x:Name="TabBorder" Background="Transparent" BorderThickness="0" MinWidth="133" Height="39" Padding="10,0" HorizontalAlignment="Center">
                                                     <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="0" TextBlock.FontSize="22" TextBlock.FontWeight="Medium" TextBlock.Foreground="#EEEEEE" TextBlock.FontStyle="Italic"/>
                                                 </Border>
                                                 <Border x:Name="UnderlineGrid" Visibility="Collapsed"
@@ -376,7 +490,7 @@
                                     </StackPanel>
                                 </Grid>
 
-                                <Grid Grid.Row="1" Margin="0,0,0,0">
+                                <Grid Grid.Row="1" Margin="0,0,0,0" Width="700" HorizontalAlignment="Right">
                                     <Grid.Resources>
                                         <Style x:Key="TechPresetComboBoxStyle" TargetType="ComboBox">
                                             <Setter Property="Background" Value="Transparent"/>
@@ -597,7 +711,7 @@
                                                                 </Border.OpacityMask>
                                                             </Border>
 
-                                                            <Path Data="M0 9V102H321L330 93V0H9L0 9Z" >
+                                                            <Path Data="M0 9V102H321L330 93V0H9L0 9Z" Stroke="#33EEEEEE" StrokeThickness="2">
                                                                 <Path.Fill>
                                                                     <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
                                                                         <GradientStop Color="#33607079" Offset="0"/>
@@ -612,47 +726,6 @@
                                                                     <BlurEffect Radius="45" RenderingBias="Performance"/>
                                                                 </Path.Effect>
                                                             </Path>
-
-                                                            <Grid IsHitTestVisible="False">
-                                                                <Path Data="M0 9 L0 102" StrokeThickness="1.5">
-                                                                    <Path.Stroke>
-                                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="0.5"/>
-                                                                            <GradientStop Color="#00EEEEEE" Offset="1"/>
-                                                                        </LinearGradientBrush>
-                                                                    </Path.Stroke>
-                                                                </Path>
-                                                                <Path Data="M0 102 L321 102" StrokeThickness="1.5">
-                                                                    <Path.Stroke>
-                                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                                            <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="0.2"/>
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                                                                        </LinearGradientBrush>
-                                                                    </Path.Stroke>
-                                                                </Path>
-                                                                <Path Data="M330 0 L330 93" StrokeThickness="1.5">
-                                                                    <Path.Stroke>
-                                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                                            <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="0.5"/>
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                                                                        </LinearGradientBrush>
-                                                                    </Path.Stroke>
-                                                                </Path>
-                                                                <Path Data="M9 0 L330 0" StrokeThickness="1.5">
-                                                                    <Path.Stroke>
-                                                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                                                            <GradientStop Color="#4DEEEEEE" Offset="0.8"/>
-                                                                            <GradientStop Color="#00EEEEEE" Offset="1"/>
-                                                                        </LinearGradientBrush>
-                                                                    </Path.Stroke>
-                                                                </Path>
-                                                                <Path Data="M0 9 L9 0" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                                                                <Path Data="M321 102 L330 93" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                                                            </Grid>
 
                                                             <Grid Margin="0">
                                                                 <Grid.ColumnDefinitions>
@@ -747,12 +820,12 @@
                                         </Border.OpacityMask>
                                     </Border>
 
-                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Opacity="0.2">
+                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Stroke="#33EEEEEE" StrokeThickness="2">
                                         <Path.Fill>
                                             <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.5,0.5">
-                                                <GradientStop Color="#607079" Offset="0"/>
-                                                <GradientStop Color="#3F4A50" Offset="0.4375"/>
-                                                <GradientStop Color="#282D30" Offset="1"/>
+                                                <GradientStop Color="#33607079" Offset="0"/>
+                                                <GradientStop Color="#333F4A50" Offset="0.4375"/>
+                                                <GradientStop Color="#33282D30" Offset="1"/>
                                             </LinearGradientBrush>
                                         </Path.Fill>
                                     </Path>
@@ -762,47 +835,6 @@
                                             <BlurEffect Radius="45" RenderingBias="Performance"/>
                                         </Path.Effect>
                                     </Path>
-
-                                    <Grid IsHitTestVisible="False">
-                                        <Path Data="M0 15 L0 378" StrokeThickness="1.5">
-                                            <Path.Stroke>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                                    <GradientStop Color="#4DEEEEEE" Offset="0.5"/>
-                                                    <GradientStop Color="#00EEEEEE" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Path.Stroke>
-                                        </Path>
-                                        <Path Data="M0 378 L663 378" StrokeThickness="1.5">
-                                            <Path.Stroke>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                    <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                                    <GradientStop Color="#4DEEEEEE" Offset="0.2"/>
-                                                    <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Path.Stroke>
-                                        </Path>
-                                        <Path Data="M678 0 L678 363" StrokeThickness="1.5">
-                                            <Path.Stroke>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                                    <GradientStop Color="#00EEEEEE" Offset="0"/>
-                                                    <GradientStop Color="#4DEEEEEE" Offset="0.5"/>
-                                                    <GradientStop Color="#4DEEEEEE" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Path.Stroke>
-                                        </Path>
-                                        <Path Data="M15 0 L678 0" StrokeThickness="1.5">
-                                            <Path.Stroke>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                                    <GradientStop Color="#4DEEEEEE" Offset="0"/>
-                                                    <GradientStop Color="#4DEEEEEE" Offset="0.8"/>
-                                                    <GradientStop Color="#00EEEEEE" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Path.Stroke>
-                                        </Path>
-                                        <Path Data="M0 15 L15 0" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                                        <Path Data="M663 378 L678 363" Stroke="#4DEEEEEE" StrokeThickness="1.5"/>
-                                    </Grid>
                                 </Grid>
 
                                 <Grid Width="678" Height="378" HorizontalAlignment="Right">
@@ -810,7 +842,7 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
                                     
-                                    <ScrollViewer x:Name="TelemetryScrollViewer" VerticalScrollBarVisibility="Visible" 
+                                    <ScrollViewer x:Name="TelemetryScrollViewer" VerticalScrollBarVisibility="Auto" 
                                                   HorizontalScrollBarVisibility="Disabled">
                                         <!--<ScrollViewer.OpacityMask>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
@@ -863,7 +895,7 @@
                                                         </Border.OpacityMask>
 
                                                         <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" 
-                                            Margin="20,20,15,20" 
+                                            Margin="20,20,20,20" 
                                             CanContentScroll="{TemplateBinding CanContentScroll}" 
                                             CanHorizontallyScroll="False" 
                                             CanVerticallyScroll="True" 
@@ -1014,6 +1046,136 @@
                                                 <TextBlock Grid.Row="12" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
                                             </Grid>
                                         </Grid>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Grid>
+                        </TabItem>
+
+                        <TabItem x:Name="TelemetrySettingsTabItem" Header="{lex:Loc Game.TelemetrySettings}" Visibility="Collapsed">
+                            <Grid Margin="0,20,0,0">
+                                <!-- 与"遥测支持"一致的边框与背景装饰 -->
+                                <Grid Width="678" Height="378" HorizontalAlignment="Right">
+                                    <Grid.Clip>
+                                        <PathGeometry Figures="M0 15V378H663L678 363V0H15L0 15Z"/>
+                                    </Grid.Clip>
+
+                                    <Border Background="{fw:AcrylicBrush BackgroundGrid, TintColor=#282D30, TintOpacity=0.2, NoiseOpacity=0.01}">
+                                        <Border.OpacityMask>
+                                            <VisualBrush Stretch="Fill">
+                                                <VisualBrush.Visual>
+                                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Fill="White" />
+                                                </VisualBrush.Visual>
+                                            </VisualBrush>
+                                        </Border.OpacityMask>
+                                    </Border>
+
+                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Stroke="#33EEEEEE" StrokeThickness="2">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.5,0.5">
+                                                <GradientStop Color="#33607079" Offset="0"/>
+                                                <GradientStop Color="#333F4A50" Offset="0.4375"/>
+                                                <GradientStop Color="#33282D30" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+
+                                    <Path Data="M0 15V378H663L678 363V0H15L0 15Z" Fill="Transparent" Stroke="#232323" StrokeThickness="15" Opacity="0.8">
+                                        <Path.Effect>
+                                            <BlurEffect Radius="45" RenderingBias="Performance"/>
+                                        </Path.Effect>
+                                    </Path>
+                                </Grid>
+
+                                <!-- 内容滚动区域，滚动条样式与"遥测支持"完全一致 -->
+                                <Grid Width="678" Height="378" HorizontalAlignment="Right">
+                                    <ScrollViewer x:Name="UdpSettingsScrollViewer" VerticalScrollBarVisibility="Auto"
+                                                  HorizontalScrollBarVisibility="Disabled">
+                                        <ScrollViewer.Resources>
+                                            <Style TargetType="ScrollBar">
+                                                <Setter Property="Width" Value="3"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="ScrollBar">
+                                                            <Grid>
+                                                                <Border x:Name="TrackBackground" Width="3" Background="#EEEEEE" CornerRadius="1.5"/>
+                                                                <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                                                    <Track.Thumb>
+                                                                        <Thumb>
+                                                                            <Thumb.Template>
+                                                                                <ControlTemplate TargetType="Thumb">
+                                                                                    <Border Background="#C60E0E" CornerRadius="1.5" Width="3"/>
+                                                                                </ControlTemplate>
+                                                                            </Thumb.Template>
+                                                                        </Thumb>
+                                                                    </Track.Thumb>
+                                                                </Track>
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ScrollViewer.Resources>
+
+                                        <ScrollViewer.Template>
+                                            <ControlTemplate TargetType="ScrollViewer">
+                                                <Grid x:Name="Grid" Background="{TemplateBinding Background}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border x:Name="ContentBorder" Grid.Column="0">
+
+                                                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                                Margin="20,20,15,18"
+                                                                CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                                CanHorizontallyScroll="False"
+                                                                CanVerticallyScroll="True"
+                                                                Content="{TemplateBinding Content}"
+                                                                ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                                                    </Border>
+
+                                                    <ScrollBar x:Name="PART_VerticalScrollBar"
+                                           Grid.Column="1"
+                                           AutomationProperties.AutomationId="VerticalScrollBar"
+                                           Cursor="Arrow"
+                                           Maximum="{TemplateBinding ScrollableHeight}"
+                                           Minimum="0"
+                                           Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                           Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                           ViewportSize="{TemplateBinding ViewportHeight}"
+                                           Margin="0,20,15,20"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </ScrollViewer.Template>
+
+                                        <StackPanel VerticalAlignment="Top">
+                                            <!-- 第 1 行：UDP 监听端口 -->
+                                            <TextBlock Text="{lex:Loc TelemetryUdp.ListenPort}" FontSize="18" FontWeight="Regular" Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" Margin="0,0,0,10"/>
+                                            <!-- 第 2 行：说明文字 -->
+                                            <TextBlock Text="{lex:Loc TelemetryUdp.ListenDesc}" FontSize="16" Foreground="#EEEEEE" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                            <!-- 第 3 行：监听端口组件 -->
+                                            <controls:PortStepperControl x:Name="ListenPortStepper" HorizontalAlignment="Left" Margin="0,0,0,20" Width="232"/>
+
+                                            <!-- 第 4 行：UDP 转发端口 -->
+                                            <TextBlock Text="{lex:Loc TelemetryUdp.ForwardPort}" FontSize="18" FontWeight="Regular" Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" Margin="0,0,0,10"/>
+                                            <!-- 第 5 行：说明文字 -->
+                                            <TextBlock Text="{lex:Loc TelemetryUdp.ForwardDesc}" FontSize="16" Foreground="#B3EEEEEE" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                            <!-- 第 6 行：转发目标列表 -->
+                                            <ItemsControl x:Name="ForwardTargetItemsControl"
+                                                          ItemTemplate="{StaticResource ForwardTargetRowTemplate}"
+                                                          Margin="0,0,0,0"/>
+                                            <!-- 第 7 行：添加转发目标 -->
+                                            <TextBlock x:Name="AddForwardTargetText" Text="{lex:Loc TelemetryUdp.AddForwardTarget}"
+                                                       FontSize="16" Foreground="#C60E0E" FontWeight="Bold"
+                                                       Cursor="Hand"
+                                                       HorizontalAlignment="Left"
+                                                       Margin="0,0,0,0" MouseLeftButtonDown="AddForwardTargetText_Click">
+                                                <TextBlock.TextDecorations>
+                                                    <TextDecoration Location="Underline" PenOffset="0.5"/>
+                                                </TextBlock.TextDecorations>
+                                            </TextBlock>
+                                        </StackPanel>
                                     </ScrollViewer>
                                 </Grid>
                             </Grid>
@@ -1399,7 +1561,9 @@
                                             </Grid>
                                             
                                             <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="20,0,0,12">
-                                                <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="Bold" FontStyle="Italic" Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" TextTrimming="CharacterEllipsis" Margin="7,0,0,2.6" HorizontalAlignment="Left" Width="145"/>
+                                                <Canvas Width="145" Height="26" Margin="7,0,0,2.6" ClipToBounds="True" HorizontalAlignment="Left">
+                                                    <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="Bold" FontStyle="Italic" Foreground="#EEEEEE" FontFamily="{StaticResource OrbitronFont}" TextTrimming="CharacterEllipsis" Width="145" lex:MarqueeBehavior.IsEnabled="True"/>
+                                                </Canvas>
                                                 
                                                 <Grid Height="24" Cursor="Hand" MouseLeftButtonDown="LaunchButton_Click" HorizontalAlignment="Left">
                                                     <Path Data="M 6,0 L 149,0 L 143,24 L 0,24 Z" Stretch="Uniform" Width="149" Height="24">

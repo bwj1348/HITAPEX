@@ -80,7 +80,8 @@
   "Game.Preset1H": "Preset 1 - H-Shifter",
   "Game.Preset2Seq": "Preset 2 - Sequential",
   "Game.Preset3Auto": "Preset 3 - Auto",
-  "Game.TelemetrySupport": "Telemetry Support",
+  "Game.TelemetrySupport": "GAME SUPPORT",
+  "Game.TelemetrySettings": "TELEMETRY",
   "Game.AllGames": "All Games",
   "Game.Installed": "Installed",
   "Game.NotInstalled": "Not Installed",
@@ -296,6 +297,9 @@
   "DeviceParam.Unknown": "Unknown",
   "DeviceParam.UnknownVersion": "---",
   "DeviceParam.Default": "Default",
+  "Device.NoDeviceTitle": "No Device Connected",
+  "Device.NoDeviceHint": "Connect a HITAPEX device to view device status or make settings",
+  "Device.RefreshDevices": "Refresh Devices",
 
   "BaseParam.Title": "Base",
 
@@ -467,6 +471,13 @@
   "Telemetry.Laps": "Laps",
   "Telemetry.Supported": "Supported",
   "Telemetry.NotSupported": "Not Supported",
+
+  "TelemetryUdp.ListenPort": "UDP Listen Port",
+  "TelemetryUdp.ListenDesc": "This game transmits telemetry over UDP. Please set the port. A port can only be used by one application at a time.",
+  "TelemetryUdp.ForwardPort": "UDP Forward Port",
+  "TelemetryUdp.ForwardDesc": "Forward telemetry to another application or device. Please set the correct UDP port.",
+  "TelemetryUdp.IpAddress": "IP Address",
+  "TelemetryUdp.AddForwardTarget": "Add Forward Target",
 
   "Status.DeviceTypeBase": "Base",
   "Status.DeviceTypePedal": "Pedal",

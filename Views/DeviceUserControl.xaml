@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:fw="clr-namespace:SourceChord.FluentWPF;assembly=FluentWPF"
+             xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
              d:DesignHeight="924" d:DesignWidth="1342"
              Background="Transparent"
@@ -15,14 +16,6 @@
             <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
-        <Storyboard x:Key="FadeOutAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0" Duration="0:0:0.15">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseIn"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
         </Storyboard>
@@ -82,17 +75,17 @@
             <StackPanel VerticalAlignment="Top">
                 <RadioButton x:Name="BaseNavButton" GroupName="DeviceNav" IsChecked="True" 
                              Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
-                    <svgc:SvgViewbox Source="/Assets/base.svg" Stretch="None"/>
+                    <svgc:SvgViewbox x:Name="BaseNavIcon" Source="/Assets/base.svg" Stretch="None" IsHitTestVisible="False"/>
                 </RadioButton>
 
                 <RadioButton x:Name="SteeringWheelNavButton" GroupName="DeviceNav" 
                              Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
-                    <svgc:SvgViewbox Source="/Assets/steeringwheel.svg" Stretch="None"/>
+                    <svgc:SvgViewbox x:Name="SteeringWheelNavIcon" Source="/Assets/steeringwheel.svg" Stretch="None" IsHitTestVisible="False"/>
                 </RadioButton>
 
                 <RadioButton x:Name="PedalNavButton" GroupName="DeviceNav" 
                              Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
-                    <svgc:SvgViewbox Source="/Assets/pedal.svg" Stretch="None"/>
+                    <svgc:SvgViewbox x:Name="PedalNavIcon" Source="/Assets/pedal.svg" Stretch="None" IsHitTestVisible="False"/>
                 </RadioButton>
 
                 <Grid Width="2" Height="586" Margin="0,1,0,0">
@@ -114,6 +107,68 @@
                         <TranslateTransform X="0"/>
                     </ContentControl.RenderTransform>
                 </ContentControl>
+
+                <!-- 设备未连接占位内容：全部设备断开时居中显示 -->
+                <Grid x:Name="NoDevicePanel" Visibility="Visible">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- 设备断开图标 -->
+                        <Viewbox Width="100" Height="100" Stretch="Uniform" HorizontalAlignment="Center">
+                            <Canvas Width="106" Height="105" Opacity="0.8">
+                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Data="M22.825 53.4541L8.44089 67.8246C4.63617 71.6413 2.5 76.8085 2.5 82.1951C2.5 87.5818 4.63617 92.749 8.44089 96.5657V96.5657C12.2612 100.367 17.4333 102.501 22.825 102.501C28.2167 102.501 33.3888 100.367 37.2091 96.5657L45.7473 88.0356"/>
+                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Data="M67.9002 71.6586H82.2074C87.5931 71.6586 92.7583 69.5211 96.5666 65.7164C100.375 61.9117 102.514 56.7515 102.514 51.3708V51.3708C102.514 45.9901 100.375 40.8299 96.5666 37.0252C92.7583 33.2205 87.5931 31.083 82.2074 31.083H61.9004"/>
+                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Data="M52.5169 2.50098L48.6709 17.8705"/>
+                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Data="M2.52148 25.5557L17.9056 33.2477"/>
+                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Data="M21.749 2.50098L29.4411 17.8705"/>
+                            </Canvas>
+                        </Viewbox>
+
+                        <TextBlock Text="{lex:Loc Device.NoDeviceTitle}" FontSize="30" FontWeight="Regular"
+                                   Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,50,0,0"/>
+                        <TextBlock Text="{lex:Loc Device.NoDeviceHint}" FontSize="26" FontWeight="Regular"
+                                   Foreground="#EEEEEE" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+
+                        <!-- 手动刷新设备按钮：设备已插入但未被检测到时使用 -->
+                        <Button x:Name="RefreshDevicesButton" Width="256" Height="52" Cursor="Hand"
+                                HorizontalAlignment="Center" Margin="0,20,0,0"
+                                Click="RefreshDevicesButton_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid>
+                                        <Path x:Name="Bg" Data="M12 0H256V40L244 52H0V12L12 0Z" Stretch="Fill">
+                                            <Path.Fill>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1" Opacity="0.8">
+                                                    <GradientStop Color="#C60E0E" Offset="0"/>
+                                                    <GradientStop Color="#600707" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Path.Fill>
+                                        </Path>
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Viewbox Width="22" Height="21" Stretch="Uniform" Margin="0,0,10,0">
+                                    <Canvas Width="18" Height="17">
+                                        <Path Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                              Data="M13.8752 10.75L16.3752 10.125L17.0002 12.6249"/>
+                                        <Path Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                              Data="M16.3753 10.125C15.8201 11.6982 14.8116 13.0719 13.477 14.0729C12.1423 15.0738 10.5412 15.6573 8.87538 15.7498C7.33554 15.7501 5.83293 15.2764 4.57165 14.3931C3.31037 13.5098 2.35155 12.2596 1.82544 10.8125"/>
+                                        <Path Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                              Data="M3.87522 5.74994L1.37524 6.37492L0.750244 3.875"/>
+                                        <Path Stroke="#EEEEEE" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                              Data="M1.37524 6.37482C2.42524 3.49991 5.65021 0.75 8.87518 0.75C10.4225 0.754349 11.9307 1.23718 13.1928 2.1323C14.455 3.02742 15.4093 4.29101 15.9251 5.74984"/>
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock Text="{lex:Loc Device.RefreshDevices}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
     </Grid>

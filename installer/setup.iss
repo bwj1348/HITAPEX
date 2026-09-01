@@ -34,7 +34,7 @@ AllowNoIcons=yes
 
 ; 权限：普通用户也能安装（写用户目录），需要管理员则改为 admin
 PrivilegesRequired=admin
-PrivilegesRequiredOverridesAllowed=dialog
+
 
 [Languages]
 Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"; LicenseFile: "LICENSE_chinesesimplified.rtf"
@@ -58,12 +58,54 @@ Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 ; 桌面快捷方式（根据用户选择）
 Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
-[Run]
-; 安装完成后是否运行程序（用户可勾选取消）
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+; 说明：不再使用 [Run] 启动程序——把 requireAdministrator 的 exe 放进 [Run] 会触发
+; CreateProcess 报错 740。改为在完成页用 [Code] 自定义"运行 HITAPEX"勾选框，
+; 选中后用 ShellExec('runas', ...) 提权启动，避开 740。
 
 ; ============================================================
 ; 卸载时清理（可选）
 ; ============================================================
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
+
+; ============================================================
+; 安装完成后"运行 HITAPEX"勾选框 + 提权自动启动
+; ============================================================
+[Code]
+var
+  LaunchCheckBox: TNewCheckBox;
+  InstallationCompleted: Boolean;
+
+procedure InitializeWizard;
+begin
+  InstallationCompleted := False;
+
+  // 在"完成"页新增一个可勾选的"运行 HITAPEX"（默认勾选）
+  LaunchCheckBox := TNewCheckBox.Create(WizardForm);
+  LaunchCheckBox.Parent := WizardForm.FinishedPage;
+  LaunchCheckBox.Left := WizardForm.FinishedLabel.Left;
+  LaunchCheckBox.Top := WizardForm.FinishedLabel.Top + WizardForm.FinishedLabel.Height + 12;
+  LaunchCheckBox.Width := WizardForm.FinishedLabel.Width;
+  LaunchCheckBox.Caption := '运行 HITAPEX';
+  LaunchCheckBox.Checked := True;
+end;
+
+// 安装真正完成后记录标志（此时仅显示完成页，尚未启动程序）
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+    InstallationCompleted := True;
+end;
+
+// 用户在完成页点击"完成"、安装器关闭后才执行——确保启动动作发生在关闭安装程序之后
+procedure DeinitializeSetup;
+var
+  ResultCode: Integer;
+begin
+  if InstallationCompleted and (LaunchCheckBox <> nil) and LaunchCheckBox.Checked then
+  begin
+    // 用 runas 动词重新提权启动，规避非提升令牌下 CreateProcess 报 740
+    ShellExec('runas', ExpandConstant('{app}\HITAPEX.exe'),
+              '', '', SW_SHOWNORMAL, ewNoWait, ResultCode);
+  end;
+end;

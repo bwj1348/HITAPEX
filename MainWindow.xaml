@@ -22,6 +22,15 @@
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
+        <!-- 顶级页面切换的统一淡入动效（与设备子页切换一致的视觉语言） -->
+        <Storyboard x:Key="FadeInAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
         
 
         <Style x:Key="NavButtonStyle" TargetType="RadioButton">
@@ -127,7 +136,7 @@
         </Style>
     </Window.Resources>
 
-    <Grid>
+    <Grid x:Name="RootLayout">
         <Grid.Background>
             <SolidColorBrush Color="#0B0B0B"/>
         </Grid.Background>
@@ -286,7 +295,7 @@
                 <Border Grid.Column="0" Width="1" Background="#383838" HorizontalAlignment="Right"/>
 
                 <Border Grid.Column="1" Background="Transparent">
-                    <ContentControl Content="{Binding CurrentView}" Margin="0"/>
+                    <ContentControl x:Name="MainContentHost" Content="{Binding CurrentView}" Margin="0"/>
                 </Border>
             </Grid>
         </Grid>

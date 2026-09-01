@@ -140,23 +140,41 @@ public class MainWindowViewModel : ViewModelBase
     private void UpdateCurrentView()
     {
         var name = SelectedNavigationItem?.Name ?? "Home";
-        if (_viewCache.TryGetValue(name, out var cached))
-        {
-            CurrentView = cached;
-            return;
-        }
+        CurrentView = PreloadView(name);
+    }
 
-        UserControl view = name switch
+    /// <summary>
+    /// 预创建指定导航视图并加入缓存（不切换当前视图）。
+    /// 供启动预热使用：提前创建并缓存实例，使其在首次导航时被直接复用，
+    /// 配合离屏预热完成构图，避免首次切换页面时的卡顿。
+    /// </summary>
+    public UserControl? PreloadView(string name)
+    {
+        if (_viewCache.TryGetValue(name, out var cached))
+            return cached;
+
+        UserControl? view = name switch
         {
             "Home" => new HomeUserControl(),
             "Device" => new DeviceUserControl(),
             "Game" => new GameUserControl(),
             "Help" => new HelpUserControl(),
             "Settings" => new SettingsUserControl(),
-            _ => new HomeUserControl()
+            _ => null
         };
 
-        _viewCache[name] = view;
-        CurrentView = view;
+        if (view != null)
+            _viewCache[name] = view;
+
+        return view;
+    }
+
+    /// <summary>
+    /// 从视图缓存中获取已预创建的视图实例（未创建则返回 null）。
+    /// </summary>
+    public UserControl? GetView(string name)
+    {
+        _viewCache.TryGetValue(name, out var view);
+        return view;
     }
 }

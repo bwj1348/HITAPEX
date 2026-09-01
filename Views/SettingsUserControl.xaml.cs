@@ -125,10 +125,9 @@ public partial class SettingsUserControl : UserControl
     /// </summary>
     private void SetupPlaceholderBehavior()
     {
-        // TextBox placeholder pairs
-        SetupTextBoxPlaceholder(NewUsernameTextBox); // NewUsernameTextBox has no separate placeholder TextBlock - uses Text property
-        //SetupTextBoxPlaceholder(NewEmailTextBox);
-        //SetupTextBoxPlaceholder(VerificationCodeTextBox);
+        // TextBox（用户名）采用独立占位 TextBlock 覆盖层，随 {lex:Loc} 绑定自动切换语言，
+        // 且不会把占位文本写入输入框内容。
+        SetupTextBoxPlaceholder(NewUsernameTextBox, NewUsernamePlaceholder);
 
         // PasswordBox placeholder pairs
         SetupPasswordBoxPlaceholder(CurrentPasswordBox, CurrentPasswordPlaceholder);
@@ -136,33 +135,24 @@ public partial class SettingsUserControl : UserControl
         SetupPasswordBoxPlaceholder(ConfirmNewPasswordBox, ConfirmNewPasswordPlaceholder);
     }
 
-    internal static void SetupTextBoxPlaceholder(TextBox textBox)
+    /// <summary>
+    /// 为 TextBox 设置占位覆盖层：有内容时隐藏占位文本，无内容时显示。
+    /// 占位文本由 <see cref="TextBlock"/> 承载（{lex:Loc} 绑定），语言切换自动更新，
+    /// 且不会出现在输入框真实的 EnteredValue 中。
+    /// </summary>
+    internal static void SetupTextBoxPlaceholder(TextBox textBox, TextBlock placeholder)
     {
-        // For TextBoxes using Text as placeholder: clear on focus, restore on lost focus if empty
-        textBox.GotFocus += (s, e) =>
-        {
-            if (textBox.Text == LocalizationService.Instance["Settings.NewUsernamePlaceholder"]
-                || textBox.Text == LocalizationService.Instance["Settings.NewEmailPlaceholder"]
-                || textBox.Text == LocalizationService.Instance["Settings.VerificationCodePlaceholder"])
-            {
-                textBox.Text = string.Empty;
-                textBox.Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238));
-            }
-        };
-        textBox.LostFocus += (s, e) =>
-        {
-            if (string.IsNullOrWhiteSpace(textBox.Text))
-            {
-                textBox.Foreground = new SolidColorBrush(Color.FromArgb(0x99, 238, 238, 238));
-                // Restore placeholder - determine which one
-                if (textBox.Name == "NewUsernameTextBox")
-                    textBox.Text = LocalizationService.Instance["Settings.NewUsernamePlaceholder"];
-                else if (textBox.Name == "NewEmailTextBox")
-                    textBox.Text = LocalizationService.Instance["Settings.NewEmailPlaceholder"];
-                else if (textBox.Name == "VerificationCodeTextBox")
-                    textBox.Text = LocalizationService.Instance["Settings.VerificationCodePlaceholder"];
-            }
-        };
+        // 聚焦即隐藏水印，失焦且为空时显示（与点击输入框后水印消失的预期一致）；
+        // 输入文本后始终隐藏。
+        textBox.GotFocus += (_, _) => placeholder.Visibility = Visibility.Collapsed;
+        textBox.LostFocus += (_, _) =>
+            placeholder.Visibility = string.IsNullOrEmpty(textBox.Text)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        textBox.TextChanged += (_, _) =>
+            placeholder.Visibility = (textBox.IsKeyboardFocused || !string.IsNullOrEmpty(textBox.Text))
+                ? Visibility.Collapsed
+                : Visibility.Visible;
     }
 
     private static void SetupPasswordBoxPlaceholder(PasswordBox passwordBox, TextBlock placeholder)
@@ -1217,8 +1207,7 @@ public partial class SettingsUserControl : UserControl
         if (App.UserApi == null || !App.UserApi.IsLoggedIn) return;
 
         var text = NewUsernameTextBox.Text;
-        var placeholder = LocalizationService.Instance["Settings.NewUsernamePlaceholder"];
-        if (string.IsNullOrWhiteSpace(text) || text == placeholder)
+        if (string.IsNullOrWhiteSpace(text))
         {
             SetInputError(NewUsernameTextBox, UsernameInputPath, UsernameErrorOverlay, UsernameErrorText,
                 LocalizationService.Instance["Settings.ErrorUsernameLength"]);
@@ -1240,8 +1229,7 @@ public partial class SettingsUserControl : UserControl
                 App.UserApi.CurrentUser = result.Data;
 
             UsernameText.Text = text;
-            NewUsernameTextBox.Text = placeholder;
-            NewUsernameTextBox.Foreground = new SolidColorBrush(Color.FromArgb(0x99, 238, 238, 238));
+            NewUsernameTextBox.Text = string.Empty;
 
             // 通知主窗口等订阅者刷新（左下角用户名同步）
             App.UserApi.NotifyUserInfoChanged();
@@ -1335,8 +1323,7 @@ public partial class SettingsUserControl : UserControl
         ResetPasswordField(CurrentPasswordBox, "CurrentPassword", CurrentPasswordPlaceholder, CurrentPasswordEyeBtn);
         ResetPasswordField(NewPasswordBox, "NewPassword", NewPasswordPlaceholder, NewPasswordEyeBtn);
         ResetPasswordField(ConfirmNewPasswordBox, "ConfirmNewPassword", ConfirmNewPasswordPlaceholder, ConfirmNewPasswordEyeBtn);
-        NewUsernameTextBox.Text = LocalizationService.Instance["Settings.NewUsernamePlaceholder"];
-        NewUsernameTextBox.Foreground = new SolidColorBrush(Color.FromArgb(0x99, 238, 238, 238));
+        NewUsernameTextBox.Text = string.Empty;
 
         ClearInputError(UsernameInputPath, UsernameErrorOverlay);
         ClearInputError(CurrentPasswordInputPath, CurrentPasswordErrorOverlay);

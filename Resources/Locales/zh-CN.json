@@ -81,6 +81,7 @@
   "Game.Preset2Seq": "预设 2 - 序列档",
   "Game.Preset3Auto": "预设 3 - 自动档",
   "Game.TelemetrySupport": "遥 测 支 持",
+  "Game.TelemetrySettings": "遥 测 设 置",
   "Game.AllGames": "所有游戏",
   "Game.Installed": "已安装",
   "Game.NotInstalled": "未安装",
@@ -297,6 +298,10 @@
   "DeviceParam.UnknownVersion": "---",
   "DeviceParam.Default": "Default",
 
+  "Device.NoDeviceTitle": "设 备 未 连 接",
+  "Device.NoDeviceHint": "请连接HITAPEX设备以查看设备状态或进行设置",
+  "Device.RefreshDevices": "刷 新 设 备",
+
   "BaseParam.Title": "基 座",
 
   "WheelParam.Title": "面 盘",
@@ -467,6 +472,13 @@
   "Telemetry.Laps": "圈数",
   "Telemetry.Supported": "支持",
   "Telemetry.NotSupported": "不支持",
+
+  "TelemetryUdp.ListenPort": "UDP 监听端口",
+  "TelemetryUdp.ListenDesc": "该游戏通过UDP传输遥测数据，请设置端口。同一端口同时只能由一个应用使用。",
+  "TelemetryUdp.ForwardPort": "UDP 转发端口",
+  "TelemetryUdp.ForwardDesc": "将遥测数据转发至其他应用或设备，请设置正确的UDP端口",
+  "TelemetryUdp.IpAddress": "IP Address",
+  "TelemetryUdp.AddForwardTarget": "添加转发目标",
 
   "Status.DeviceTypeBase": "基座",
   "Status.DeviceTypePedal": "踏板",

@@ -71,6 +71,7 @@ public static class GameListConfig
             new()
             {
                 Id = 1692250,
+                NeedUdpPortConfig = true,
                 Name = "F1 22",
                 Abbreviation = "F1 22",
                 SteamId = "1692250",
@@ -83,6 +84,7 @@ public static class GameListConfig
             new()
             {
                 Id = 2108330,
+                NeedUdpPortConfig = true,
                 Name = "F1 23",
                 Abbreviation = "F1 23",
                 SteamId = "2108330",
@@ -95,6 +97,7 @@ public static class GameListConfig
             new()
             {
                 Id = 2488620,
+                NeedUdpPortConfig = true,
                 Name = "F1 24",
                 Abbreviation = "F1 24",
                 SteamId = "2488620",
@@ -107,6 +110,7 @@ public static class GameListConfig
             new()
             {
                 Id = 3059520,
+                NeedUdpPortConfig = true,
                 Name = "F1 25",
                 Abbreviation = "F1 25",
                 SteamId = "3059520",
@@ -175,6 +179,7 @@ public static class GameListConfig
             new()
             {
                 Id = 421020,
+                NeedUdpPortConfig = true,
                 Name = "DiRT 4",
                 Abbreviation = "D4",
                 SteamId = "421020",
@@ -187,6 +192,7 @@ public static class GameListConfig
             new()
             {
                 Id = 690790,
+                NeedUdpPortConfig = true,
                 Name = "DiRT Rally 2.0",
                 Abbreviation = "DR2.0",
                 SteamId = "690790",
@@ -307,6 +313,7 @@ public static class GameListConfig
             new()
             {
                 Id = 1953520,
+                NeedUdpPortConfig = true,
                 Name = "WRC Generations",
                 Abbreviation = "WRCG",
                 SteamId = "1953520",
@@ -319,6 +326,7 @@ public static class GameListConfig
             new()
             {
                 Id = 1849250,
+                NeedUdpPortConfig = true,
                 Name = "EA Sports WRC",
                 Abbreviation = "EA WRC",
                 SteamId = "1849250",
@@ -415,6 +423,7 @@ public static class GameListConfig
             new()
             {
                 Id = 25,
+                NeedUdpPortConfig = true,
                 Name = "Live for Speed",
                 Abbreviation = "LFS",
                 SteamId = "25",

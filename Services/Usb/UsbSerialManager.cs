@@ -89,6 +89,29 @@ public class UsbSerialManager : IUsbSerialManager
     }
 
     /// <summary>
+    /// 手动重新扫描当前系统中已连接的串口设备，并尝试连接新发现的设备。
+    /// 供"刷新设备"按钮使用：WMI 热插拔事件偶发丢失、设备已插入但未被检测到时，
+    /// 通过一次完整发现来补齐连接。
+    /// </summary>
+    public void RediscoverDevices()
+    {
+        if (!_isRunning || _disposed) return;
+
+        try
+        {
+            _logger.Log(DeviceEventType.DiscoveryStarted, "", "手动刷新：重新扫描已连接的设备");
+            foreach (var device in _discovery.DiscoverDevices())
+            {
+                OnDeviceArrived(device);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.Log(DeviceEventType.DiscoveryCompleted, "", "手动刷新设备异常", null, ex);
+        }
+    }
+
+    /// <summary>
     /// 启动管理器 —— 扫描已连接的设备并开始热插拔监控。
     /// </summary>
     public void Start()
