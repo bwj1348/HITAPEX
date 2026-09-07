@@ -42,6 +42,9 @@ public class DeviceItem
     public ICommand UpdateCommand { get; set; }
     public string UpdateDescription { get; set; }
 
+    /// <summary>固件列表第一列的设备图标（按设备类型区分）</summary>
+    public Uri? DeviceIcon { get; set; }
+
     // Internal fields for firmware update flow
     public UsbDeviceInfo? UsbDevice { get; set; }
     public FirmwareVersionInfo? FirmwareInfo { get; set; }
@@ -1961,6 +1964,18 @@ public partial class SettingsUserControl : UserControl
         }
     }
 
+    /// <summary>按设备类型返回固件列表第一列的图标资源。</summary>
+    private static Uri GetDeviceIcon(DeviceType type)
+    {
+        return type switch
+        {
+            DeviceType.Base => new Uri("/Assets/base-fw.svg", UriKind.Relative),
+            DeviceType.Wheel => new Uri("/Assets/steeringwheel-fw.svg", UriKind.Relative),
+            DeviceType.Pedal => new Uri("/Assets/pedal-fw.svg", UriKind.Relative),
+            _ => new Uri("/Assets/Intersect.svg", UriKind.Relative)
+        };
+    }
+
     /// <summary>
     /// 检查所有已连接设备的固件更新：
     ///   1. 调用 API 获取云端固件版本列表并缓存
@@ -2091,6 +2106,7 @@ public partial class SettingsUserControl : UserControl
                     UsbDevice = usbDevice,
                     FirmwareInfo = matchedFirmware,
                     DeviceIndex = deviceIndex,
+                    DeviceIcon = GetDeviceIcon(deviceType),
                 };
 
                 deviceItem.UpdateCommand = new RelayCommand(param =>
@@ -2114,6 +2130,7 @@ public partial class SettingsUserControl : UserControl
                     Status = LocalizationService.Instance["Firmware.ConnectDevice"],
                     ButtonBackground = disabledBrush,
                     UpdateCommand = new RelayCommand(_ => { }),
+                    DeviceIcon = GetDeviceIcon(DeviceType.Unknown),
                 });
             }
 

@@ -906,11 +906,12 @@
                                                         <ColumnDefinition Width="157"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <svgc:SvgViewbox Grid.Column="0" Source="/Assets/Intersect.svg" Width="81" Height="81" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                                                    <svgc:SvgViewbox Grid.Column="0" Source="{Binding DeviceIcon}" Width="80" Height="80" Stretch="Fill" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
                                                     <TextBlock Grid.Column="0" 
                                                            Text="{Binding DeviceType}" 
                                                            Foreground="#EEEEEE" 
                                                            FontSize="16"
+                                                           FontWeight="Bold"
                                                            Margin="34,0,0,0"
                                                            VerticalAlignment="Center"/>
                                                     <TextBlock Grid.Column="1" 

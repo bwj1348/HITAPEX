@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -8,12 +9,15 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Net.Http;
 using HITAPEX.Controls;
 using HITAPEX.Models;
+using HITAPEX.Models.Usb;
 using HITAPEX.Services;
 using HITAPEX.Services.Data;
 using HITAPEX.Services.Data.Api;
+using SharpVectors.Converters;
 
 namespace HITAPEX.Views;
 
@@ -162,6 +166,252 @@ public partial class HomeUserControl : UserControl
 
         InitializeGameList();
         _ = LoadBannersAsync();
+
+        // 设备卡片：订阅连接/断开事件并初始化三种设备的连接状态显示
+        InitDeviceCardStates();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 首页设备卡片 — 已连接/未连接显示
+    // 基座/方向盘/踏板三张卡片随设备连接状态切换；连接时显示标题中的设备名称。
+    // ────────────────────────────────────────────────────────────────
+    // 采用从右列标签锚点向上查找卡片容器的方式，避免重复编辑窗口根结构；
+    // 每个卡片顶层的"未连接"覆盖层在代码中构建并挂到卡片根部。
+    // ═══════════════════════════════════════════════════════════════
+
+    private FrameworkElement? _baseNoDeviceOverlay;
+    private FrameworkElement? _wheelNoDeviceOverlay;
+    private FrameworkElement? _pedalNoDeviceOverlay;
+    private FrameworkElement? _shifterNoDeviceOverlay;
+
+    /// <summary>
+    /// 订阅设备连接/断开事件，并初始化三张设备卡片的连接状态。
+    /// 视图缓存复用，只需订阅一次。
+    /// </summary>
+    private void InitDeviceCardStates()
+    {
+        if (App.UsbManager != null)
+        {
+            App.UsbManager.DeviceConnected += OnDeviceCardConnectionChanged;
+            App.UsbManager.DeviceDisconnected += OnDeviceCardConnectionChanged;
+        }
+
+        // 每张卡片各建一个独立"未连接"覆盖层（WPF 元素实例只能有一个父级）
+        _baseNoDeviceOverlay = BuildNoDeviceOverlay();
+        _wheelNoDeviceOverlay = BuildNoDeviceOverlay();
+        _pedalNoDeviceOverlay = BuildNoDeviceOverlay();
+        _shifterNoDeviceOverlay = BuildNoDeviceOverlay();
+
+        AttachOverlayToCard(BaseStationEnText, _baseNoDeviceOverlay);
+        AttachOverlayToCard(WheelEnText, _wheelNoDeviceOverlay);
+        AttachOverlayToCard(PedalsEnText, _pedalNoDeviceOverlay);
+        AttachOverlayToCard(ShifterText, _shifterNoDeviceOverlay);
+
+        RefreshDeviceCards();
+    }
+
+    /// <summary>设备连接/断开事件：封送到 UI 线程后刷新设备卡片状态</summary>
+    private void OnDeviceCardConnectionChanged(UsbDeviceInfo device)
+    {
+        if (Dispatcher.CheckAccess())
+            RefreshDeviceCards();
+        else
+            Dispatcher.BeginInvoke(RefreshDeviceCards);
+    }
+
+    /// <summary>把"未连接"覆盖层挂到指定卡片的根部（附加在最后 → 显示在最上层）</summary>
+    private static void AttachOverlayToCard(TextBlock anchor, FrameworkElement overlay)
+    {
+        var (cardRoot, _) = FindDeviceCardGrids(anchor);
+        if (cardRoot != null)
+            cardRoot.Children.Add(overlay);
+    }
+
+    /// <summary>刷新三张设备卡片的连接状态与设备名称</summary>
+    private void RefreshDeviceCards()
+    {
+        if (BaseStationEnText == null) return;
+
+        var baseInfo = GetDeviceConnectionInfo(DeviceType.Base);
+        var wheelInfo = GetDeviceConnectionInfo(DeviceType.Wheel);
+        var pedalInfo = GetDeviceConnectionInfo(DeviceType.Pedal);
+
+        ApplyDeviceCardState(BaseStationEnText, BaseStationEnText, _baseNoDeviceOverlay, BaseGroupIcon, baseInfo.connected, baseInfo.name);
+        ApplyDeviceCardState(WheelEnText, WheelEnText, _wheelNoDeviceOverlay, WheelGroupIcon, wheelInfo.connected, wheelInfo.name);
+        ApplyDeviceCardState(PedalsEnText, PedalsEnText, _pedalNoDeviceOverlay, PedalGroupIcon, pedalInfo.connected, pedalInfo.name);
+        // 第四张（手刹）与前三张显示方式一致，但当前无该设备 → 恒为未连接
+        ApplyDeviceCardState(ShifterText, null, _shifterNoDeviceOverlay, null, false, string.Empty);
+    }
+
+    /// <summary>
+    /// 根据连接状态设置单张设备卡片，四张卡片统一走此逻辑。
+    /// <paramref name="gridAnchor"/> 用于向上定位卡片容器；<paramref name="subtitle"/> 为标题下方的英文/设备名称行（可能为空）。
+    /// 连接：显示标题+实时数据+设备名+跳转图标；未连接：仅保留标题并居中显示"未连接"覆盖层。
+    /// </summary>
+    private void ApplyDeviceCardState(FrameworkElement gridAnchor, FrameworkElement? subtitle,
+        FrameworkElement? overlay, FrameworkElement? groupIcon, bool connected, string? deviceName)
+    {
+        var (cardRoot, contentGrid) = FindDeviceCardGrids(gridAnchor);
+        if (cardRoot == null || contentGrid == null) return;
+
+        if (connected)
+        {
+            // 已连接：显示第一行标题、英文设备名、跳转图标与全部实时内容，隐藏"未连接"覆盖层
+            contentGrid.Visibility = Visibility.Visible;
+            for (int i = 0; i < contentGrid.Children.Count; i++)
+                contentGrid.Children[i].Visibility = Visibility.Visible;
+
+            if (subtitle != null)
+                subtitle.Visibility = Visibility.Visible;
+            if (groupIcon != null)
+                groupIcon.Visibility = Visibility.Visible;
+            if (overlay != null)
+                overlay.Visibility = Visibility.Collapsed;
+
+            // 英文副标题行显示连接到的设备名称
+            if (subtitle != null && !string.IsNullOrEmpty(deviceName))
+                subtitle.SetValue(TextBlock.TextProperty, deviceName);
+        }
+        else
+        {
+            // 未连接：保留第一行设备类型标题，隐藏英文设备名与跳转图标，
+            // 隐藏其余实时内容，下方居中显示带棋盘渐变的"未连接"覆盖层
+            contentGrid.Visibility = Visibility.Visible;
+            if (contentGrid.Children.Count > 1)
+            {
+                for (int i = 1; i < contentGrid.Children.Count; i++)
+                    contentGrid.Children[i].Visibility = Visibility.Collapsed;
+            }
+
+            if (subtitle != null)
+                subtitle.Visibility = Visibility.Collapsed;
+            if (groupIcon != null)
+                groupIcon.Visibility = Visibility.Collapsed;
+            if (overlay != null)
+                overlay.Visibility = Visibility.Visible;
+        }
+    }
+
+    /// <summary>
+    /// 从卡片内某个已命名元素向上查找其所属的设备卡片容器。
+    /// 返回 (卡片根 Grid, 卡片内容 Grid)。
+    /// 卡片根 Grid 的特征是显式宽度 289（当前首页设备卡片的统一宽度）。
+    /// </summary>
+    private static (Grid? cardRoot, Grid? contentGrid) FindDeviceCardGrids(FrameworkElement anchor)
+    {
+        FrameworkElement? node = anchor;
+        while (node?.Parent is FrameworkElement parent)
+        {
+            if (parent is Grid grid && Math.Abs(grid.Width - 289) < 1)
+                return (grid, node as Grid);
+            node = parent;
+        }
+        return (null, null);
+    }
+
+    /// <summary>获取指定设备类型的连接状态与设备显示名称</summary>
+    private static (bool connected, string name) GetDeviceConnectionInfo(DeviceType type)
+    {
+        var connectedDevices = App.UsbManager?.ConnectedDevices
+            ?? System.Collections.ObjectModel.ReadOnlyCollection<UsbDeviceInfo>.Empty;
+
+        var device = connectedDevices.FirstOrDefault(d =>
+        {
+            var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+            return descriptor != null && descriptor.DeviceType == type
+                   && descriptor.IsNormalMode(d.Vid, d.Pid);
+        });
+
+        if (device == null)
+            return (false, string.Empty);
+
+        var desc = DeviceRegistry.FindByVidPid(device.Vid, device.Pid);
+        return (true, desc?.ModelName ?? device.Name);
+    }
+
+    /// <summary>构建"未连接"覆盖层：与第四张卡片一致——棋盘渐变背景框 + 断开图标 + 居中文字</summary>
+    private static FrameworkElement BuildNoDeviceOverlay()
+    {
+        var box = new Grid
+        {
+            Width = 143.75,
+            Height = 127.78,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            // 与第四张卡片一致：内容框置于标题下方固定偏移（内容区顶部 12 + 标题行高 ~25 + 40 间隔）
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 78, 0, 0),
+            IsHitTestVisible = false,
+            Visibility = Visibility.Collapsed
+        };
+
+        // 棋盘格背景（#EEEEEE 双格平铺，20% 不透明度 + 上下渐隐）
+        var checker = new Rectangle { Opacity = 0.2 };
+        var checkerBrush = new DrawingBrush
+        {
+            Viewport = new Rect(0, 0, 31.944, 31.944),
+            ViewportUnits = BrushMappingMode.Absolute,
+            TileMode = TileMode.Tile
+        };
+        var geometryGroup = new GeometryGroup();
+        geometryGroup.Children.Add(new RectangleGeometry(new Rect(0, 0, 15.972, 15.972)));
+        geometryGroup.Children.Add(new RectangleGeometry(new Rect(15.972, 15.972, 15.972, 15.972)));
+        checkerBrush.Drawing = new GeometryDrawing
+        {
+            Brush = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            Geometry = geometryGroup
+        };
+        checker.Fill = checkerBrush;
+
+        var maskGradient = new LinearGradientBrush
+        {
+            StartPoint = new Point(0, 0),
+            EndPoint = new Point(0, 1)
+        };
+        maskGradient.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, 0x00, 0x00, 0x00), 0));
+        maskGradient.GradientStops.Add(new GradientStop(Color.FromArgb(0xFF, 0x00, 0x00, 0x00), 0.38));
+        maskGradient.GradientStops.Add(new GradientStop(Color.FromArgb(0x1A, 0x00, 0x00, 0x00), 1));
+        checker.OpacityMask = maskGradient;
+        box.Children.Add(checker);
+
+        // 断开图标 + 居中文字
+        var icon = new SvgViewbox
+        {
+            Source = new Uri("/Assets/disconnect.svg", UriKind.Relative),
+            Width = 27,
+            Height = 27,
+            Stretch = Stretch.Uniform,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 0, 0, 8)
+        };
+
+        var text = new TextBlock
+        {
+            Width = 120,
+            FontSize = 16,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            HorizontalAlignment = HorizontalAlignment.Center,
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap
+        };
+        // 使用绑定以支持语言切换自动刷新
+        text.SetBinding(TextBlock.TextProperty, new Binding
+        {
+            Source = LocalizationService.Instance,
+            Path = new PropertyPath("[Home.DeviceNotConnected]")
+        });
+
+        var stack = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            // 与第四张卡片一致：图标+文字在内容框顶部向下偏移 30
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(0, 30, 0, 0)
+        };
+        stack.Children.Add(icon);
+        stack.Children.Add(text);
+        box.Children.Add(stack);
+
+        return box;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1323,14 +1573,13 @@ public partial class HomeUserControl : UserControl
         var deviceItem = viewModel.NavigationItems.FirstOrDefault(n => n.Name == "Device");
         if (deviceItem == null) return;
 
-        viewModel.SelectedNavigationItem = deviceItem;
+        // 先告知已缓存的 DeviceUserControl 期望跳转的目标子页，
+        // 使其在进入设备界面时直接展示该页，避免先默认显示最上方已连接页再二次跳转
+        if (viewModel.GetView("Device") is DeviceUserControl cachedDeviceView)
+            cachedDeviceView.SetPendingTab(tabIndex);
 
-        // 延迟到 DeviceUserControl 加载完成后再切换到指定子选项卡
-        mainWindow.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
-        {
-            if (viewModel.CurrentView is DeviceUserControl deviceView)
-                deviceView.NavigateToTab(tabIndex);
-        });
+        // 导航到设备页面（DeviceUserControl 会在加载刷新时消费 pendingTab）
+        viewModel.SelectedNavigationItem = deviceItem;
 
         e.Handled = true;
     }

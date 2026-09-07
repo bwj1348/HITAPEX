@@ -2,11 +2,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Input;
 using HITAPEX.Models.Usb;
 using HITAPEX.Views.DeviceParameters;
-using SharpVectors.Converters;
 
 namespace HITAPEX.Views;
 
@@ -37,8 +37,13 @@ public partial class DeviceUserControl : UserControl
     private bool _isCheckingUnsaved;
     /// <summary>自动切换标志：设备插拔触发的页面跳转跳过未保存确认</summary>
     private bool _autoSwitching;
-    /// <summary>设备连接事件是否已订阅（视图缓存复用，只需订阅一次）</summary>
+    /// <summary>事件订阅防重（视图缓存复用，只需订阅一次）</summary>
     private bool _eventsSubscribed;
+    /// <summary>
+    /// 外部导航希望直接跳转的目标子页索引（0/1/2，-1=无）。
+    /// 由首页/游戏页预先设置，Device 视图下次刷新时直接跳转，避免先默认显示最上方页再二次跳转。
+    /// </summary>
+    private int _pendingTab = -1;
 
     // ═══ 各类型设备连接状态 ═══
     private bool _baseConnected;
@@ -47,6 +52,11 @@ public partial class DeviceUserControl : UserControl
 
     /// <summary>未连接状态下导航图标的透明度</summary>
     private const double DisconnectedIconOpacity = 0.4;
+
+    /// <summary>选中状态下的导航图标颜色（红）</summary>
+    private static readonly Color SelectedIconColor = Color.FromRgb(0xC6, 0x0E, 0x0E);
+    /// <summary>未选中状态下的导航图标颜色</summary>
+    private static readonly Color UnselectedIconColor = Color.FromRgb(0xEE, 0xEE, 0xEE);
 
     // ═══ 公开属性：供外部获取子控件引用 ═══
     public BaseParameterControl? BaseControl => _baseControl;
@@ -74,6 +84,16 @@ public partial class DeviceUserControl : UserControl
             index = first;
         }
         UpdateNavigationSelection(index);
+    }
+
+    /// <summary>
+    /// 设置外部跳转的目标子页索引。Device 视图下次刷新（进入页面/设备事件）时直接跳转，
+    /// 避免先默认显示最上方已连接页再二次跳转。
+    /// </summary>
+    /// <param name="index">0=基座, 1=面盘, 2=踏板</param>
+    public void SetPendingTab(int index)
+    {
+        _pendingTab = Math.Clamp(index, 0, 2);
     }
 
     public DeviceUserControl()
@@ -246,11 +266,60 @@ public partial class DeviceUserControl : UserControl
         NoDevicePanel.Visibility = Visibility.Collapsed;
         ContentHost.Visibility = Visibility.Visible;
 
+        // 外部导航预先指定的目标子页 → 直接跳转，覆盖"保持当前/最上方"逻辑
+        if (_pendingTab >= 0)
+        {
+            ShowPendingTab();
+            return;
+        }
+
         // 当前展示页对应类型仍连接 → 保持现状；否则跳转到最上方已连接设备页
         if (_currentControl == null || !IsConnectedAt(_currentIndex))
         {
             AutoSelectFirstConnected();
         }
+
+        // 同步选中/未选中图标颜色
+        UpdateNavButtonSelectionColors();
+    }
+
+    /// <summary>
+    /// 跳转到外部导航预先指定的目标子页：目标类型已连接则直接跳转，
+    /// 否则回退到最上方已连接设备页；全部未连接则显示占位内容。
+    /// </summary>
+    private void ShowPendingTab()
+    {
+        int target = _pendingTab;
+        _pendingTab = -1;
+
+        int first = GetFirstConnectedIndex();
+        if (!IsConnectedAt(target))
+        {
+            if (first < 0)
+            {
+                ShowNoDeviceState();
+                return;
+            }
+            target = first;
+        }
+
+        SelectConnectedIndex(target);
+    }
+
+    /// <summary>直接切换到指定已连接类型的参数页（绕过未保存确认，设备断开时页面状态已被重置）</summary>
+    private void SelectConnectedIndex(int index)
+    {
+        _autoSwitching = true;
+        UpdateNavigationSelection(index);
+        _autoSwitching = false;
+
+        if (_currentControl != GetControlForIndex(index))
+        {
+            _currentIndex = index;
+            ShowControl(GetControlForIndex(index), _currentControl != null);
+        }
+
+        UpdateNavButtonSelectionColors();
     }
 
     /// <summary>当前是否存在指定索引对应类型的已连接设备</summary>
@@ -292,12 +361,26 @@ public partial class DeviceUserControl : UserControl
     }
 
     /// <summary>更新导航按钮的可用状态与图标透明度</summary>
-    private static void UpdateNavButtonState(RadioButton button, SvgViewbox? icon, bool connected)
+    private static void UpdateNavButtonState(RadioButton button, FrameworkElement? icon, bool connected)
     {
         if (button == null) return;
         button.IsEnabled = connected;
         if (icon != null)
             icon.Opacity = connected ? 1.0 : DisconnectedIconOpacity;
+    }
+
+    /// <summary>
+    /// 根据当前选中状态刷新三个导航图标的颜色：选中 → 红(#C60E0E)，未选中 → #EEEEEE。
+    /// 图标通过 Mask Tint（Rectangle.OpacityMask）将 SVG 当作蒙版，再由 SolidColorBrush 填充上色。
+    /// </summary>
+    private void UpdateNavButtonSelectionColors()
+    {
+        if (BaseNavBrush == null || SteeringWheelNavBrush == null || PedalNavBrush == null)
+            return;
+
+        BaseNavBrush.Color = BaseNavButton.IsChecked == true ? SelectedIconColor : UnselectedIconColor;
+        SteeringWheelNavBrush.Color = SteeringWheelNavButton.IsChecked == true ? SelectedIconColor : UnselectedIconColor;
+        PedalNavBrush.Color = PedalNavButton.IsChecked == true ? SelectedIconColor : UnselectedIconColor;
     }
 
     /// <summary>全部设备断开：取消按钮选中、隐藏参数页，显示"设备未连接"占位内容</summary>
@@ -313,6 +396,9 @@ public partial class DeviceUserControl : UserControl
 
         _currentControl = null;
         _currentIndex = -1;
+
+        // 全部取消选中 → 三个图标均回落为未选中色
+        UpdateNavButtonSelectionColors();
     }
 
     /// <summary>
@@ -343,6 +429,9 @@ public partial class DeviceUserControl : UserControl
     /// </summary>
     private void NavButton_Checked(object sender, RoutedEventArgs e)
     {
+        // 无论是否放行切换，选中态变化都应即时同步图标颜色
+        UpdateNavButtonSelectionColors();
+
         if (_isCheckingUnsaved) return;
 
         if (sender is RadioButton button)

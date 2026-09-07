@@ -322,22 +322,23 @@ public partial class PresetListPopup : UserControl
     /// </summary>
     private void AnimateIn()
     {
-        // 初始状态：遮罩透明、面板透明、面板位于右侧
-        OverlayBackground.Opacity = 0;
+        // 高分屏下让 BitmapCache 按实际 DPI 渲染，避免把 1x 缓存位图放大搬运导致的卡顿与模糊
+        if (PopupPanel.CacheMode is BitmapCache bitmapCache)
+            bitmapCache.RenderAtScale = GetDpiScale();
+
+        // 初始状态：面板透明、面板位于右侧；遮罩层直接以最终不透明度显示（不再整窗淡入，
+        // 分层窗口里整窗透明度动画每帧都要重合成整窗，是卡顿主因）
         PopupPanel.Opacity = 0;
         PopupPanel.RenderTransform = new TranslateTransform(PopupPanel.Width, 0);
         PopupPanel.IsHitTestVisible = false;
+        OverlayBackground.Opacity = 1;
 
-        // 面板从右侧滑入到原始位置
-        DoubleAnimation slideIn = new(PopupPanel.Width, 0, TimeSpan.FromMilliseconds(300))
+        // 面板从右侧滑入到原始位置（镜头保持缓动，但缩短时长减少整窗重合成帧数）
+        DoubleAnimation slideIn = new(PopupPanel.Width, 0, TimeSpan.FromMilliseconds(240))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        DoubleAnimation panelFade = new(0, 1, TimeSpan.FromMilliseconds(220))
-        {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-        };
-        DoubleAnimation overlayFade = new(0, 1, TimeSpan.FromMilliseconds(180))
+        DoubleAnimation panelFade = new(0, 1, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
@@ -347,12 +348,25 @@ public partial class PresetListPopup : UserControl
 
         PopupPanel.RenderTransform.BeginAnimation(TranslateTransform.XProperty, slideIn);
         PopupPanel.BeginAnimation(OpacityProperty, panelFade);
-        OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
+    }
+
+    /// <summary>获取面板当前显示器的 DPI 缩放比例（用于 BitmapCache.RenderAtScale），失败时返回 1.0</summary>
+    private double GetDpiScale()
+    {
+        try
+        {
+            var dpi = VisualTreeHelper.GetDpi(PopupPanel);
+            return dpi.DpiScaleX > 0 ? dpi.DpiScaleX : 1.0;
+        }
+        catch
+        {
+            return 1.0;
+        }
     }
 
     /// <summary>
     /// 滑出动画：弹窗面板从当前 X 位置平移到 X = PanelWidth（右侧之外），
-    /// 同时面板和遮罩层淡出，动画完成后执行回调。
+    /// 同时面板淡出，动画完成后执行回调。
     /// </summary>
     private void AnimateOut(Action onCompleted)
     {
@@ -361,26 +375,25 @@ public partial class PresetListPopup : UserControl
 
         PopupPanel.IsHitTestVisible = false;
 
-        // 面板从当前位置滑出到右侧
-        DoubleAnimation slideOut = new(translate.X, PopupPanel.Width, TimeSpan.FromMilliseconds(260))
+        // 面板从当前位置滑出到右侧（缩短时长减少整窗重合成帧数）
+        DoubleAnimation slideOut = new(translate.X, PopupPanel.Width, TimeSpan.FromMilliseconds(220))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
-        DoubleAnimation panelFade = new(1, 0, TimeSpan.FromMilliseconds(200))
-        {
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
-        };
-        DoubleAnimation overlayFade = new(1, 0, TimeSpan.FromMilliseconds(160))
+        DoubleAnimation panelFade = new(1, 0, TimeSpan.FromMilliseconds(160))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
 
-        // 面板淡出完成后设置 Visibility = Collapsed
-        panelFade.Completed += (_, _) => { onCompleted(); };
+        // 面板淡出完成后隐藏弹窗并让遮罩层一次性消失
+        panelFade.Completed += (_, _) =>
+        {
+            OverlayBackground.Opacity = 0;
+            onCompleted();
+        };
 
         translate.BeginAnimation(TranslateTransform.XProperty, slideOut);
         PopupPanel.BeginAnimation(OpacityProperty, panelFade);
-        OverlayBackground.BeginAnimation(OpacityProperty, overlayFade);
     }
 
     // ══════════════════════════════════════════

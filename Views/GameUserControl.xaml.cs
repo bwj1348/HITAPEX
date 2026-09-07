@@ -23,6 +23,7 @@ using HITAPEX.Services.Data.Api;
 using HITAPEX.Services.Usb;
 using HITAPEX.Views.DeviceParameters;
 using Microsoft.Win32;
+using SharpVectors.Converters;
 
 namespace HITAPEX.Views;
 
@@ -63,12 +64,25 @@ public partial class GameUserControl : UserControl
     private bool _isDraggingThumb = false;
     private Point _lastMousePosition;
 
+    // 设备配置卡片使用的图标
+    private SvgViewbox? _baseDeviceIcon;
+    private SvgViewbox? _wheelDeviceIcon;
+    private SvgViewbox? _pedalDeviceIcon;
+    // 每个卡片一个独立的"未连接"图标实例：WPF 元素实例只能有一个父级，
+    // 若四张断开卡片共用同一实例，则仅最后一张能显示，其余会被重新挂载覆盖。
+    private FrameworkElement? _baseNoDeviceIcon;
+    private FrameworkElement? _wheelNoDeviceIcon;
+    private FrameworkElement? _pedalNoDeviceIcon;
+    private FrameworkElement? _shifterNoDeviceIcon;
+
     public GameUserControl()
     {
         InitializeComponent();
 
         // 转发目标列表的数据源
         ForwardTargetItemsControl.ItemsSource = _forwardTargetRows;
+
+        InitializeDeviceConfigIcons();
     }
 
     private void GameUserControl_Loaded(object sender, RoutedEventArgs e)
@@ -83,6 +97,135 @@ public partial class GameUserControl : UserControl
         PopulatePresetComboBoxes();
         StartTelemetrySimulation();
         UpdateScrollbarThumb();
+
+        // 订阅设备连接/断开事件，实时刷新设备配置卡片的连接状态
+        SubscribeDeviceEvents();
+        RefreshDeviceConfigState();
+    }
+
+    /// <summary>订阅 USB 串口设备的连接/断开事件，用于刷新设备配置卡片状态</summary>
+    private void SubscribeDeviceEvents()
+    {
+        if (App.UsbManager != null)
+        {
+            App.UsbManager.DeviceConnected += OnDeviceConnectionChanged;
+            App.UsbManager.DeviceDisconnected += OnDeviceConnectionChanged;
+        }
+    }
+
+    /// <summary>设备连接/断开事件处理：封送到 UI 线程后刷新设备配置卡片状态</summary>
+    private void OnDeviceConnectionChanged(UsbDeviceInfo device)
+    {
+        if (Dispatcher.CheckAccess())
+            RefreshDeviceConfigState();
+        else
+            Dispatcher.BeginInvoke(RefreshDeviceConfigState);
+    }
+
+    /// <summary>
+    /// 刷新设备配置卡片的连接状态：
+    /// - 前三类（基座/面盘/踏板）有对应设备连接 → 显示设备图标与预设下拉框；
+    ///   无连接 → 显示"未连接"断开图标 + "设备未连接"文字；
+    /// - 手刹类目前尚无设备 → 恒为未连接。
+    /// </summary>
+    private void RefreshDeviceConfigState()
+    {
+        if (BasePresetCard == null) return;
+
+        SetDeviceCardState(BasePresetCard, BasePresetComboBox,
+            HasDeviceConnected(DeviceType.Base), _baseDeviceIcon, _baseNoDeviceIcon);
+        SetDeviceCardState(WheelPresetCard, WheelPresetComboBox,
+            HasDeviceConnected(DeviceType.Wheel), _wheelDeviceIcon, _wheelNoDeviceIcon);
+        SetDeviceCardState(PedalPresetCard, PedalPresetComboBox,
+            HasDeviceConnected(DeviceType.Pedal), _pedalDeviceIcon, _pedalNoDeviceIcon);
+        // 手刹类设备暂未支持，恒为未连接
+        SetDeviceCardState(ShifterPresetCard, ShifterPresetComboBox, false, null, _shifterNoDeviceIcon);
+    }
+
+    /// <summary>根据连接状态设置单个设备卡片的左侧图标与右侧内容</summary>
+    private void SetDeviceCardState(HeaderedContentControl card, ComboBox comboBox,
+        bool connected, FrameworkElement? deviceIcon, FrameworkElement? noDeviceIcon)
+    {
+        // 左侧图标：已连接显示设备图标，未连接显示"未连接"断开图标
+        card.Tag = connected && deviceIcon != null ? deviceIcon : noDeviceIcon;
+
+        // 右侧内容：已连接显示标题+预设下拉框，未连接仅居中显示"设备未连接"文字
+        if (comboBox != null)
+            comboBox.Visibility = connected ? Visibility.Visible : Visibility.Collapsed;
+
+        if (card.Template is ControlTemplate template)
+        {
+            if (template.FindName("CardHeader", card) is FrameworkElement header)
+                header.Visibility = connected ? Visibility.Visible : Visibility.Collapsed;
+            if (template.FindName("CardNotConnectedText", card) is FrameworkElement notConnected)
+                notConnected.Visibility = connected ? Visibility.Collapsed : Visibility.Visible;
+        }
+    }
+
+    /// <summary>判断指定类型的设备当前是否有已连接的串口设备（仅正常模式）</summary>
+    private static bool HasDeviceConnected(DeviceType type)
+    {
+        var connectedDevices = App.UsbManager?.ConnectedDevices
+            ?? System.Collections.ObjectModel.ReadOnlyCollection<UsbDeviceInfo>.Empty;
+
+        return connectedDevices.Any(d =>
+        {
+            var descriptor = DeviceRegistry.FindByVidPid(d.Vid, d.Pid);
+            return descriptor != null && descriptor.DeviceType == type
+                   && descriptor.IsNormalMode(d.Vid, d.Pid);
+        });
+    }
+
+    /// <summary>初始化设备配置卡片使用的图标（设备图标与"未连接"断开图标）</summary>
+    private void InitializeDeviceConfigIcons()
+    {
+        _baseDeviceIcon = CreateSvgIcon("/Assets/base.svg");
+        _wheelDeviceIcon = CreateSvgIcon("/Assets/steeringwheel.svg");
+        _pedalDeviceIcon = CreateSvgIcon("/Assets/pedal.svg");
+
+        // 每张卡片各建一个独立的"未连接"断开图标实例
+        _baseNoDeviceIcon = BuildNoDeviceIcon();
+        _wheelNoDeviceIcon = BuildNoDeviceIcon();
+        _pedalNoDeviceIcon = BuildNoDeviceIcon();
+        _shifterNoDeviceIcon = BuildNoDeviceIcon();
+    }
+
+    private static SvgViewbox CreateSvgIcon(string source)
+        => new()
+        {
+            Source = new Uri(source, UriKind.Relative),
+            Stretch = Stretch.Uniform
+        };
+
+    /// <summary>用代码构建"未连接"断开图标（35×35，5 条圆角描边路径）</summary>
+    private static FrameworkElement BuildNoDeviceIcon()
+    {
+        var canvas = new Canvas { Width = 35, Height = 35, Opacity = 0.8 };
+
+        canvas.Children.Add(StrokePath("M7.5407 17.7734L2.73488 22.5747C1.4637 23.8499 0.75 25.5763 0.75 27.3761C0.75 29.1758 1.4637 30.9022 2.73488 32.1774V32.1774C4.01127 33.4473 5.73929 34.1604 7.5407 34.1604C9.3421 34.1604 11.0701 33.4473 12.3465 32.1774L15.1992 29.3274"));
+        canvas.Children.Add(StrokePath("M22.6003 23.8545H27.3804C29.1798 23.8545 30.9055 23.1403 32.1779 21.8692C33.4502 20.598 34.1651 18.8739 34.1651 17.0762V17.0762C34.1651 15.2784 33.4502 13.5544 32.1779 12.2832C30.9055 11.012 29.1798 10.2979 27.3804 10.2979H20.5957"));
+        canvas.Children.Add(StrokePath("M17.4615 0.75L16.1765 5.88509"));
+        canvas.Children.Add(StrokePath("M0.757568 8.45215L5.89747 11.0221"));
+        canvas.Children.Add(StrokePath("M7.18091 0.75L9.75086 5.88509"));
+
+        return new Viewbox
+        {
+            Stretch = Stretch.None,
+            Child = canvas
+        };
+    }
+
+    private static System.Windows.Shapes.Path StrokePath(string data)
+    {
+        return new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse(data),
+            Stroke = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE)),
+            StrokeThickness = 1.5,
+            StrokeStartLineCap = PenLineCap.Round,
+            StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round
+        };
     }
 
     // ═══════════════════════════════════════════════════
@@ -1616,18 +1759,20 @@ public partial class GameUserControl : UserControl
         var vm = mainWindow.DataContext as ViewModels.MainWindowViewModel;
         if (vm == null) return;
 
-        // 切换到设备参数页面
+        // 切换到设备参数页面；
+        // 先告知缓存的 DeviceUserControl 目标子页，进入设备界面时直接展示对应页，
+        // 避免先默认显示最上方已连接页再二次跳转
         var deviceItem = vm.NavigationItems.FirstOrDefault(n => n.Name == "Device");
         if (deviceItem != null)
+        {
+            if (vm.GetView("Device") is DeviceUserControl cachedDeviceView)
+                cachedDeviceView.SetPendingTab(tabIndex);
             vm.SelectedNavigationItem = deviceItem;
+        }
 
-        // 延迟到 UI 加载完成后：导航到对应的设备 tab 并打开预设弹窗
+        // 延迟到 UI 加载完成后打开预设弹窗
         Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
         {
-            // 导航到对应设备 tab（0=基座, 1=面盘, 2=踏板, 3=排挡）
-            if (vm.CurrentView is DeviceUserControl deviceView)
-                deviceView.NavigateToTab(tabIndex);
-
             // 打开预设弹窗
             var popup = mainWindow.ShowPresetListPopup(deviceType);
 

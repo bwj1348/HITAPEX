@@ -75,17 +75,50 @@
             <StackPanel VerticalAlignment="Top">
                 <RadioButton x:Name="BaseNavButton" GroupName="DeviceNav" IsChecked="True" 
                              Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
-                    <svgc:SvgViewbox x:Name="BaseNavIcon" Source="/Assets/base.svg" Stretch="None" IsHitTestVisible="False"/>
+                    <Rectangle x:Name="BaseNavIcon" Width="44" Height="56" IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <SolidColorBrush x:Name="BaseNavBrush" Color="#EEEEEE"/>
+                        </Rectangle.Fill>
+                        <Rectangle.OpacityMask>
+                            <VisualBrush Stretch="None">
+                                <VisualBrush.Visual>
+                                    <svgc:SvgViewbox Source="/Assets/base.svg" Width="42.74" Height="55" Stretch="Uniform"/>
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Rectangle.OpacityMask>
+                    </Rectangle>
                 </RadioButton>
 
                 <RadioButton x:Name="SteeringWheelNavButton" GroupName="DeviceNav" 
                              Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
-                    <svgc:SvgViewbox x:Name="SteeringWheelNavIcon" Source="/Assets/steeringwheel.svg" Stretch="None" IsHitTestVisible="False"/>
+                    <Rectangle x:Name="SteeringWheelNavIcon" Width="61" Height="56" IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <SolidColorBrush x:Name="SteeringWheelNavBrush" Color="#EEEEEE"/>
+                        </Rectangle.Fill>
+                        <Rectangle.OpacityMask>
+                            <VisualBrush Stretch="None">
+                                <VisualBrush.Visual>
+                                    <svgc:SvgViewbox Source="/Assets/steeringwheel.svg" Width="60.15" Height="55" Stretch="Uniform"/>
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Rectangle.OpacityMask>
+                    </Rectangle>
                 </RadioButton>
 
                 <RadioButton x:Name="PedalNavButton" GroupName="DeviceNav" 
                              Style="{StaticResource NavIconButtonStyle}" Checked="NavButton_Checked">
-                    <svgc:SvgViewbox x:Name="PedalNavIcon" Source="/Assets/pedal.svg" Stretch="None" IsHitTestVisible="False"/>
+                    <Rectangle x:Name="PedalNavIcon" Width="51" Height="56" IsHitTestVisible="False">
+                        <Rectangle.Fill>
+                            <SolidColorBrush x:Name="PedalNavBrush" Color="#EEEEEE"/>
+                        </Rectangle.Fill>
+                        <Rectangle.OpacityMask>
+                            <VisualBrush Stretch="None">
+                                <VisualBrush.Visual>
+                                    <svgc:SvgViewbox Source="/Assets/pedal.svg" Width="50.32" Height="55" Stretch="Uniform"/>
+                                </VisualBrush.Visual>
+                            </VisualBrush>
+                        </Rectangle.OpacityMask>
+                    </Rectangle>
                 </RadioButton>
 
                 <Grid Width="2" Height="586" Margin="0,1,0,0">
@@ -112,20 +145,8 @@
                 <Grid x:Name="NoDevicePanel" Visibility="Visible">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <!-- 设备断开图标 -->
-                        <Viewbox Width="100" Height="100" Stretch="Uniform" HorizontalAlignment="Center">
-                            <Canvas Width="106" Height="105" Opacity="0.8">
-                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      Data="M22.825 53.4541L8.44089 67.8246C4.63617 71.6413 2.5 76.8085 2.5 82.1951C2.5 87.5818 4.63617 92.749 8.44089 96.5657V96.5657C12.2612 100.367 17.4333 102.501 22.825 102.501C28.2167 102.501 33.3888 100.367 37.2091 96.5657L45.7473 88.0356"/>
-                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      Data="M67.9002 71.6586H82.2074C87.5931 71.6586 92.7583 69.5211 96.5666 65.7164C100.375 61.9117 102.514 56.7515 102.514 51.3708V51.3708C102.514 45.9901 100.375 40.8299 96.5666 37.0252C92.7583 33.2205 87.5931 31.083 82.2074 31.083H61.9004"/>
-                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      Data="M52.5169 2.50098L48.6709 17.8705"/>
-                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      Data="M2.52148 25.5557L17.9056 33.2477"/>
-                                <Path Stroke="#EEEEEE" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                      Data="M21.749 2.50098L29.4411 17.8705"/>
-                            </Canvas>
-                        </Viewbox>
+                        <svgc:SvgViewbox Source="/Assets/Group126549809.svg" Width="212" Height="229"
+                                         Stretch="Uniform" HorizontalAlignment="Center"/>
 
                         <TextBlock Text="{lex:Loc Device.NoDeviceTitle}" FontSize="30" FontWeight="Regular"
                                    Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,50,0,0"/>

@@ -96,7 +96,7 @@
                             
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
                                 <TextBlock Text="{lex:Loc Home.BaseStation}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
-                                <TextBlock Text="{lex:Loc Home.BaseStationEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
+                                <TextBlock x:Name="BaseStationEnText" Text="{lex:Loc Home.BaseStationEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
                             
                             <svgc:SvgViewbox x:Name="BaseGroupIcon" Grid.Column="2" Source="/Assets/Group.svg"
@@ -231,7 +231,7 @@
 
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
                                 <TextBlock Text="{lex:Loc Home.SteeringWheel}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
-                                <TextBlock Text="{lex:Loc Home.SteeringWheelEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
+                                <TextBlock x:Name="WheelEnText" Text="{lex:Loc Home.SteeringWheelEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
 
                             <svgc:SvgViewbox x:Name="WheelGroupIcon" Grid.Column="2" Source="/Assets/Group.svg"
@@ -315,7 +315,7 @@
 
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
                                 <TextBlock Text="{lex:Loc Home.Pedals}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
-                                <TextBlock Text="{lex:Loc Home.PedalsEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
+                                <TextBlock x:Name="PedalsEnText" Text="{lex:Loc Home.PedalsEn}" FontSize="16" Foreground="#EEEEEE" FontWeight="Regular" HorizontalAlignment="Left" Margin="0,2,0,0" FontFamily="{StaticResource OrbitronFont}"/>
                             </StackPanel>
 
                             <svgc:SvgViewbox x:Name="PedalGroupIcon" Grid.Column="2" Source="/Assets/Group.svg"
@@ -445,51 +445,11 @@
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,-3,0,0">
-                                <TextBlock Text="{lex:Loc Home.Shifter}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
+                                <TextBlock x:Name="ShifterText" Text="{lex:Loc Home.Shifter}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" HorizontalAlignment="Left"/>
                                
                             </StackPanel>
 
                             <!--<svgc:SvgViewbox Grid.Column="2" Source="/Assets/Group.svg" Width="15" Height="15" VerticalAlignment="Top"/>-->
-                        </Grid>
-
-                        <Grid Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,40,0,0">
-                            <Grid Width="143.75" Height="127.78">
-                                <!-- <svgc:SvgViewbox Source="/Assets/Maskgroup.svg" Width="143.75" Height="127.78" Opacity="1"/> -->
-                                <Rectangle Width="143.75" Height="127.78" Opacity="0.2">
-
-                                    <Rectangle.Fill>
-                                        <DrawingBrush Viewport="0,0,31.944,31.944" ViewportUnits="Absolute" TileMode="Tile">
-                                            <DrawingBrush.Drawing>
-                                                <DrawingGroup>
-                                                    <GeometryDrawing Brush="#EEEEEE">
-                                                        <GeometryDrawing.Geometry>
-                                                            <GeometryGroup>
-                                                                <RectangleGeometry Rect="0,0,15.972,15.972" />
-                                                                <RectangleGeometry Rect="15.972,15.972,15.972,15.972" />
-                                                            </GeometryGroup>
-                                                        </GeometryDrawing.Geometry>
-                                                    </GeometryDrawing>
-                                                </DrawingGroup>
-                                            </DrawingBrush.Drawing>
-                                        </DrawingBrush>
-                                    </Rectangle.Fill>
-
-                                    <Rectangle.OpacityMask>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#00000000" Offset="0"/>
-                                            <GradientStop Color="#FF000000" Offset="0.38"/>
-                                            <GradientStop Color="#1A000000" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Rectangle.OpacityMask>
-
-                                </Rectangle>
-
-
-                                <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,30,0,0">
-                                    <svgc:SvgViewbox Source="/Assets/disconnect.svg" Width="27" Height="27" Margin="0,0,0,8"/>
-                                    <TextBlock Text="{lex:Loc Home.DeviceNotConnected}" Width="120" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Grid>
                         </Grid>
 
                     </Grid>
