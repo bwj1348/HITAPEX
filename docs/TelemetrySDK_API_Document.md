@@ -572,7 +572,7 @@ IDLE ──StartTelemetry 成功──→ ┌─ !IsConnected ──→ DISCONNE
 | 字段 | 类型 | 语义 |
 |---|---|---|
 | `sdkState` | int32 | `TEL_SDK_IDLE(0)` / `TEL_SDK_RUNNING(1)` |
-| `connState` | int32 | 上表六态 |
+| `connState` | int32 | 连接状态机六态（语义见 10.2 图）：IDLE(0) / WAITING_DATA(1) / CONNECTED(2) / STALE(3) / DISCONNECTED(4) / UNKNOWN_AGE(5，兼容保留、1.0.0 起实际不可达) |
 | `lastError` | int32 | 错误槽透传（同 `GetLastTelemetryError()`） |
 | `dataAgeMs` | uint32 | 数据年龄（UDP = 收包年龄；SHM = 数据更新年龄）；`0xFFFFFFFF` = 未知/尚无数据 |
 | `staleTimeoutMs` | uint32 | STALE 判定阈值（默认 5000ms；透传给客户端可展示） |
@@ -582,10 +582,20 @@ UI 态建议：`WAITING_DATA` 显示"等待游戏数据"（黄）而非报错；
 ### 10.3 C# P/Invoke（可直接粘贴）
 
 ```csharp
+public enum TelemetryConnState          // connState 字段取值（六态）
+{
+    Idle = 0,                           // SDK 未启动
+    WaitingData = 1,                    // 已启动但从未观察到数据（游戏没在发/写）
+    Connected = 2,                      // 数据新鲜（dataAgeMs ≤ staleTimeoutMs）
+    Stale = 3,                          // 超阈值无新数据（游戏退出/暂停/回菜单）
+    Disconnected = 4,                   // 传输层失效（如 iRacing sim 退出）
+    UnknownAge = 5                      // ABI 兼容保留，1.0.0 起实际不可达
+}
+
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
 public struct TelemetryStatus {          // 20 字节
     public int sdkState;
-    public int connState;
+    public int connState;               // TelemetryConnState
     public int lastError;
     public uint dataAgeMs;               // 0xFFFFFFFF = 未知/尚无数据
     public uint staleTimeoutMs;

@@ -95,7 +95,9 @@ public static class GameLauncher
     }
 
     /// <summary>
-    /// 延迟 5 秒后尝试启动遥测数据采集（给游戏加载时间）。
+    /// 延迟 5 秒后启动遥测数据采集（给游戏加载时间）。
+    /// 启动失败时立即开启自动重试：每隔 5 秒重新调用 StartTelemetry，
+    /// 直至成功；游戏进程全部退出则停止重试。
     /// </summary>
     private static async Task StartTelemetryAsync(GameItem game)
     {
@@ -118,14 +120,24 @@ public static class GameLauncher
 
         try
         {
-            if (telemetryService.Start(steamAppId))
+            while (!telemetryService.Start(steamAppId))
             {
-                Debug.WriteLine($"[GameLauncher] 遥测启动成功: {game.Name} (GameId={steamAppId})");
+                // 启动失败：输出 SDK 诊断信息（错误码 + 中文消息），5 秒后自动重试
+                var errorCode = telemetryService.LastStartErrorCode;
+                var errorMsg = telemetryService.LastStartErrorMessage;
+                Debug.WriteLine($"[GameLauncher] 遥测启动失败，5 秒后自动重试: {game.Name} (GameId={steamAppId}), Err={errorCode}({(int)errorCode}), Msg={errorMsg}");
+
+                // 游戏进程已全部退出 → 重试无意义，停止
+                if (!telemetryService.IsGameProcessRunning(steamAppId))
+                {
+                    Debug.WriteLine($"[GameLauncher] 游戏 {game.Name} 进程已退出，停止遥测自动重试");
+                    return;
+                }
+
+                await Task.Delay(5000);
             }
-            else
-            {
-                Debug.WriteLine($"[GameLauncher] 遥测启动失败: {game.Name} (GameId={steamAppId})");
-            }
+
+            Debug.WriteLine($"[GameLauncher] 遥测启动成功: {game.Name} (GameId={steamAppId})");
         }
         catch (Exception ex)
         {

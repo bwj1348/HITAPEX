@@ -3,8 +3,9 @@ using System.Diagnostics;
 namespace HITAPEX.Services;
 
 /// <summary>
-/// 遥测数据服务：管理 TelemetrySDK 生命周期，
+/// 遥测数据服务：管理 TelemetrySDK v1.0.0 生命周期，
 /// 以 ~60Hz 的频率循环读取游戏遥测数据并通过 USB 串口广播到所有已连接设备（基座、面盘、踏板）。
+/// 数据到达性以 GetTelemetryStatus 连接状态机为准 —— 仅在 CONNECTED（数据新鲜）时下发数据包。
 /// </summary>
 public class TelemetryService : IDisposable
 {
@@ -23,6 +24,16 @@ public class TelemetryService : IDisposable
     private float _trackedMaxRpm;
     private int _rpmZeroFrameCount;
 
+    // 最近一次连接状态快照（由采集线程写入，UI 线程读取）
+    private TelemetryAPI.TelemetryStatus _lastStatus;
+    private TelemetryAPI.TelemetryConnState _lastReportedConnState = TelemetryAPI.TelemetryConnState.Idle;
+
+    /// <summary>最近一次 StartTelemetry 失败的错误码（成功启动后为 None）</summary>
+    public TelemetryAPI.TelemetryErrorCode LastStartErrorCode { get; private set; }
+
+    /// <summary>最近一次 StartTelemetry 失败的中文错误消息（可直接弹窗）</summary>
+    public string LastStartErrorMessage { get; private set; } = "";
+
     // 目标循环间隔 ~16ms (60Hz)
     private static readonly TimeSpan LoopInterval = TimeSpan.FromMilliseconds(16);
 
@@ -32,7 +43,7 @@ public class TelemetryService : IDisposable
     // 自适应最大转速 —— LFS、RBR、BeamNG 三款游戏遥测协议不提供 maxRpm 字段
     private const float DefaultMaxRpm = 6000f;
     private const int RpmZeroResetFrames = 300; // 连续 5 秒转速为 0 → 可能更换车辆，重置为默认值
-    private static readonly HashSet<int> GamesNeedingMaxRpmTracking = [22, 25, 284160];
+    private static readonly HashSet<int> GamesNeedingMaxRpmTracking = [22, 25, 284160, 3917090];
 
     /// <summary>GameId → 进程名列表映射。用于轮询检测目标游戏进程是否仍在运行。</summary>
     private static readonly Dictionary<int, string[]> GameProcessNames = new()
@@ -69,7 +80,7 @@ public class TelemetryService : IDisposable
         { 1953520, ["WRCG", "WRCGenerations"] },
         { 1849250, ["WRC", "EAAntiCheat.GameServiceLauncher", "EAAntiCheat.GameService"] },
         // 其他竞速
-        { 266410,  ["iRacingSim64DX11", "iRacingUI"] },
+        { 266410,  ["iRacing", "iRacingUI", "iRacing.com Simulator"] },
         { 211500,  ["RRRE", "RRRE64", "RRREWebBrowser"] },
         { 284160,  ["BeamNG.drive", "BeamNG.drive.x64"] },
         // 模拟驾驶
@@ -87,15 +98,17 @@ public class TelemetryService : IDisposable
     /// <summary>遥测启动成功时触发</summary>
     public event Action<int>? OnStarted;          // (gameId)
 
-    /// <summary>遥测启动失败时触发</summary>
+    /// <summary>遥测启动失败时触发（失败原因见 LastStartErrorCode / LastStartErrorMessage）</summary>
     public event Action<int>? OnStartFailed;      // (gameId)
 
     /// <summary>遥测停止时触发</summary>
     public event Action? OnStopped;
 
+    /// <summary>连接状态变化时触发（connState 变化才触发，避免 60Hz 刷屏；初值为 Idle）</summary>
+    public event Action<TelemetryAPI.TelemetryStatus>? OnStatusChanged;
 
     /// <summary>数据包已构建并准备发送时触发（可用于调试/日志）</summary>
-    public event Action<byte[][]>? OnPacketsBuilt;  // (five packets: 0x6101~0x6105)
+    public event Action<byte[][]>? OnPacketsBuilt;  // (three packets: 0x6101~0x6103)
 
     /// <summary>遥测数据已下发到基座时触发</summary>
     public event Action<uint>? OnPacketsDispatched; // (timestampMs)
@@ -119,7 +132,7 @@ public class TelemetryService : IDisposable
     /// <summary>当前 SDK 版本号</summary>
     public int SdkVersion => TelemetryAPI.GetSDKVersion();
 
-    /// <summary>当前游戏支持的字段掩码（启动后有效）</summary>
+    /// <summary>当前游戏支持的字段掩码（启动后有效；未启动返回 0）</summary>
     public ulong SupportedFlags
     {
         get
@@ -128,12 +141,25 @@ public class TelemetryService : IDisposable
         }
     }
 
+    /// <summary>最新连接状态快照（未启动时为全默认字段）</summary>
+    public TelemetryAPI.TelemetryStatus CurrentStatus
+    {
+        get { lock (_lock) return _lastStatus; }
+    }
+
+    /// <summary>最新连接状态枚举</summary>
+    public TelemetryAPI.TelemetryConnState ConnectionState
+    {
+        get { lock (_lock) return (TelemetryAPI.TelemetryConnState)_lastStatus.connState; }
+    }
+
     // ════════════════════════════════════════════════════════════════
     //  生命周期管理
     // ════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// 启动遥测数据采集。如果已有游戏在采集中，先停止。
+    /// 启动遥测数据采集。如果已有游戏在采集中，先停止（SDK 内部也会自动停旧会话，等价且安全）。
+    /// UDP 游戏会先应用该游戏的 UDP 监听/转发设置（SetUDPSettings 须在 StartTelemetry 之前调用）。
     /// </summary>
     /// <param name="gameId">TelemetrySDK 的游戏 ID（Steam App ID 或自定义 ID）</param>
     /// <returns>是否成功启动</returns>
@@ -153,12 +179,28 @@ public class TelemetryService : IDisposable
 
         Debug.WriteLine($"[Telemetry] 正在启动遥测采集，GameId={gameId}");
 
+        // 应用 UDP 设置（仅 UDP 游戏有效；共享内存游戏 SDK 返回 false，无害）
+        try
+        {
+            if (TelemetryUdpSettingsService.Apply(gameId))
+                Debug.WriteLine($"[Telemetry] UDP 设置已应用，GameId={gameId}");
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Telemetry] UDP 设置应用异常: {ex.Message}");
+        }
+
         if (!TelemetryAPI.StartTelemetry(gameId))
         {
-            Debug.WriteLine($"[Telemetry] StartTelemetry 失败，GameId={gameId}");
+            LastStartErrorCode = (TelemetryAPI.TelemetryErrorCode)TelemetryAPI.GetLastTelemetryError();
+            LastStartErrorMessage = TelemetryAPI.GetLastErrorMessage();
+            Debug.WriteLine($"[Telemetry] StartTelemetry 失败，GameId={gameId}, Err={LastStartErrorCode}({(int)LastStartErrorCode}), Msg={LastStartErrorMessage}");
             OnStartFailed?.Invoke(gameId);
             return false;
         }
+
+        LastStartErrorCode = TelemetryAPI.TelemetryErrorCode.None;
+        LastStartErrorMessage = "";
 
         lock (_lock)
         {
@@ -198,6 +240,11 @@ public class TelemetryService : IDisposable
         }
     }
 
+    /// <summary>
+    /// 万能兜底重连：StopTelemetry() → StartTelemetry(gameId)，等价于重建会话。
+    /// </summary>
+    public bool Reconnect(int gameId) => Start(gameId);
+
     private void StopInternal()
     {
         // 取消后台线程
@@ -220,6 +267,8 @@ public class TelemetryService : IDisposable
             TelemetryAPI.StopTelemetry();
             _isRunning = false;
             _currentGameId = -1;
+            _lastStatus = default;
+            _lastReportedConnState = TelemetryAPI.TelemetryConnState.Idle;
             Debug.WriteLine("[Telemetry] 遥测采集已停止");
             OnStopped?.Invoke();
         }
@@ -242,12 +291,22 @@ public class TelemetryService : IDisposable
                 var tickStart = Stopwatch.GetTimestamp();
                 frameCount++;
 
-                // 读取并下发遥测数据（有数据就发，没数据就跳过）
-                if (TelemetryAPI.GetTelemetryData(ref data))
+                // 读取连接状态：仅 CONNECTED（数据新鲜）时才取数并下发，
+                // WAITING_DATA / STALE / DISCONNECTED 时不下发（设备端保持无数据状态）。
+                var status = new TelemetryAPI.TelemetryStatus();
+                if (TelemetryAPI.GetTelemetryStatus(ref status))
                 {
-                    // 自适应最大转速追踪（LFS/RBR/BeamNG 不提供 maxRpm）
-                    ApplyAdaptiveMaxRpm(ref data);
-                    ProcessFrame(data);
+                    UpdateStatus(status);
+
+                    if (TelemetryAPI.IsDataFresh(status))
+                    {
+                        if (TelemetryAPI.GetTelemetryData(ref data))
+                        {
+                            // 自适应最大转速追踪（LFS/RBR/BeamNG 不提供 maxRpm）
+                            ApplyAdaptiveMaxRpm(ref data);
+                            ProcessFrame(data);
+                        }
+                    }
                 }
 
                 // 每 ProcessCheckIntervalFrames 帧（~5 秒）检查一次目标游戏进程是否仍在运行
@@ -285,6 +344,24 @@ public class TelemetryService : IDisposable
         }
     }
 
+    /// <summary>更新最新状态快照，连接状态变化时触发 OnStatusChanged（轻量，供 UI 状态灯使用）</summary>
+    private void UpdateStatus(TelemetryAPI.TelemetryStatus status)
+    {
+        var connState = (TelemetryAPI.TelemetryConnState)status.connState;
+
+        lock (_lock)
+        {
+            _lastStatus = status;
+        }
+
+        // connState 变化（含回 Idle）才通知，避免 60Hz 刷屏
+        if (connState != _lastReportedConnState)
+        {
+            _lastReportedConnState = connState;
+            OnStatusChanged?.Invoke(status);
+        }
+    }
+
     /// <summary>
     /// 检测当前遥测目标游戏的进程是否仍在运行。
     /// </summary>
@@ -295,6 +372,14 @@ public class TelemetryService : IDisposable
 
         if (gameId < 0) return false;
 
+        return IsGameProcessRunning(gameId);
+    }
+
+    /// <summary>
+    /// 指定游戏是否有进程在运行；进程名未知时保守返回 true（避免误停止/误停重试）。
+    /// </summary>
+    public bool IsGameProcessRunning(int gameId)
+    {
         if (!GameProcessNames.TryGetValue(gameId, out var processNames) || processNames.Length == 0)
         {
             // 进程名未知，保守返回 true 避免误停止
@@ -329,7 +414,7 @@ public class TelemetryService : IDisposable
             // 计算模拟时间戳（自启动以来的毫秒数）
             var timestampMs = (uint)Stopwatch.GetElapsedTime(_telemetryStartTick).TotalMilliseconds;
 
-            // 构建五个数据包 (0x6101~0x6105)
+            // 构建三个数据包 (0x6101~0x6103)
             var packets = TelemetryPacketBuilder.BuildAllPackets(data, timestampMs);
 
             OnPacketsBuilt?.Invoke(packets);
@@ -346,7 +431,7 @@ public class TelemetryService : IDisposable
     /// <summary>
     /// 自适应最大转速追踪。
     /// LFS、RBR、BeamNG 三款游戏遥测协议不提供 maxRpm 字段（始终为 0）。
-    /// 启动时使用默认值 8000 RPM，随后追踪 rpm 峰值作为 maxRpm；
+    /// 启动时使用默认值 6000 RPM，随后追踪 rpm 峰值作为 maxRpm；
     /// 当 rpm 连续 5 秒为 0 时重置为默认值（可能更换了车辆）。
     /// </summary>
     private void ApplyAdaptiveMaxRpm(ref TelemetryAPI.NormalizedData data)
@@ -382,7 +467,7 @@ public class TelemetryService : IDisposable
     // ════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// 向所有已连接的设备广播遥测数据包（共 5 包：0x6101~0x6105）。
+    /// 向所有已连接的设备广播遥测数据包（共 3 包：0x6101~0x6103）。
     /// 基座、面盘、踏板可能各自独立直连到电脑，不是只能通过基座中转。
     /// </summary>
     private void DispatchPackets(byte[][] packets)

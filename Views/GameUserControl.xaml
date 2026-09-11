@@ -221,6 +221,29 @@
                 </Button>
             </Grid>
         </DataTemplate>
+
+        <!-- 遥测支持：单个参数条目模板（参数名 + 支持状态） -->
+        <DataTemplate x:Key="TelemetrySupportRowTemplate">
+            <Grid Margin="0,0,0,5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <TextBlock Grid.Column="1" Text="{Binding SupportText}" FontSize="16" FontWeight="Regular" VerticalAlignment="Center" HorizontalAlignment="Right">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="#EEEEEE"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSupported}" Value="False">
+                                    <Setter Property="Foreground" Value="#C60E0E"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </DataTemplate>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -847,7 +870,8 @@
                                     </Grid.RowDefinitions>
                                     
                                     <ScrollViewer x:Name="TelemetryScrollViewer" VerticalScrollBarVisibility="Auto" 
-                                                  HorizontalScrollBarVisibility="Disabled">
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  ScrollChanged="TelemetryScrollViewer_ScrollChanged">
                                         <!--<ScrollViewer.OpacityMask>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                                 <GradientStop Color="White" Offset="0"/>
@@ -889,7 +913,7 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <Border x:Name="ContentBorder" Grid.Column="0">
+                                                    <Border x:Name="TelemetryContentBorder" Grid.Column="0">
                                                         <Border.OpacityMask>
                                                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                                                 <GradientStop Color="White" Offset="0"/>
@@ -924,132 +948,18 @@
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="63"/>
+                                                <!-- 列间距离：调整下面这一个值即可，两侧贴边不受影响 -->
+                                                <ColumnDefinition Width="60"/>
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Grid Grid.Column="0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
+                                            <ItemsControl x:Name="TelemetrySupportItemsControl" Grid.Column="0"
+                                                          ItemTemplate="{StaticResource TelemetrySupportRowTemplate}"/>
 
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{lex:Loc Telemetry.Rpm}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="{lex:Loc Telemetry.Speed}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{lex:Loc Telemetry.Gear}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{lex:Loc Telemetry.BrakeTravel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{lex:Loc Telemetry.ThrottleTravel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{lex:Loc Telemetry.ClutchTravel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="6" Grid.Column="0" Text="{lex:Loc Telemetry.CurrentLapTime}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="7" Grid.Column="0" Text="{lex:Loc Telemetry.PreviousLapTime}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="8" Grid.Column="0" Text="{lex:Loc Telemetry.FastestLapTime}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="9" Grid.Column="0" Text="{lex:Loc Telemetry.TireTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="9" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="10" Grid.Column="0" Text="{lex:Loc Telemetry.TirePressure}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="10" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="11" Grid.Column="0" Text="{lex:Loc Telemetry.BrakeTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="11" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="12" Grid.Column="0" Text="{lex:Loc Telemetry.FuelLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="12" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-                                            </Grid>
-
-                                            <Grid Grid.Column="2">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.RowDefinitions>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                    <RowDefinition Height="Auto"/>
-                                                </Grid.RowDefinitions>
-
-                                                <TextBlock Grid.Row="0" Grid.Column="0" Text="{lex:Loc Telemetry.DriverRanking}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="1" Grid.Column="0" Text="DRS" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="2" Grid.Column="0" Text="{lex:Loc Telemetry.WaterTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="3" Grid.Column="0" Text="{lex:Loc Telemetry.OilTemperature}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="4" Grid.Column="0" Text="{lex:Loc Telemetry.TurboPressure}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="5" Grid.Column="0" Text="{lex:Loc Telemetry.TcLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="6" Grid.Column="0" Text="{lex:Loc Telemetry.PitArea}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="7" Grid.Column="0" Text="{lex:Loc Telemetry.AbsLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="7" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="8" Grid.Column="0" Text="{lex:Loc Telemetry.EnginePowerLevel}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="8" Grid.Column="1" Text="{lex:Loc Telemetry.NotSupported}" FontSize="16" FontWeight="Regular" Foreground="#C60E0E" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="9" Grid.Column="0" Text="{lex:Loc Telemetry.TireWear}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="9" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="10" Grid.Column="0" Text="{lex:Loc Telemetry.CurrentLapDelta}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="10" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="11" Grid.Column="0" Text="{lex:Loc Telemetry.Flags}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="11" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-
-                                                <TextBlock Grid.Row="12" Grid.Column="0" Text="{lex:Loc Telemetry.Laps}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="0,0,0,5"/>
-                                                <TextBlock Grid.Row="12" Grid.Column="1" Text="{lex:Loc Telemetry.Supported}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,0,5"/>
-                                            </Grid>
+                                            <ItemsControl x:Name="TelemetrySupportItemsControlRight" Grid.Column="2"
+                                                          ItemTemplate="{StaticResource TelemetrySupportRowTemplate}"/>
                                         </Grid>
+
                                     </ScrollViewer>
                                 </Grid>
                             </Grid>

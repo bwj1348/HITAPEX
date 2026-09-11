@@ -82,6 +82,14 @@ public partial class GameUserControl : UserControl
         // 转发目标列表的数据源
         ForwardTargetItemsControl.ItemsSource = _forwardTargetRows;
 
+        // 遥测支持列表的数据源：按行排列（第 1 行=转速、车速……）
+        // 左列取偶数索引项(0,2,4…)，右列取奇数索引项(1,3,5…)
+        TelemetrySupportItemsControl.ItemsSource = TelemetrySupportRows.Where((_, i) => i % 2 == 0).ToList();
+        TelemetrySupportItemsControlRight.ItemsSource = TelemetrySupportRows.Where((_, i) => i % 2 == 1).ToList();
+
+        // 页面卸载时保存当前 UDP 设置（应用退出/切页兜底）
+        Unloaded += (_, _) => SaveCurrentUdpSettings();
+
         InitializeDeviceConfigIcons();
     }
 
@@ -97,10 +105,50 @@ public partial class GameUserControl : UserControl
         PopulatePresetComboBoxes();
         StartTelemetrySimulation();
         UpdateScrollbarThumb();
+        UpdateTelemetryContentFade();
 
         // 订阅设备连接/断开事件，实时刷新设备配置卡片的连接状态
         SubscribeDeviceEvents();
         RefreshDeviceConfigState();
+    }
+
+    /// <summary>
+    /// 遥测支持列表滚动时更新底部渐隐：
+    /// 仅当内容可继续向下滚动时显示渐隐，滚动到底部（或内容不足以滚动）时移除渐隐。
+    /// </summary>
+    private void TelemetryScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        => UpdateTelemetryContentFade();
+
+    private void UpdateTelemetryContentFade()
+    {
+        if (TelemetryScrollViewer.Template == null) return;
+
+        var border = TelemetryScrollViewer.Template.FindName("TelemetryContentBorder", TelemetryScrollViewer) as Border;
+        if (border == null) return;
+
+        // 还能继续向下滚动才显示渐隐（ScrollableHeight=0 或已滚到底 → 不显示）
+        var canScrollMore = TelemetryScrollViewer.ScrollableHeight > 0 &&
+                            TelemetryScrollViewer.VerticalOffset < TelemetryScrollViewer.ScrollableHeight - 0.5;
+
+        if (canScrollMore)
+        {
+            if (border.OpacityMask == null)
+            {
+                var fade = new LinearGradientBrush
+                {
+                    StartPoint = new Point(0, 0),
+                    EndPoint = new Point(0, 1)
+                };
+                fade.GradientStops.Add(new GradientStop(Colors.White, 0));
+                fade.GradientStops.Add(new GradientStop(Colors.White, 0.90));
+                fade.GradientStops.Add(new GradientStop(Colors.Transparent, 1));
+                border.OpacityMask = fade;
+            }
+        }
+        else
+        {
+            border.OpacityMask = null;
+        }
     }
 
     /// <summary>订阅 USB 串口设备的连接/断开事件，用于刷新设备配置卡片状态</summary>
@@ -368,6 +416,9 @@ public partial class GameUserControl : UserControl
     /// </summary>
     private void SelectGame(GameItem game)
     {
+        // 切换游戏前保存当前选中游戏的 UDP 设置（防止丢失未保存的编辑）
+        SaveCurrentUdpSettings();
+
         _selectedGame = game;
         GameTitleText.Text = game.Name;
         GameTitleText2.Text = game.Name;
@@ -414,6 +465,12 @@ public partial class GameUserControl : UserControl
 
         // 根据当前游戏是否需要 UDP 遥测配置，控制"遥测设置"选项卡的显示
         UpdateTelemetrySettingsTabVisibility(game);
+
+        // 加载新选中游戏的 UDP 设置到 UI
+        LoadUdpSettingsForGame(game);
+
+        // 按当前游戏刷新"遥测支持"列表
+        ApplyTelemetrySupport(game);
     }
 
     /// <summary>
@@ -432,18 +489,97 @@ public partial class GameUserControl : UserControl
     }
 
     // ═══════════════════════════════════════════════════
+    // 遥测设置 — UDP 设置加载 / 保存（按游戏持久化）
+    // ═══════════════════════════════════════════════════
+
+    /// <summary>
+    /// 将指定游戏的 UDP 设置（监听端口 + 转发目标）加载到 UI 控件。
+    /// 仅对 NeedUdpPortConfig 的游戏执行；无用户保存配置时，监听端口显示 SDK 文档默认值（8.1 节）。
+    /// </summary>
+    private void LoadUdpSettingsForGame(GameItem game)
+    {
+        if (!game.NeedUdpPortConfig) return;
+
+        var settings = TelemetryUdpSettingsService.Load(game.Id);
+
+        // 有用户配置 → 用保存值；无配置 → 显示 SDK 默认监听端口
+        var listenPort = settings?.ListenPort is > 0
+            ? settings.ListenPort
+            : TelemetryUdpSettingsService.GetDefaultListenPort(game.Id);
+        ListenPortStepper.Port = listenPort > 0 ? listenPort.ToString() : string.Empty;
+
+        _forwardTargetRows.Clear();
+        if (settings?.ForwardTargets != null)
+        {
+            foreach (var t in settings.ForwardTargets)
+            {
+                _forwardTargetRows.Add(new ForwardTargetRow
+                {
+                    Enabled = t.Enabled,
+                    Ip = t.Ip,
+                    Port = t.Port > 0 ? t.Port.ToString() : string.Empty
+                });
+            }
+        }
+    }
+
+    /// <summary>
+    /// 将当前 UI 中的 UDP 设置保存到持久化存储。
+    /// 仅对当前选中且 NeedUdpPortConfig 的游戏执行（避免把其他游戏的残留值写入非 UDP 游戏）。
+    /// </summary>
+    private void SaveCurrentUdpSettings()
+    {
+        var game = _selectedGame;
+        if (game == null || !game.NeedUdpPortConfig) return;
+
+        var settings = new TelemetryUdpSettingsService.GameUdpSettings
+        {
+            ListenPort = ushort.TryParse(ListenPortStepper.Port, out var listen) ? listen : (ushort)0,
+            ForwardTargets = _forwardTargetRows
+                .Select(r => new TelemetryUdpSettingsService.ForwardTargetSettings
+                {
+                    Enabled = r.Enabled,
+                    Ip = r.Ip,
+                    Port = ushort.TryParse(r.Port, out var p) ? p : (ushort)0
+                })
+                .ToList()
+        };
+
+        TelemetryUdpSettingsService.Save(game.Id, settings);
+    }
+
+    /// <summary>
+    /// 按当前选中游戏刷新"遥测支持"列表状态（数据来自嵌入资源 遥测支持_UI.csv）。
+    /// 矩阵中无该游戏（非遥测游戏）或解析失败时，全部参数显示"不支持"。
+    /// </summary>
+    private void ApplyTelemetrySupport(GameItem game)
+    {
+        var states = TelemetrySupportService.Load(game.Id);
+        foreach (var row in TelemetrySupportRows)
+        {
+            row.IsSupported = states != null && states.TryGetValue(row.CsvName, out var supported)
+                ? supported
+                : false;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════
     // 遥测设置 — UDP 转发目标：添加 / 删除
     // ═══════════════════════════════════════════════════
 
     /// <summary>
     /// "添加转发目标"文本点击：新增一个空的转发目标条目。
+    /// 最多 8 个（SDK fan-out 上限）；新增条目默认未启用，勾选后才参与转发。
     /// </summary>
     private void AddForwardTargetText_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+
+        if (_forwardTargetRows.Count >= 8) return;   // SDK forwardCount 最大 8
+
         _forwardTargetRows.Add(new ForwardTargetRow
         {
-            Enabled = true,
+            Enabled = false,
             Port = string.Empty,
             Ip = string.Empty
         });
@@ -780,6 +916,9 @@ public partial class GameUserControl : UserControl
         e.Handled = true;
 
         if (_selectedGame == null) return;
+
+        // 启动前保存当前 UDP 设置，确保本次启动应用最新的监听端口/转发目标
+        SaveCurrentUdpSettings();
 
         ApplyPresetsIfAutoApplyEnabled();
 
@@ -1461,6 +1600,16 @@ public partial class GameUserControl : UserControl
             });
         };
 
+        // 订阅连接状态变化事件（轻量：仅日志，供后续 UI 状态灯扩展）
+        telemetryService.OnStatusChanged += status =>
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                var conn = (TelemetryAPI.TelemetryConnState)status.connState;
+                Debug.WriteLine($"[GameUI] 遥测连接状态: {conn}, dataAgeMs={status.dataAgeMs}, lastError={status.lastError}");
+            });
+        };
+
         // 订阅遥测发包事件
         // OnPacketsDispatched 在后台线程中触发，需要通过 Dispatcher 调度到 UI 线程更新计数
         telemetryService.OnPacketsDispatched += _ =>
@@ -1786,6 +1935,42 @@ public partial class GameUserControl : UserControl
     {
 
     }
+
+    /// <summary>
+    /// "遥测支持"列表参数（顺序固定，与遥测数据包字段对应）。
+    /// IsSupported 由 TelemetrySupportService 按当前选中游戏从 遥测支持_UI.csv 驱动。
+    /// </summary>
+    internal static readonly IReadOnlyList<TelemetrySupportRow> TelemetrySupportRows =
+    [
+        new("Telemetry.Rpm", "转速"),                       // 转速
+        new("Telemetry.Speed", "车速"),                     // 车速
+        new("Telemetry.Gear", "档位"),                      // 档位
+        new("Telemetry.PitLimiter", "维修区限速器"),        // 维修区限速器
+        new("Telemetry.BrakeTravel", "刹车行程"),           // 刹车行程
+        new("Telemetry.ThrottleTravel", "油门行程"),        // 油门行程
+        new("Telemetry.ClutchTravel", "离合行程"),          // 离合行程
+        new("Telemetry.DriverRanking", "排名"),             // 排名
+        new("Telemetry.CurrentLapTime", "当前圈速"),        // 当前圈速
+        new("Telemetry.PreviousLapTime", "上一圈速"),       // 上一圈速
+        new("Telemetry.FastestLapTime", "最快圈速"),        // 最快圈速
+        new("Telemetry.Drs", "DRS"),                        // DRS
+        new("Telemetry.Tc", "TC"),                          // TC
+        new("Telemetry.Abs", "ABS"),                        // ABS
+        new("Telemetry.TcCut", "TC cut"),                   // TC cut
+        new("Telemetry.WheelLocked", "车辆抱死"),           // 车辆抱死
+        new("Telemetry.WheelSlipping", "车辆打滑"),         // 车辆打滑
+        new("Telemetry.Flags", "旗语"),                     // 旗语
+        new("Telemetry.TireTemperature", "胎温"),           // 胎温
+        new("Telemetry.TirePressure", "胎压"),              // 胎压
+        new("Telemetry.TireWear", "轮胎磨损"),              // 轮胎磨损
+        new("Telemetry.BrakeTemperature", "刹车温度"),      // 刹车温度
+        new("Telemetry.TurboPressure", "涡轮压力"),         // 涡轮压力
+        new("Telemetry.Ers", "ERS"),                        // ERS
+        new("Telemetry.FuelLevel", "油量"),                 // 油量
+        new("Telemetry.WaterTemperature", "水温"),          // 水温
+        new("Telemetry.OilTemperature", "油温"),            // 油温
+        new("Telemetry.EngineMap", "发动机模式（Engine Map）"), // 发动机模式（Engine Map）
+    ];
 }
 
 /// <summary>
@@ -1817,6 +2002,65 @@ internal sealed class ForwardTargetRow : INotifyPropertyChanged
     {
         get => _ip;
         set { if (_ip != value) { _ip = value; OnPropertyChanged(); } }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+/// <summary>
+/// "遥测支持"列表中单个参数条目。
+/// Name / SupportText 随语言切换自动刷新（订阅 LocalizationService.PropertyChanged）；
+/// IsSupported 由 TelemetrySupportService 按当前选中游戏驱动。
+/// </summary>
+internal sealed class TelemetrySupportRow : INotifyPropertyChanged
+{
+    /// <summary>本地化资源 key（如 Telemetry.Rpm），用于跨语言切换刷新</summary>
+    public string LocKey { get; }
+
+    /// <summary>遥测支持_UI.csv 中的行名（用于匹配矩阵数据）</summary>
+    public string CsvName { get; }
+
+    private bool _isSupported;
+
+    /// <summary>该参数当前是否被支持（默认支持；按游戏从 CSV 矩阵加载）</summary>
+    public bool IsSupported
+    {
+        get => _isSupported;
+        set
+        {
+            if (_isSupported != value)
+            {
+                _isSupported = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SupportText));
+            }
+        }
+    }
+
+    /// <summary>参数名（当前语言文本）</summary>
+    public string Name => LocalizationService.Instance[LocKey];
+
+    /// <summary>支持状态文本（当前语言：支持 / 不支持）</summary>
+    public string SupportText =>
+        IsSupported
+            ? LocalizationService.Instance["Telemetry.Supported"]
+            : LocalizationService.Instance["Telemetry.NotSupported"];
+
+    public TelemetrySupportRow(string locKey, string csvName, bool isSupported = true)
+    {
+        LocKey = locKey;
+        CsvName = csvName;
+        _isSupported = isSupported;
+
+        // 语言切换时刷新 Name / SupportText
+        LocalizationService.Instance.PropertyChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(Name));
+            OnPropertyChanged(nameof(SupportText));
+        };
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

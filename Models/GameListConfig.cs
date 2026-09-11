@@ -71,7 +71,6 @@ public static class GameListConfig
             new()
             {
                 Id = 1692250,
-                NeedUdpPortConfig = true,
                 Name = "F1 22",
                 Abbreviation = "F1 22",
                 SteamId = "1692250",
@@ -80,11 +79,11 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/F122_cover.png",
                 BgImageUrl = "/Assets/gameimage/F122_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
             new()
             {
                 Id = 2108330,
-                NeedUdpPortConfig = true,
                 Name = "F1 23",
                 Abbreviation = "F1 23",
                 SteamId = "2108330",
@@ -93,11 +92,11 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/F123_cover.png",
                 BgImageUrl = "/Assets/gameimage/F123_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
             new()
             {
                 Id = 2488620,
-                NeedUdpPortConfig = true,
                 Name = "F1 24",
                 Abbreviation = "F1 24",
                 SteamId = "2488620",
@@ -106,11 +105,11 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/F124_cover.png",
                 BgImageUrl = "/Assets/gameimage/F124_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
             new()
             {
                 Id = 3059520,
-                NeedUdpPortConfig = true,
                 Name = "F1 25",
                 Abbreviation = "F1 25",
                 SteamId = "3059520",
@@ -119,6 +118,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/F125_cover.png",
                 BgImageUrl = "/Assets/gameimage/F125_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
 
             // ============================
@@ -135,6 +135,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/FM_cover.png",
                 BgImageUrl = "/Assets/gameimage/FM_bg.png",
                 NeedsTelemetryConfig = false,
+                NeedUdpPortConfig = true,
             },
             new()
             {
@@ -147,6 +148,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/FH4_cover.png",
                 BgImageUrl = "/Assets/gameimage/FH4_bg.png",
                 NeedsTelemetryConfig = false,
+                NeedUdpPortConfig = true,
             },
             new()
             {
@@ -159,6 +161,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/FH5_cover.png",
                 BgImageUrl = "/Assets/gameimage/FH5_bg.png",
                 NeedsTelemetryConfig = false,
+                NeedUdpPortConfig = true,
             },
             new()
             {
@@ -171,6 +174,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/FH6_cover.png",
                 BgImageUrl = "/Assets/gameimage/FH6_bg.png",
                 NeedsTelemetryConfig = false,
+                NeedUdpPortConfig = true,
             },
 
             // ============================
@@ -179,7 +183,6 @@ public static class GameListConfig
             new()
             {
                 Id = 421020,
-                NeedUdpPortConfig = true,
                 Name = "DiRT 4",
                 Abbreviation = "D4",
                 SteamId = "421020",
@@ -188,11 +191,11 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/D4_cover.png",
                 BgImageUrl = "/Assets/gameimage/D4_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
             new()
             {
                 Id = 690790,
-                NeedUdpPortConfig = true,
                 Name = "DiRT Rally 2.0",
                 Abbreviation = "DR2.0",
                 SteamId = "690790",
@@ -201,6 +204,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/DR2_cover.png",
                 BgImageUrl = "/Assets/gameimage/DR2_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
 
             // ============================
@@ -277,7 +281,7 @@ public static class GameListConfig
             new()
             {
                 Id = 1004750,
-                Name = "WRC 8 FIA World Rally Championship",
+                Name = "WRC 8",
                 Abbreviation = "WRC8",
                 SteamId = "1004750",
                 Description = "KT Racing 出品的 WRC 2019 赛季官方游戏。动态天气系统可在一场拉力赛中经历晴雨交替，路面退化机制影响后续车辆抓地力。",
@@ -289,7 +293,7 @@ public static class GameListConfig
             new()
             {
                 Id = 1267540,
-                Name = "WRC 9 FIA World Rally Championship",
+                Name = "WRC 9",
                 Abbreviation = "WRC9",
                 SteamId = "1267540",
                 Description = "WRC 2020 赛季官方游戏，新增肯尼亚 Safari Rally、新西兰和日本拉力赛。改进悬挂物理，碎石路面反馈更加细腻真实。",
@@ -301,7 +305,7 @@ public static class GameListConfig
             new()
             {
                 Id = 1462810,
-                Name = "WRC 10 FIA World Rally Championship",
+                Name = "WRC 10",
                 Abbreviation = "WRC10",
                 SteamId = "1462810",
                 Description = "纪念 WRC 50 周年的力作，收录传奇拉力赛车与经典历史赛段。新增周年纪念模式和俱乐部创建系统，致敬半个世纪的拉力赛历史。",
@@ -313,7 +317,6 @@ public static class GameListConfig
             new()
             {
                 Id = 1953520,
-                NeedUdpPortConfig = true,
                 Name = "WRC Generations",
                 Abbreviation = "WRCG",
                 SteamId = "1953520",
@@ -322,12 +325,12 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/WRCG_cover.png",
                 BgImageUrl = "/Assets/gameimage/WRCG_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
             new()
             {
                 Id = 1849250,
-                NeedUdpPortConfig = true,
-                Name = "EA SPORTS WRC",
+                Name = "EA WRC",
                 Abbreviation = "EA WRC",
                 SteamId = "1849250",
                 Description = "Codemasters 加盟 EA 后首款 WRC 官方游戏，采用 Unreal Engine 打造。赛道长度与精度大幅提升，支持 Builder 自定义拉力赛车系统。",
@@ -335,6 +338,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/EAWRC_cover.png",
                 BgImageUrl = "/Assets/gameimage/EAWRC_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
 
             // ============================
@@ -375,6 +379,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/BNG_cover.png",
                 BgImageUrl = "/Assets/gameimage/BNG_bg.png",
                 NeedsTelemetryConfig = false,
+                NeedUdpPortConfig = true,
             },
 
             // ============================
@@ -419,11 +424,11 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/RBR_cover.png",
                 BgImageUrl = "/Assets/gameimage/RBR_bg.png",
                 NeedsTelemetryConfig = false,
+                NeedUdpPortConfig = true,
             },
             new()
             {
                 Id = 25,
-                NeedUdpPortConfig = true,
                 Name = "Live for Speed",
                 Abbreviation = "LFS",
                 SteamId = "25",
@@ -432,6 +437,7 @@ public static class GameListConfig
                 CoverImageUrl = "/Assets/gameimage/LFS_cover.png",
                 BgImageUrl = "/Assets/gameimage/LFS_bg.png",
                 NeedsTelemetryConfig = true,
+                NeedUdpPortConfig = true,
             },
         };
     }
