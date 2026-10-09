@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using HITAPEX.Models.Usb;
 using HITAPEX.Services.Data.Api;
@@ -152,7 +153,7 @@ public class PresetService
             if (!File.Exists(path))
                 return [];
 
-            var json = File.ReadAllText(path);
+            var json = Encoding.UTF8.GetString(PresetEncryptor.Unprotect(File.ReadAllBytes(path)));
 
             if (path == _officialCacheFilePath)
             {
@@ -183,7 +184,7 @@ public class PresetService
         {
             var cache = new OfficialCacheFile { Presets = entries };
             var json = JsonSerializer.Serialize(cache, JsonOptions);
-            File.WriteAllText(_officialCacheFilePath, json);
+            File.WriteAllBytes(_officialCacheFilePath, PresetEncryptor.Protect(Encoding.UTF8.GetBytes(json)));
             Debug.WriteLine($"[PresetService] 缓存已写入: {_officialCacheFilePath} ({entries.Count} 条)");
         }
         catch (Exception ex)
@@ -241,7 +242,7 @@ public class PresetService
             if (!File.Exists(_personalFilePath))
                 return [];
 
-            var json = File.ReadAllText(_personalFilePath);
+            var json = Encoding.UTF8.GetString(PresetEncryptor.Unprotect(File.ReadAllBytes(_personalFilePath)));
             var presets = JsonSerializer.Deserialize<List<PresetItem>>(json, JsonOptions);
             if (presets != null)
             {
@@ -268,7 +269,7 @@ public class PresetService
             allPresets.RemoveAll(p => p.DeviceType == deviceType);
             allPresets.AddRange(presets);
             var json = JsonSerializer.Serialize(allPresets, JsonOptions);
-            File.WriteAllText(_personalFilePath, json);
+            File.WriteAllBytes(_personalFilePath, PresetEncryptor.Protect(Encoding.UTF8.GetBytes(json)));
         }
         catch (Exception ex)
         {
@@ -286,7 +287,7 @@ public class PresetService
         try
         {
             var json = JsonSerializer.Serialize(presets, JsonOptions);
-            File.WriteAllText(_personalFilePath, json);
+            File.WriteAllBytes(_personalFilePath, PresetEncryptor.Protect(Encoding.UTF8.GetBytes(json)));
         }
         catch (Exception ex)
         {
@@ -305,7 +306,7 @@ public class PresetService
             if (!File.Exists(_personalFilePath))
                 return [];
 
-            var json = File.ReadAllText(_personalFilePath);
+            var json = Encoding.UTF8.GetString(PresetEncryptor.Unprotect(File.ReadAllBytes(_personalFilePath)));
             var presets = JsonSerializer.Deserialize<List<PresetItem>>(json, JsonOptions);
             if (presets != null)
             {
@@ -335,7 +336,7 @@ public class PresetService
         };
 
         var json = JsonSerializer.Serialize(exportItem, JsonOptions);
-        File.WriteAllText(filePath, json);
+        File.WriteAllBytes(filePath, PresetEncryptor.Protect(Encoding.UTF8.GetBytes(json)));
     }
 
     /// <summary>
@@ -350,7 +351,7 @@ public class PresetService
     {
         try
         {
-            var json = File.ReadAllText(filePath);
+            var json = Encoding.UTF8.GetString(PresetEncryptor.Unprotect(File.ReadAllBytes(filePath)));
             var preset = JsonSerializer.Deserialize<PresetItem>(json, JsonOptions);
             if (preset == null) return null;
 

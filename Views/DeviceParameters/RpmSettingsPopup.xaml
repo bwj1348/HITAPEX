@@ -646,14 +646,14 @@
                         <Grid Height="26" VerticalAlignment="Center" SnapsToDevicePixels="True">
                             <Grid.Resources>
                                 <GeometryGroup x:Key="TrackGeometry">
-                                    <PathGeometry Figures="M0 0H54.2308L51.2727 5H0V0Z"/>
+                                    <PathGeometry Figures="M0 2.5C0 1.11929 1.11929 0 2.5 0H54.2308L51.2727 5H2.5C1.11929 5 0 3.88071 0 2.5Z"/>
                                     <PathGeometry Figures="M60.1475 0H111.42L108.462 5H57.1895L60.1475 0Z"/>
                                     <PathGeometry Figures="M117.335 0H167.622L164.664 5H114.377L117.335 0Z"/>
                                     <PathGeometry Figures="M56.2061 0H58.1781L55.2201 5H53.248L56.2061 0Z"/>
                                     <PathGeometry Figures="M113.392 0H115.364L112.406 5H110.434L113.392 0Z"/>
                                     <PathGeometry Figures="M173.54 0H224.813L221.855 5H170.582L173.54 0Z"/>
                                     <PathGeometry Figures="M169.595 0H171.567L168.609 5H166.637L169.595 0Z"/>
-                                    <PathGeometry Figures="M230.728 0H282V5H227.77L230.728 0Z"/>
+                                    <PathGeometry Figures="M230.728 0H279.5C280.881 0 282 1.11929 282 2.5C282 3.88071 280.881 5 279.5 5H227.77L230.728 0Z"/>
                                     <PathGeometry Figures="M226.784 0H228.756L225.798 5H223.826L226.784 0Z"/>
                                 </GeometryGroup>
                             </Grid.Resources>

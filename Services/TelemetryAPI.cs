@@ -155,8 +155,12 @@ public static class TelemetryAPI
         // —— 元信息 ——
         public ulong validFlags;                                 // 有效性掩码，见 ValidFlags
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 249)]
-        public byte[] _reserved;                                 // 263 已用 + 249 = 512
+        // iRacing 方向盘力反馈扭矩（6 个 360Hz 采样；仅 GameId=266410 填充，其余游戏保持全 0）
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
+        public float[] steeringWheelTorqueST;
+
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 225)]
+        public byte[] _reserved;                                 // 287 已用 + 225 = 512
     }
 
     /// <summary>
@@ -368,7 +372,7 @@ public static class TelemetryAPI
     public static bool IsDataValid(NormalizedData data) =>
         data.rpm > 0.0f || data.speed > 0.0f;
 
-    /// <summary>创建已初始化内联数组的 NormalizedData 实例（_reserved = 249）</summary>
+    /// <summary>创建已初始化内联数组的 NormalizedData 实例（_reserved = 225）</summary>
     public static NormalizedData CreateNormalizedData()
     {
         return new NormalizedData
@@ -383,7 +387,8 @@ public static class TelemetryAPI
             brakeTemp = new float[4],
             isWheelLocked = new bool[4],
             isWheelSlipping = new bool[4],
-            _reserved = new byte[249],
+            steeringWheelTorqueST = new float[6],
+            _reserved = new byte[225],
         };
     }
 

@@ -1,9 +1,10 @@
 {
   "Name": "123",
-  "Description": "",
-  "Category": "",
-  "ItemCount": 0,
   "Games": [],
+  "IsPersonal": true,
+  "DeviceType": 2,
+  "BaseParameters": null,
+  "WheelParameters": null,
   "PedalParameters": {
     "clutchCurveType": 2,
     "clutchDirection": 0,
@@ -42,7 +43,7 @@
     "throttleDeadZoneFront": 7,
     "throttleDeadZoneRear": 8
   },
-  "WheelParameters": null,
-  "IsPersonal": true,
-  "DeviceType": 2
+  "SyncToCloud": false,
+  "CloudDocumentId": null,
+  "ShareCode": null
 }

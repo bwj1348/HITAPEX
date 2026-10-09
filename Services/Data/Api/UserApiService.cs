@@ -319,6 +319,10 @@ public class UserApiService
     /// <summary>删除预设（非自己的预设返回 404）—— DELETE /api/user-presets/:documentId</summary>
     public async Task<ApiResult<object>> DeletePresetAsync(string documentId)
         => await _apiClient.DeleteAsync<object>($"/api/user-presets/{documentId}");
+
+    /// <summary>凭分享码导入预设（公开接口，无需登录）—— POST /api/user-presets/import</summary>
+    public async Task<ApiResult<ImportedPresetEntry?>> ImportPresetByCodeAsync(string code)
+        => await _apiClient.PostWrappedAsync<ImportedPresetEntry>("/api/user-presets/import", new { code });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -362,6 +366,20 @@ public class UserPresetEntry
     [JsonPropertyName("documentId")] public string DocumentId { get; set; } = string.Empty;
     [JsonPropertyName("config_data")] public JsonElement? ConfigData { get; set; }
     [JsonPropertyName("user")] public int UserId { get; set; }
+    [JsonPropertyName("share_code")] public string? ShareCode { get; set; }
+}
+
+/// <summary>凭分享码导入预设的响应（POST /api/user-presets/import）</summary>
+public class ImportedPresetEntry
+{
+    [JsonPropertyName("config_data")] public JsonElement? ConfigData { get; set; }
+    [JsonPropertyName("owner")] public ImportedPresetOwner? Owner { get; set; }
+}
+
+/// <summary>导入响应中的作者信息（可能为 null，展示时需兜底）</summary>
+public class ImportedPresetOwner
+{
+    [JsonPropertyName("username")] public string? Username { get; set; }
 }
 
 /// <summary>

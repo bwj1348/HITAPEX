@@ -21,7 +21,7 @@
 
         <Style x:Key="SettingsTabButtonStyle" TargetType="RadioButton">
             <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontStyle" Value="Italic"/>
             <Setter Property="Width" Value="266"/>
@@ -41,14 +41,13 @@
                                       HorizontalAlignment="Center" 
                                       VerticalAlignment="Center"
                                       TextElement.Foreground="#FFFFFF"
-                                      TextElement.FontWeight="Medium"
+                                      TextElement.FontWeight="Bold"
                                       TextElement.FontSize="22"
                                       TextElement.FontStyle="Italic"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
-                                <Setter TargetName="ContentPresenter" Property="TextElement.FontWeight" Value="Bold"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -58,7 +57,7 @@
 
         <Style x:Key="SettingsTabButtonStyle2" TargetType="RadioButton">
             <Setter Property="Foreground" Value="#FFFFFF"/>
-            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="FontSize" Value="22"/>
             <Setter Property="FontStyle" Value="Italic"/>
             <Setter Property="Width" Value="264"/>
@@ -78,14 +77,13 @@
                                       HorizontalAlignment="Center" 
                                       VerticalAlignment="Center"
                                       TextElement.Foreground="#FFFFFF"
-                                      TextElement.FontWeight="Medium"
+                                      TextElement.FontWeight="Bold"
                                       TextElement.FontSize="22"
                                       TextElement.FontStyle="Italic"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
-                                <Setter TargetName="ContentPresenter" Property="TextElement.FontWeight" Value="Bold"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>

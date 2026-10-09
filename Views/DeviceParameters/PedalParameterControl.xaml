@@ -112,8 +112,8 @@
 
         <Style x:Key="DualStateSvgToggleStyle" TargetType="CheckBox">
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Width" Value="34.5"/>
-            <Setter Property="Height" Value="18"/>
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="23"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="CheckBox">
@@ -390,7 +390,7 @@
                 </Grid>
 
                 <!-- 导出按钮 -->
-                <Grid MinWidth="80" Height="37"
+                <Grid MinWidth="80" Height="37" Margin="0,0,10,0"
                       MouseLeftButtonDown="ExportButton_Click"
                       SizeChanged="ActionButton_SizeChanged">
                     <Canvas>
@@ -398,6 +398,19 @@
                               Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
                     </Canvas>
                     <TextBlock Text="{lex:Loc Common.Export}" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <!-- 分享按钮（仅云预设可用） -->
+                <Grid x:Name="ShareButtonGrid" MinWidth="80" Height="37"
+                      MouseLeftButtonDown="ShareButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="ShareButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Share}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>
@@ -481,34 +494,38 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- 第一行：离合器图标和标题 -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                        <Viewbox Width="8" Height="26" Margin="0,0,10,0">
-                            <Grid Width="8" Height="26" Opacity="0.9">
-                                <Grid.Effect>
-                                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
-                                </Grid.Effect>
-                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
-                                    <Path.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C60E0E" Offset="0"/>
-                                            <GradientStop Color="#600707" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Path.Fill>
-                                </Path>
-                            </Grid>
-                        </Viewbox>
-                        <TextBlock Text="{lex:Loc PedalParam.Clutch}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <!-- 第二行：输入反向 -->
-                    <Grid Grid.Row="1" Margin="0,0,0,20">
+                    <!-- 第一行：图标、标题与输入反向 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{lex:Loc PedalParam.InputReverse}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="ClutchReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="{lex:Loc PedalParam.Clutch}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Grid Grid.Column="1" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{lex:Loc PedalParam.InputReverse}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <CheckBox x:Name="ClutchReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
+                        </Grid>
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
@@ -624,25 +641,28 @@
                     </Grid>
 
                     <!-- 第五行：坐标系 -->
-                    <Canvas Grid.Row="4" Width="345" Height="266" Margin="0,0,0,20">
+                    <Canvas Grid.Row="4" Width="345" Height="308" Margin="0,0,0,20">
                         <!-- 虚线网格 -->
                         <Line X1="0" Y1="0" X2="345" Y2="0" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="38" X2="345" Y2="38" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="76" X2="345" Y2="76" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="114" X2="345" Y2="114" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="152" X2="345" Y2="152" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="190" X2="345" Y2="190" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="228" X2="345" Y2="228" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="30.8" X2="345" Y2="30.8" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="61.6" X2="345" Y2="61.6" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="92.4" X2="345" Y2="92.4" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="123.2" X2="345" Y2="123.2" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="154" X2="345" Y2="154" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="184.8" X2="345" Y2="184.8" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="215.6" X2="345" Y2="215.6" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="246.4" X2="345" Y2="246.4" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="277.2" X2="345" Y2="277.2" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
 
-                        <Line X1="69" Y1="0" X2="69" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="138" Y1="0" X2="138" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="207" Y1="0" X2="207" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="276" Y1="0" X2="276" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="345" Y1="0" X2="345" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="69" Y1="0" X2="69" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="138" Y1="0" X2="138" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="207" Y1="0" X2="207" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="276" Y1="0" X2="276" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="345" Y1="0" X2="345" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
 
                         <!-- 坐标轴 -->
-                        <Line X1="0" Y1="266" X2="345" Y2="266" Stroke="#EEEEEE" StrokeThickness="1"/>
-                        <Line X1="0" Y1="0" X2="0" Y2="266" Stroke="#EEEEEE" StrokeThickness="1"/>
+                        <Line X1="0" Y1="308" X2="345" Y2="308" Stroke="#EEEEEE" StrokeThickness="1"/>
+                        <Line X1="0" Y1="0" X2="0" Y2="308" Stroke="#EEEEEE" StrokeThickness="1"/>
 
                         <!-- 渐变填充区域 -->
                         <Path x:Name="ClutchFillArea">
@@ -656,13 +676,13 @@
                             </Path.Fill>
                             <Path.Data>
                                 <PathGeometry>
-                                    <PathFigure StartPoint="0,266">
-                                        <LineSegment Point="69,205"/>
-                                        <LineSegment Point="138,148"/>
-                                        <LineSegment Point="207,91"/>
-                                        <LineSegment Point="276,42"/>
+                                    <PathFigure StartPoint="0,308">
+                                        <LineSegment Point="69,237.4"/>
+                                        <LineSegment Point="138,171.4"/>
+                                        <LineSegment Point="207,105.4"/>
+                                        <LineSegment Point="276,48.6"/>
                                         <LineSegment Point="345,0"/>
-                                        <LineSegment Point="345,266"/>
+                                        <LineSegment Point="345,308"/>
                                     </PathFigure>
                                 </PathGeometry>
                             </Path.Data>
@@ -673,13 +693,13 @@
 
                         <!-- 可移动圆点 -->
                         <Control x:Name="ClutchPoint1" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#FFC800" Canvas.Left="61.5" Canvas.Top="197.5"/>
+                                 Foreground="#FFC800" Canvas.Left="61.5" Canvas.Top="228.7"/>
                         <Control x:Name="ClutchPoint2" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#FFC800" Canvas.Left="130.5" Canvas.Top="140.5"/>
+                                 Foreground="#FFC800" Canvas.Left="130.5" Canvas.Top="162.7"/>
                         <Control x:Name="ClutchPoint3" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#FFC800" Canvas.Left="199.5" Canvas.Top="83.5"/>
+                                 Foreground="#FFC800" Canvas.Left="199.5" Canvas.Top="96.7"/>
                         <Control x:Name="ClutchPoint4" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#FFC800" Canvas.Left="268.5" Canvas.Top="34.5"/>
+                                 Foreground="#FFC800" Canvas.Left="268.5" Canvas.Top="40"/>
                     </Canvas>
 
                     <!-- 第六行：死区调整 -->
@@ -894,34 +914,38 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- 第一行：刹车图标和标题 -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                        <Viewbox Width="8" Height="26" Margin="0,0,10,0">
-                            <Grid Width="8" Height="26" Opacity="0.9">
-                                <Grid.Effect>
-                                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
-                                </Grid.Effect>
-                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
-                                    <Path.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C60E0E" Offset="0"/>
-                                            <GradientStop Color="#600707" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Path.Fill>
-                                </Path>
-                            </Grid>
-                        </Viewbox>
-                        <TextBlock Text="{lex:Loc PedalParam.Brake}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <!-- 第二行：输入反向 -->
-                    <Grid Grid.Row="1" Margin="0,0,0,20">
+                    <!-- 第一行：图标、标题与输入反向 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{lex:Loc PedalParam.InputReverse}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="BrakeReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="{lex:Loc PedalParam.Brake}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Grid Grid.Column="1" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{lex:Loc PedalParam.InputReverse}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <CheckBox x:Name="BrakeReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
+                        </Grid>
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
@@ -1037,25 +1061,28 @@
                     </Grid>
 
                     <!-- 第五行：坐标系 -->
-                    <Canvas Grid.Row="4" Width="345" Height="266" Margin="0,0,0,20">
+                    <Canvas Grid.Row="4" Width="345" Height="308" Margin="0,0,0,20">
                         <!-- 虚线网格 -->
                         <Line X1="0" Y1="0" X2="345" Y2="0" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="38" X2="345" Y2="38" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="76" X2="345" Y2="76" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="114" X2="345" Y2="114" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="152" X2="345" Y2="152" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="190" X2="345" Y2="190" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="228" X2="345" Y2="228" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="30.8" X2="345" Y2="30.8" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="61.6" X2="345" Y2="61.6" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="92.4" X2="345" Y2="92.4" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="123.2" X2="345" Y2="123.2" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="154" X2="345" Y2="154" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="184.8" X2="345" Y2="184.8" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="215.6" X2="345" Y2="215.6" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="246.4" X2="345" Y2="246.4" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="277.2" X2="345" Y2="277.2" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
 
-                        <Line X1="69" Y1="0" X2="69" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="138" Y1="0" X2="138" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="207" Y1="0" X2="207" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="276" Y1="0" X2="276" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="345" Y1="0" X2="345" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="69" Y1="0" X2="69" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="138" Y1="0" X2="138" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="207" Y1="0" X2="207" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="276" Y1="0" X2="276" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="345" Y1="0" X2="345" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
 
                         <!-- 坐标轴 -->
-                        <Line X1="0" Y1="266" X2="345" Y2="266" Stroke="#EEEEEE" StrokeThickness="1"/>
-                        <Line X1="0" Y1="0" X2="0" Y2="266" Stroke="#EEEEEE" StrokeThickness="1"/>
+                        <Line X1="0" Y1="308" X2="345" Y2="308" Stroke="#EEEEEE" StrokeThickness="1"/>
+                        <Line X1="0" Y1="0" X2="0" Y2="308" Stroke="#EEEEEE" StrokeThickness="1"/>
 
                         <!-- 渐变填充区域 -->
                         <Path x:Name="BrakeFillArea">
@@ -1069,13 +1096,13 @@
                             </Path.Fill>
                             <Path.Data>
                                 <PathGeometry>
-                                    <PathFigure StartPoint="0,266">
-                                        <LineSegment Point="69,205"/>
-                                        <LineSegment Point="138,148"/>
-                                        <LineSegment Point="207,91"/>
-                                        <LineSegment Point="276,42"/>
+                                    <PathFigure StartPoint="0,308">
+                                        <LineSegment Point="69,237.4"/>
+                                        <LineSegment Point="138,171.4"/>
+                                        <LineSegment Point="207,105.4"/>
+                                        <LineSegment Point="276,48.6"/>
                                         <LineSegment Point="345,0"/>
-                                        <LineSegment Point="345,266"/>
+                                        <LineSegment Point="345,308"/>
                                     </PathFigure>
                                 </PathGeometry>
                             </Path.Data>
@@ -1086,13 +1113,13 @@
 
                         <!-- 可移动圆点 -->
                         <Control x:Name="BrakePoint1" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#C60E0E" Canvas.Left="61.5" Canvas.Top="197.5"/>
+                                 Foreground="#C60E0E" Canvas.Left="61.5" Canvas.Top="228.7"/>
                         <Control x:Name="BrakePoint2" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#C60E0E" Canvas.Left="130.5" Canvas.Top="140.5"/>
+                                 Foreground="#C60E0E" Canvas.Left="130.5" Canvas.Top="162.7"/>
                         <Control x:Name="BrakePoint3" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#C60E0E" Canvas.Left="199.5" Canvas.Top="83.5"/>
+                                 Foreground="#C60E0E" Canvas.Left="199.5" Canvas.Top="96.7"/>
                         <Control x:Name="BrakePoint4" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#C60E0E" Canvas.Left="268.5" Canvas.Top="34.5"/>
+                                 Foreground="#C60E0E" Canvas.Left="268.5" Canvas.Top="40"/>
                     </Canvas>
 
                     <!-- 第六行：死区调整 -->
@@ -1304,34 +1331,38 @@
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- 第一行：油门图标和标题 -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
-                        <Viewbox Width="8" Height="26" Margin="0,0,10,0">
-                            <Grid Width="8" Height="26" Opacity="0.9">
-                                <Grid.Effect>
-                                    <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
-                                </Grid.Effect>
-                                <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
-                                    <Path.Fill>
-                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                            <GradientStop Color="#C60E0E" Offset="0"/>
-                                            <GradientStop Color="#600707" Offset="1"/>
-                                        </LinearGradientBrush>
-                                    </Path.Fill>
-                                </Path>
-                            </Grid>
-                        </Viewbox>
-                        <TextBlock Text="{lex:Loc PedalParam.Throttle}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                    </StackPanel>
-
-                    <!-- 第二行：输入反向 -->
-                    <Grid Grid.Row="1" Margin="0,0,0,20">
+                    <!-- 第一行：图标、标题与输入反向 -->
+                    <Grid Grid.Row="0" Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{lex:Loc PedalParam.InputReverse}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
-                        <CheckBox x:Name="ThrottleReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Viewbox Width="8" Height="26" Margin="0,0,10,0">
+                                <Grid Width="8" Height="26" Opacity="0.9">
+                                    <Grid.Effect>
+                                        <DropShadowEffect ShadowDepth="0" BlurRadius="5" Color="#C60E0E" Opacity="0.4"/>
+                                    </Grid.Effect>
+                                    <Path Data="M0 2L2 0H4L0 4V2Z M8 0H6L0 6V26H5L8 23V0Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                <GradientStop Color="#C60E0E" Offset="0"/>
+                                                <GradientStop Color="#600707" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                </Grid>
+                            </Viewbox>
+                            <TextBlock Text="{lex:Loc PedalParam.Throttle}" FontSize="22" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Grid Grid.Column="1" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{lex:Loc PedalParam.InputReverse}" FontSize="16" FontWeight="Regular" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+                            <CheckBox x:Name="ThrottleReverseToggle" Grid.Column="1" IsChecked="False" Style="{StaticResource DualStateSvgToggleStyle}" Margin="10,0,0,0" Checked="AxisReverseToggle_Changed" Unchecked="AxisReverseToggle_Changed"/>
+                        </Grid>
                     </Grid>
 
                     <!-- 第三行：踏板曲线 -->
@@ -1447,25 +1478,28 @@
                     </Grid>
 
                     <!-- 第五行：坐标系 -->
-                    <Canvas Grid.Row="4" Width="345" Height="266" Margin="0,0,0,20">
+                    <Canvas Grid.Row="4" Width="345" Height="308" Margin="0,0,0,20">
                         <!-- 虚线网格 -->
                         <Line X1="0" Y1="0" X2="345" Y2="0" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="38" X2="345" Y2="38" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="76" X2="345" Y2="76" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="114" X2="345" Y2="114" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="152" X2="345" Y2="152" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="190" X2="345" Y2="190" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="0" Y1="228" X2="345" Y2="228" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="30.8" X2="345" Y2="30.8" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="61.6" X2="345" Y2="61.6" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="92.4" X2="345" Y2="92.4" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="123.2" X2="345" Y2="123.2" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="154" X2="345" Y2="154" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="184.8" X2="345" Y2="184.8" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="215.6" X2="345" Y2="215.6" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="246.4" X2="345" Y2="246.4" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="0" Y1="277.2" X2="345" Y2="277.2" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
 
-                        <Line X1="69" Y1="0" X2="69" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="138" Y1="0" X2="138" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="207" Y1="0" X2="207" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="276" Y1="0" X2="276" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
-                        <Line X1="345" Y1="0" X2="345" Y2="266" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="69" Y1="0" X2="69" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="138" Y1="0" X2="138" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="207" Y1="0" X2="207" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="276" Y1="0" X2="276" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
+                        <Line X1="345" Y1="0" X2="345" Y2="308" Stroke="#66EEEEEE" StrokeThickness="1" StrokeDashArray="5,5"/>
 
                         <!-- 坐标轴 -->
-                        <Line X1="0" Y1="266" X2="345" Y2="266" Stroke="#EEEEEE" StrokeThickness="1"/>
-                        <Line X1="0" Y1="0" X2="0" Y2="266" Stroke="#EEEEEE" StrokeThickness="1"/>
+                        <Line X1="0" Y1="308" X2="345" Y2="308" Stroke="#EEEEEE" StrokeThickness="1"/>
+                        <Line X1="0" Y1="0" X2="0" Y2="308" Stroke="#EEEEEE" StrokeThickness="1"/>
 
                         <!-- 渐变填充区域 -->
                         <Path x:Name="ThrottleFillArea">
@@ -1479,13 +1513,13 @@
                             </Path.Fill>
                             <Path.Data>
                                 <PathGeometry>
-                                    <PathFigure StartPoint="0,266">
-                                        <LineSegment Point="69,205"/>
-                                        <LineSegment Point="138,148"/>
-                                        <LineSegment Point="207,91"/>
-                                        <LineSegment Point="276,42"/>
+                                    <PathFigure StartPoint="0,308">
+                                        <LineSegment Point="69,237.4"/>
+                                        <LineSegment Point="138,171.4"/>
+                                        <LineSegment Point="207,105.4"/>
+                                        <LineSegment Point="276,48.6"/>
                                         <LineSegment Point="345,0"/>
-                                        <LineSegment Point="345,266"/>
+                                        <LineSegment Point="345,308"/>
                                     </PathFigure>
                                 </PathGeometry>
                             </Path.Data>
@@ -1496,13 +1530,13 @@
 
                         <!-- 可移动圆点 -->
                         <Control x:Name="ThrottlePoint1" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#16C642" Canvas.Left="61.5" Canvas.Top="197.5"/>
+                                 Foreground="#16C642" Canvas.Left="61.5" Canvas.Top="228.7"/>
                         <Control x:Name="ThrottlePoint2" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#16C642" Canvas.Left="130.5" Canvas.Top="140.5"/>
+                                 Foreground="#16C642" Canvas.Left="130.5" Canvas.Top="162.7"/>
                         <Control x:Name="ThrottlePoint3" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#16C642" Canvas.Left="199.5" Canvas.Top="83.5"/>
+                                 Foreground="#16C642" Canvas.Left="199.5" Canvas.Top="96.7"/>
                         <Control x:Name="ThrottlePoint4" Style="{StaticResource CurvePointStyle}"
-                                 Foreground="#16C642" Canvas.Left="268.5" Canvas.Top="34.5"/>
+                                 Foreground="#16C642" Canvas.Left="268.5" Canvas.Top="40"/>
                     </Canvas>
 
                     <!-- 第六行：死区调整 -->

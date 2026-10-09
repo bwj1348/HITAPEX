@@ -31,8 +31,8 @@ public partial class PedalParameterControl : UserControl
     private string? _clutchDraggingDeadZoneThumb = null;
     private PointCollection _clutchCurvePoints = new PointCollection
     {
-        new Point(0, 266), new Point(69, 205), new Point(138, 148),
-        new Point(207, 91), new Point(276, 42), new Point(345, 0)
+        new Point(0, 308), new Point(69, 237.4), new Point(138, 171.4),
+        new Point(207, 105.4), new Point(276, 48.6), new Point(345, 0)
     };
     private bool _isClutchDragging = false;
     private Control? _clutchDraggingPoint = null;
@@ -45,8 +45,8 @@ public partial class PedalParameterControl : UserControl
     private string? _brakeDraggingDeadZoneThumb = null;
     private PointCollection _brakeCurvePoints = new PointCollection
     {
-        new Point(0, 266), new Point(69, 205), new Point(138, 148),
-        new Point(207, 91), new Point(276, 42), new Point(345, 0)
+        new Point(0, 308), new Point(69, 237.4), new Point(138, 171.4),
+        new Point(207, 105.4), new Point(276, 48.6), new Point(345, 0)
     };
     private bool _isBrakeDragging = false;
     private Control? _brakeDraggingPoint = null;
@@ -59,8 +59,8 @@ public partial class PedalParameterControl : UserControl
     private string? _throttleDraggingDeadZoneThumb = null;
     private PointCollection _throttleCurvePoints = new PointCollection
     {
-        new Point(0, 266), new Point(69, 205), new Point(138, 148),
-        new Point(207, 91), new Point(276, 42), new Point(345, 0)
+        new Point(0, 308), new Point(69, 237.4), new Point(138, 171.4),
+        new Point(207, 105.4), new Point(276, 48.6), new Point(345, 0)
     };
     private bool _isThrottleDragging = false;
     private Control? _throttleDraggingPoint = null;
@@ -284,8 +284,8 @@ public partial class PedalParameterControl : UserControl
     {
         PointCollection Linear() => new PointCollection
         {
-            new Point(0, 266), new Point(69, 212.8), new Point(138, 159.6),
-            new Point(207, 106.4), new Point(276, 53.2), new Point(345, 0)
+            new Point(0, 308), new Point(69, 246.4), new Point(138, 184.8),
+            new Point(207, 123.2), new Point(276, 61.6), new Point(345, 0)
         };
 
         return type switch
@@ -293,18 +293,18 @@ public partial class PedalParameterControl : UserControl
             1 => Linear(),
             2 => new PointCollection
             {
-                new Point(0, 266), new Point(69, 232), new Point(138, 188),
-                new Point(207, 128), new Point(276, 58), new Point(345, 0)
+                new Point(0, 308), new Point(69, 268.6), new Point(138, 217.7),
+                new Point(207, 148.2), new Point(276, 67.2), new Point(345, 0)
             },
             3 => new PointCollection
             {
-                new Point(0, 266), new Point(69, 192), new Point(138, 128),
-                new Point(207, 76), new Point(276, 38), new Point(345, 0)
+                new Point(0, 308), new Point(69, 222.3), new Point(138, 148.2),
+                new Point(207, 88), new Point(276, 44), new Point(345, 0)
             },
             4 => new PointCollection
             {
-                new Point(0, 266), new Point(69, 232), new Point(138, 195),
-                new Point(207, 120), new Point(276, 45), new Point(345, 0)
+                new Point(0, 308), new Point(69, 268.6), new Point(138, 225.8),
+                new Point(207, 139), new Point(276, 52.1), new Point(345, 0)
             },
             5 => Linear(),
             _ => Linear()
@@ -364,7 +364,7 @@ public partial class PedalParameterControl : UserControl
         if (n < 2) return geometry;
 
         double[] m = ComputeMonotonicSlopes(points);
-        var figure = new PathFigure { StartPoint = new Point(0, 266) };
+        var figure = new PathFigure { StartPoint = new Point(0, 308) };
 
         for (int i = 0; i < n - 1; i++)
         {
@@ -378,7 +378,7 @@ public partial class PedalParameterControl : UserControl
             figure.Segments.Add(new BezierSegment(cp1, cp2, p1, true));
         }
 
-        figure.Segments.Add(new LineSegment(new Point(345, 266), true));
+        figure.Segments.Add(new LineSegment(new Point(345, 308), true));
         geometry.Figures.Add(figure);
         return geometry;
     }
@@ -574,7 +574,7 @@ public partial class PedalParameterControl : UserControl
         if (!isDragging || draggingPoint == null || curveLine == null) return;
 
         var position = e.GetPosition(curveLine.Parent as Canvas);
-        var y = Math.Max(0, Math.Min(266, position.Y));
+        var y = Math.Max(0, Math.Min(308, position.Y));
 
         if (draggingPoint == p1)
         {
@@ -1013,6 +1013,112 @@ public partial class PedalParameterControl : UserControl
         TryExportWithRetry(fileName);
     }
 
+    // ═══════════════════════════════════════════════
+    //  分享（仅云预设可用）
+    // ═══════════════════════════════════════════════
+
+    /// <summary>
+    /// 分享按钮点击：云预设 → 弹出分享码弹窗；官方/个人预设 → 提示仅云预设可分享。
+    /// </summary>
+    private void ShareButton_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (IsAppliedPresetCloud())
+        {
+            var code = GetPresetListPopup()?.FindCloudPreset(_currentPresetName)?.ShareCode;
+            if (string.IsNullOrEmpty(code))
+            {
+                // 兜底：云预设缺少分享码（可能版本较旧），提示重新同步
+                ShowCloudShareHint(LocalizationService.Instance["Preset.ShareCodeMissing"]);
+                return;
+            }
+            ShowShareCodeDialog(code);
+        }
+        else
+        {
+            ShowCloudShareHint(LocalizationService.Instance["Preset.ShareCloudOnlyMessage"]);
+        }
+    }
+
+    /// <summary>显示分享功能相关提示弹窗（仅云可分享 / 分享码缺失兜底）</summary>
+    private void ShowCloudShareHint(string message)
+    {
+        if (Window.GetWindow(this) is not MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.ShareCloudOnlyTitle"];
+        dialog.ShowIcon = true;
+        dialog.ClearButtons();
+        dialog.DialogContent = new TextBlock
+        {
+            Text = message,
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        dialog.AddButton(LocalizationService.Instance["Common.Confirm"], (_, _) => dialog.Hide(), isPrimary: true);
+        dialog.Show();
+    }
+
+    /// <summary>显示云预设分享码弹窗（5-5 分组展示），提供复制按钮</summary>
+    private void ShowShareCodeDialog(string code)
+    {
+        if (Window.GetWindow(this) is not MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.ShareTitle"];
+        dialog.ShowIcon = false;
+        dialog.ShowCloseButton = false;
+        dialog.ClearButtons();
+
+        // 分享码原样展示（10 位，不带分隔符），复制时也是原始码
+        var displayCode = code;
+        var panel = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        panel.Children.Add(new TextBlock
+        {
+            Text = LocalizationService.Instance["Preset.ShareCodeMessage"],
+            FontSize = 18,
+            Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0xEE, 0xEE, 0xEE)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = displayCode,
+            FontSize = 44,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 14, 0, 0)
+        });
+        dialog.DialogContent = panel;
+
+        dialog.AddButton(LocalizationService.Instance["Common.Copy"], (_, _) =>
+        {
+            try
+            {
+                Clipboard.SetText(code);
+                dialog.Hide();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[PedalControl] 复制分享码失败: {ex.Message}");
+            }
+        }, isPrimary: true);
+
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) => dialog.Hide(), isPrimary: false);
+
+        dialog.Show();
+    }
+
     private void TryExportWithRetry(string fileName)
     {
         if (PerformExport(fileName))
@@ -1094,9 +1200,13 @@ public partial class PedalParameterControl : UserControl
         return null;
     }
 
-    /// <summary>当前应用的是否为云预设（通过预设列表弹窗的云预设列表判断）</summary>
+    /// <summary>
+    /// 当前应用的是否为云端预设（而非本地个人/官方预设）。
+    /// 必须先排除个人预设：云端预设与本地个人预设可能同名，应用个人副本时不应启用分享等云功能。
+    /// </summary>
     private bool IsAppliedPresetCloud()
-        => _currentPresetName != null
+        => !_isAppliedPresetPersonal
+           && _currentPresetName != null
            && GetPresetListPopup()?.IsCloudPreset(_currentPresetName) == true;
 
     private void PresetListButton_Click(object sender, MouseButtonEventArgs e)
@@ -1236,6 +1346,16 @@ public partial class PedalParameterControl : UserControl
             }
         }
 
+        // 分享按钮状态：云预设可用（红色），其他预设灰色，但点击仍可弹出提示
+        if (ShareButtonPath != null)
+        {
+            if (IsAppliedPresetCloud())
+                ShareButtonPath.ClearValue(System.Windows.Shapes.Path.FillProperty);
+            else
+                ShareButtonPath.Fill = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE));
+            ShareButtonPath.Cursor = System.Windows.Input.Cursors.Hand;
+        }
+
         if (OnboardPresetIcon != null)
             OnboardPresetIcon.Visibility = isOnboard ? Visibility.Visible : Visibility.Collapsed;
         if (OfficialPresetIcon != null)
@@ -1300,7 +1420,7 @@ public partial class PedalParameterControl : UserControl
         ApplyCurveTypeSelection(p.ClutchCurveType, "CurveType", Color.FromRgb(255, 200, 0), Color.FromRgb(153, 120, 0));
         _clutchCurvePoints = new PointCollection
         {
-            new Point(0, 266),
+            new Point(0, 308),
             PointFromProtocol(p.ClutchPoint1X, p.ClutchPoint1Y),
             PointFromProtocol(p.ClutchPoint2X, p.ClutchPoint2Y),
             PointFromProtocol(p.ClutchPoint3X, p.ClutchPoint3Y),
@@ -1324,7 +1444,7 @@ public partial class PedalParameterControl : UserControl
         ApplyCurveTypeSelection(p.BrakeCurveType, "BrakeCurveType", Color.FromRgb(198, 14, 14), Color.FromRgb(96, 7, 7));
         _brakeCurvePoints = new PointCollection
         {
-            new Point(0, 266),
+            new Point(0, 308),
             PointFromProtocol(p.BrakePoint1X, p.BrakePoint1Y),
             PointFromProtocol(p.BrakePoint2X, p.BrakePoint2Y),
             PointFromProtocol(p.BrakePoint3X, p.BrakePoint3Y),
@@ -1348,7 +1468,7 @@ public partial class PedalParameterControl : UserControl
         ApplyCurveTypeSelection(p.ThrottleCurveType, "ThrottleCurveType", Color.FromRgb(22, 198, 66), Color.FromRgb(10, 96, 32));
         _throttleCurvePoints = new PointCollection
         {
-            new Point(0, 266),
+            new Point(0, 308),
             PointFromProtocol(p.ThrottlePoint1X, p.ThrottlePoint1Y),
             PointFromProtocol(p.ThrottlePoint2X, p.ThrottlePoint2Y),
             PointFromProtocol(p.ThrottlePoint3X, p.ThrottlePoint3Y),
@@ -1906,7 +2026,7 @@ public partial class PedalParameterControl : UserControl
     /// <summary>
     /// 将协议解析的踏板参数应用到 UI 控件。
     /// 协议字段使用字节值（范围 0-100），通过 PointFromProtocol 转换为
-    /// 画布坐标（X: 0-345, Y: 266-0 倒置，即协议值越大画布位置越高）
+    /// 画布坐标（X: 0-345, Y: 308-0 倒置，即协议值越大画布位置越高）
     /// 后构建 PointCollection 并应用到曲线渲染。
     /// </summary>
     private void ApplyPedalParameters(PedalParametersResponse p)
@@ -1929,7 +2049,7 @@ public partial class PedalParameterControl : UserControl
         ApplyCurveTypeSelection(5, "CurveType", Color.FromRgb(255, 200, 0), Color.FromRgb(153, 120, 0));
         _clutchCurvePoints = new PointCollection
         {
-            new Point(0, 266),
+            new Point(0, 308),
             PointFromProtocol(p.ClutchPoint1X, p.ClutchPoint1Y),
             PointFromProtocol(p.ClutchPoint2X, p.ClutchPoint2Y),
             PointFromProtocol(p.ClutchPoint3X, p.ClutchPoint3Y),
@@ -1954,7 +2074,7 @@ public partial class PedalParameterControl : UserControl
         ApplyCurveTypeSelection(5, "BrakeCurveType", Color.FromRgb(198, 14, 14), Color.FromRgb(96, 7, 7));
         _brakeCurvePoints = new PointCollection
         {
-            new Point(0, 266),
+            new Point(0, 308),
             PointFromProtocol(p.BrakePoint1X, p.BrakePoint1Y),
             PointFromProtocol(p.BrakePoint2X, p.BrakePoint2Y),
             PointFromProtocol(p.BrakePoint3X, p.BrakePoint3Y),
@@ -1979,7 +2099,7 @@ public partial class PedalParameterControl : UserControl
         ApplyCurveTypeSelection(5, "ThrottleCurveType", Color.FromRgb(22, 198, 66), Color.FromRgb(10, 96, 32));
         _throttleCurvePoints = new PointCollection
         {
-            new Point(0, 266),
+            new Point(0, 308),
             PointFromProtocol(p.ThrottlePoint1X, p.ThrottlePoint1Y),
             PointFromProtocol(p.ThrottlePoint2X, p.ThrottlePoint2Y),
             PointFromProtocol(p.ThrottlePoint3X, p.ThrottlePoint3Y),
@@ -2009,7 +2129,7 @@ public partial class PedalParameterControl : UserControl
     private static Point PointFromProtocol(byte x, byte y)
     {
         var canvasX = x / 100.0 * 345.0;
-        var canvasY = (100 - y) / 100.0 * 266.0;
+        var canvasY = (100 - y) / 100.0 * 308.0;
         return new Point(canvasX, canvasY);
     }
 
@@ -2043,13 +2163,13 @@ public partial class PedalParameterControl : UserControl
     /// <summary>将画布曲线点转换为协议格式的字节数组(每点Y,X，各0-100)</summary>
     private static byte[] GetCurvePointsAsProtocolBytes(PointCollection curvePoints)
     {
-        // curvePoints 有6个点，取中间4个(索引1-4)，Y从266倒转为0-100
+        // curvePoints 有6个点，取中间4个(索引1-4)，Y从308倒转为0-100
         var result = new byte[8];
         for (int i = 0; i < 4 && i + 1 < curvePoints.Count; i++)
         {
-            var y = Math.Max(0, Math.Min(266, curvePoints[i + 1].Y));
+            var y = Math.Max(0, Math.Min(308, curvePoints[i + 1].Y));
             var x = Math.Max(0, Math.Min(345, curvePoints[i + 1].X));
-            var yPercent = (byte)Math.Round((266.0 - y) / 266.0 * 100.0);
+            var yPercent = (byte)Math.Round((308.0 - y) / 308.0 * 100.0);
             var xPercent = (byte)Math.Round(x / 345.0 * 100.0);
             result[i * 2] = yPercent;
             result[i * 2 + 1] = xPercent;
@@ -2261,9 +2381,9 @@ public partial class PedalParameterControl : UserControl
         var slopes = ComputeMonotonicSlopes(curvePoints);
 
         if (canvasX <= curvePoints[0].X)
-            return (266.0 - curvePoints[0].Y) / 266.0 * 100.0;
+            return (308.0 - curvePoints[0].Y) / 308.0 * 100.0;
         if (canvasX >= curvePoints[n - 1].X)
-            return (266.0 - curvePoints[n - 1].Y) / 266.0 * 100.0;
+            return (308.0 - curvePoints[n - 1].Y) / 308.0 * 100.0;
 
         for (int i = 0; i < n - 1; i++)
         {
@@ -2288,7 +2408,7 @@ public partial class PedalParameterControl : UserControl
                      + (-2 * t3 + 3 * t2) * y1
                      + (t3 - t2) * m1;
 
-            return (266.0 - y) / 266.0 * 100.0;
+            return (308.0 - y) / 308.0 * 100.0;
         }
 
         return positionPercent;
@@ -2310,9 +2430,9 @@ public partial class PedalParameterControl : UserControl
         int n = points.Length;
 
         if (canvasX <= points[0].X)
-            return (266.0 - points[0].Y) / 266.0 * 100.0;
+            return (308.0 - points[0].Y) / 308.0 * 100.0;
         if (canvasX >= points[n - 1].X)
-            return (266.0 - points[n - 1].Y) / 266.0 * 100.0;
+            return (308.0 - points[n - 1].Y) / 308.0 * 100.0;
 
         for (int i = 0; i < n - 1; i++)
         {
@@ -2337,7 +2457,7 @@ public partial class PedalParameterControl : UserControl
                      + (-2 * t3 + 3 * t2) * y1
                      + (t3 - t2) * m1;
 
-            return (266.0 - y) / 266.0 * 100.0;
+            return (308.0 - y) / 308.0 * 100.0;
         }
 
         return positionPercent;

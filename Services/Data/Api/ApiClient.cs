@@ -125,6 +125,7 @@ public class ApiClient : IDisposable
                 if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 {
                     return ApiResult<T>.Failure(lastErrorMessage, isClientError: true,
+                        statusCode: (int)response.StatusCode,
                         errorCode: code, retryAfterSeconds: retryAfter);
                 }
             }
@@ -217,7 +218,8 @@ public class ApiClient : IDisposable
 
                 if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                     return ApiResult<int>.Failure(message ?? $"上传失败 ({(int)response.StatusCode})",
-                        isClientError: true, errorCode: code, retryAfterSeconds: retryAfter);
+                        isClientError: true, statusCode: (int)response.StatusCode,
+                        errorCode: code, retryAfterSeconds: retryAfter);
             }
             catch (TaskCanceledException) { return ApiResult<int>.Failure("上传已取消", isClientError: false); }
             catch (HttpRequestException ex) { Debug.WriteLine($"[API] [网络异常] 上传: {ex.Message}"); }
@@ -244,7 +246,7 @@ public class ApiClient : IDisposable
         var result = await SendJsonAsync<ApiWrappedResponse<TData>>(HttpMethod.Post, endpoint, body, ct, authToken);
         if (!result.IsSuccess)
             return ApiResult<TData?>.Failure(result.ErrorMessage ?? "请求失败", result.IsClientError,
-                errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
+                statusCode: result.StatusCode, errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
         return ApiResult<TData?>.Success(result.Data!.Data);
     }
 
@@ -256,7 +258,7 @@ public class ApiClient : IDisposable
         var result = await SendJsonAsync<ApiWrappedResponse<TData>>(HttpMethod.Put, endpoint, body, ct);
         if (!result.IsSuccess)
             return ApiResult<TData?>.Failure(result.ErrorMessage ?? "请求失败", result.IsClientError,
-                errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
+                statusCode: result.StatusCode, errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
         return ApiResult<TData?>.Success(result.Data!.Data);
     }
 
@@ -268,7 +270,7 @@ public class ApiClient : IDisposable
         var result = await GetAsync<ApiWrappedResponse<TData>>(endpoint, ct);
         if (!result.IsSuccess)
             return ApiResult<TData?>.Failure(result.ErrorMessage ?? "请求失败", result.IsClientError,
-                errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
+                statusCode: result.StatusCode, errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
         return ApiResult<TData?>.Success(result.Data!.Data);
     }
 
@@ -320,6 +322,7 @@ public class ApiClient : IDisposable
                 if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 {
                     return ApiResult<TResponse>.Failure(lastErrorMessage, isClientError: true,
+                        statusCode: (int)response.StatusCode,
                         errorCode: code, retryAfterSeconds: retryAfter);
                 }
             }
@@ -359,7 +362,7 @@ public class ApiClient : IDisposable
         var result = await SendMultipartAsync<ApiWrappedResponse<TData>>(HttpMethod.Put, endpoint, formFields, filePaths, ct);
         if (!result.IsSuccess)
             return ApiResult<TData?>.Failure(result.ErrorMessage ?? "请求失败", result.IsClientError,
-                errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
+                statusCode: result.StatusCode, errorCode: result.ErrorCode, retryAfterSeconds: result.RetryAfterSeconds);
         return ApiResult<TData?>.Success(result.Data!.Data);
     }
 
@@ -423,6 +426,7 @@ public class ApiClient : IDisposable
                 if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500)
                 {
                     return ApiResult<TResponse>.Failure(lastErrorMessage, isClientError: true,
+                        statusCode: (int)response.StatusCode,
                         errorCode: code, retryAfterSeconds: retryAfter);
                 }
             }
@@ -520,18 +524,21 @@ public class ApiResult<T>
     public string? ErrorMessage { get; }
     /// <summary>是否由客户端错误（4xx）导致失败</summary>
     public bool IsClientError { get; }
+    /// <summary>HTTP 状态码（失败时对应实际响应码，如 404；网络异常等无响应时为 null）</summary>
+    public int? StatusCode { get; }
     /// <summary>业务错误码（error.code，稳定契约，UI 按此分支处理）</summary>
     public string? ErrorCode { get; }
     /// <summary>限流倒计时秒数（status=429 时从 error.details.retry_after 或 Retry-After 头解析）</summary>
     public int? RetryAfterSeconds { get; }
 
     private ApiResult(bool isSuccess, T? data, string? errorMessage, bool isClientError,
-        string? errorCode = null, int? retryAfterSeconds = null)
+        int? statusCode = null, string? errorCode = null, int? retryAfterSeconds = null)
     {
         IsSuccess = isSuccess;
         Data = data;
         ErrorMessage = errorMessage;
         IsClientError = isClientError;
+        StatusCode = statusCode;
         ErrorCode = errorCode;
         RetryAfterSeconds = retryAfterSeconds;
     }
@@ -542,8 +549,8 @@ public class ApiResult<T>
 
     /// <summary>创建失败结果</summary>
     public static ApiResult<T> Failure(string error, bool isClientError,
-        string? errorCode = null, int? retryAfterSeconds = null) =>
-        new(false, default, error, isClientError, errorCode, retryAfterSeconds);
+        int? statusCode = null, string? errorCode = null, int? retryAfterSeconds = null) =>
+        new(false, default, error, isClientError, statusCode, errorCode, retryAfterSeconds);
 }
 
 /// <summary>带 { success, data } 包装的 API 响应（用户系统 API 统一格式）</summary>

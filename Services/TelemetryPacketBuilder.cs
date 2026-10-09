@@ -15,6 +15,7 @@ public static class TelemetryPacketBuilder
         public const ushort VehicleInfo1 = 0x6101;  // 车辆信息包1（基础驾驶参数）
         public const ushort VehicleInfo2 = 0x6102;  // 车辆信息包2（胎面内/中/外温度 + 前轮刹车温度）
         public const ushort VehicleInfo3 = 0x6103;  // 车辆信息包3（胎核温度 + 胎压 + 胎磨损 + 后轮刹车温度 + 发动机模式）
+        public const ushort VehicleInfo4 = 0x6104;  // 力反馈扭矩包（iRacing 方向盘力反馈扭矩，360Hz 独立下发）
     }
 
     /// <summary>协议挡位常量（0=N, 1-100=前进挡, 0xFF=R1, 0xFE=R2, 0xFD=R3, 0xFC=R4）</summary>
@@ -257,6 +258,21 @@ public static class TelemetryPacketBuilder
     // ════════════════════════════════════════════════════════════════
     //  批量构建
     // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// 构建力反馈扭矩数据包（0x6104）。
+    /// 仅 iRacing 启动时由 360Hz 独立通道发送，每包携带 steeringWheelTorqueST 数组中的一个值。
+    /// </summary>
+    public static byte[] BuildVehicleInfo4Packet(float torque, uint timestampMs)
+    {
+        var frame = new byte[FrameSize];
+        WriteHeader(frame, PacketType.VehicleInfo4, timestampMs);
+
+        // 方向盘力反馈扭矩 (float32 LE, N·m) — offset 7-10
+        BitConverter.TryWriteBytes(frame.AsSpan(7), torque);
+
+        return frame;
+    }
 
     /// <summary>
     /// 从 NormalizedData v1.0.0 构建完整的遥测数据三包。

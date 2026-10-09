@@ -192,16 +192,55 @@ public partial class PresetListPopup : UserControl
         editPopup.Show();
     }
 
-    /// <summary>把预设同步到云端，失败时提示用户</summary>
+    /// <summary>把预设同步到云端，失败时弹出统一风格提示弹窗（可重试）</summary>
     private async Task SyncPresetToCloudAsync(PresetItem preset)
     {
-        var ok = await PresetCloudSyncHelper.SyncToCloudAsync(preset);
-        if (!ok)
+        if (await PresetCloudSyncHelper.SyncToCloudAsync(preset))
+            return;
+
+        Debug.WriteLine($"[PresetListPopup] 同步预设到云端失败: {preset.Name}");
+        ShowCloudSyncFailedDialog(preset);
+    }
+
+    /// <summary>
+    /// 显示"同步到云失败"提示弹窗（复用全局 ModalDialog，保证样式与项目其他弹窗一致）。
+    /// "重试"按钮会再次尝试同步，成功后刷新列表；"取消"按钮仅关闭弹窗。
+    /// </summary>
+    private void ShowCloudSyncFailedDialog(PresetItem preset)
+    {
+        if (Window.GetWindow(this) is not MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.SyncToCloudFailedTitle"];
+        dialog.ShowIcon = true;
+        dialog.ShowCloseButton = false;
+        dialog.ClearButtons();
+
+        dialog.DialogContent = new TextBlock
         {
-            Debug.WriteLine($"[PresetListPopup] 同步预设到云端失败: {preset.Name}");
-            MessageBox.Show(LocalizationService.Instance["Preset.CloudSyncFailed"] ?? "同步到云端失败，请稍后重试",
-                "云预设", MessageBoxButton.OK);
-        }
+            Text = LocalizationService.Instance["Preset.SyncToCloudFailedMessage"],
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),  // #EEEEEE
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        // 重试：关闭弹窗后再次同步，成功则刷新列表，仍失败则重新提示
+        dialog.AddButton(LocalizationService.Instance["Common.Retry"], async (_, _) =>
+        {
+            dialog.Hide();
+            if (await PresetCloudSyncHelper.SyncToCloudAsync(preset))
+                RenderPresetList();
+            else
+                ShowCloudSyncFailedDialog(preset);
+        }, isPrimary: true);
+
+        // 取消：仅关闭弹窗
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) => dialog.Hide());
+
+        dialog.Show();
     }
 
     /// <summary>删除云端预设，成功从列表移除并刷新，失败提示用户</summary>
@@ -1354,10 +1393,173 @@ public partial class PresetListPopup : UserControl
         Hide();
     }
 
-    /// <summary>点击导入按钮，打开文件对话框选择 JSON 预设文件导入</summary>
+    /// <summary>点击导入按钮：弹出导入弹窗，支持输入分享码导入，或切换为本地文件导入</summary>
     private void ImportButton_Click(object sender, RoutedEventArgs e)
     {
-        DoImportWithRetry();
+        ShowImportShareDialog();
+    }
+
+    /// <summary>
+    /// 显示导入弹窗（复用全局 ModalDialog）：
+    /// 主按钮"导入"按分享码导入；副按钮"导入本地文件"走原文件选择流程（DoImportWithRetry）。
+    /// </summary>
+    private void ShowImportShareDialog()
+    {
+        if (Window.GetWindow(this) is not MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.ImportPreset"];
+        dialog.ShowIcon = false;
+        dialog.ShowCloseButton = false;
+        dialog.ClearButtons();
+
+        var inputBox = new TextBox
+        {
+            FontSize = 22,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            CaretBrush = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            Background = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xEE, 0xEE, 0xEE)),
+            BorderThickness = new Thickness(1),
+            MaxLength = 15,
+            Width = 300,
+            Height = 44,
+            TextAlignment = TextAlignment.Center,
+            CharacterCasing = CharacterCasing.Upper,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(0, 16, 0, 0)
+        };
+
+        var panel = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        panel.Children.Add(new TextBlock
+        {
+            Text = LocalizationService.Instance["Preset.ImportShareCodeMessage"],
+            FontSize = 20,
+            Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0xEE, 0xEE, 0xEE)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+        panel.Children.Add(inputBox);
+
+        // 本地文件导入入口：以下划线链接形式展示在弹窗内容区，点击走原文件选择流程
+        // 下划线通过自定义 TextDecoration 绘制：Pen 颜色为 C60E0E，PenOffset 控制文字与下划线的间距（正值向下增大间距）
+        var underlinePen = new Pen(new SolidColorBrush(Color.FromRgb(0xC6, 0x0E, 0x0E)), 1);
+        var underlineDecorations = new TextDecorationCollection
+        {
+            new TextDecoration
+            {
+                Location = TextDecorationLocation.Underline,
+                Pen = underlinePen,
+                PenOffset = 3,
+                PenOffsetUnit = TextDecorationUnit.Pixel
+            }
+        };
+        var importLocalLink = new TextBlock
+        {
+            Text = LocalizationService.Instance["Preset.ImportLocalFile"],
+            TextDecorations = underlineDecorations,
+            FontSize = 16,
+            Foreground = new SolidColorBrush(Color.FromRgb(0xC6, 0x0E, 0x0E)),
+            Cursor = Cursors.Hand,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 20, 0, 0)
+        };
+        importLocalLink.MouseLeftButtonDown += (_, _) =>
+        {
+            dialog.Hide();
+            DoImportWithRetry();
+        };
+        panel.Children.Add(importLocalLink);
+        dialog.DialogContent = panel;
+
+        // 主按钮：按分享码导入
+        dialog.AddButton(LocalizationService.Instance["Preset.Import"], async (_, _) =>
+        {
+            var raw = inputBox.Text ?? string.Empty;
+            var code = raw.Trim().Replace("-", "").Replace(" ", "").ToUpperInvariant();
+            if (code.Length != 10)
+            {
+                ShowImportErrorDialog(LocalizationService.Instance["Preset.ShareCodeInvalid"],
+                    ShowImportShareDialog);
+                return;
+            }
+            dialog.Hide();
+            await ImportByShareCodeAsync(code);
+        }, isPrimary: true);
+
+        // 取消按钮：关闭弹窗
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) => dialog.Hide(), isPrimary: false);
+
+        dialog.Show();
+        inputBox.Focus();
+    }
+
+    /// <summary>按分享码导入预设：调公开导入接口，成功后落地为本地个人预设</summary>
+    private async Task ImportByShareCodeAsync(string code)
+    {
+        if (App.UserApi == null)
+        {
+            ShowImportErrorDialog(LocalizationService.Instance["Preset.ShareImportFailed"],
+                ShowImportShareDialog);
+            return;
+        }
+
+        var result = await App.UserApi.ImportPresetByCodeAsync(code);
+        if (!result.IsSuccess || result.Data == null)
+        {
+            // 按 API 文档稳定错误码分支提示
+            var message = result.ErrorCode switch
+            {
+                "SHARE_CODE_NOT_FOUND" => LocalizationService.Instance["Preset.ShareCodeInvalid"],
+                "SYSTEM_RATE_LIMITED" => LocalizationService.Instance["Preset.ShareCodeRateLimited"],
+                _ => LocalizationService.Instance["Preset.ShareImportFailed"]
+            };
+            ShowImportErrorDialog(message, ShowImportShareDialog);
+            return;
+        }
+
+        var imported = PresetCloudSyncHelper.FromImportEntry(result.Data);
+        if (imported == null)
+        {
+            ShowImportErrorDialog(LocalizationService.Instance["Preset.ShareImportFailed"],
+                ShowImportShareDialog);
+            return;
+        }
+
+        // 设备类型校验：导入的预设必须与当前弹窗的设备类型一致
+        if (imported.DeviceType != DeviceType)
+        {
+            var actual = GetDeviceTypeDisplayName(imported.DeviceType);
+            ShowImportErrorDialog(
+                string.Format(LocalizationService.Instance["Preset.ImportDeviceTypeMismatch"], actual),
+                ShowImportShareDialog);
+            return;
+        }
+
+        // 检查名称是否与已有个人预设重复，重复则弹窗确认是否覆盖
+        var existing = _personalPresets.FirstOrDefault(p =>
+            string.Equals(p.Name, imported.Name, StringComparison.OrdinalIgnoreCase));
+        if (existing != null)
+        {
+            ShowImportOverwriteDialog(imported.Name, () =>
+            {
+                _personalPresets.Remove(existing);
+                _personalPresets.Add(imported);
+                SavePersonalPresets();
+                RenderPresetList();
+            });
+            return;
+        }
+
+        _personalPresets.Add(imported);
+        SavePersonalPresets();
+        RenderPresetList();
     }
 
     /// <summary>执行导入流程，失败时弹窗提供重试和取消选项</summary>
@@ -1440,6 +1642,10 @@ public partial class PresetListPopup : UserControl
     public PresetItem? FindPreset(string name)
         => _personalPresets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase))
         ?? _cloudPresets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>仅从云预设列表查找（分享码专用，避免命中同名的本地个人预设副本拿不到分享码）</summary>
+    public PresetItem? FindCloudPreset(string name)
+        => _cloudPresets.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>从外部设置个人预设列表数据</summary>
     public void SetPersonalPresets(IEnumerable<PresetItem> presets)
@@ -1995,6 +2201,9 @@ public class PresetItem
     /// 云端预设的 documentId（已同步过则用于更新已有云预设；为空表示尚未同步，首次同步为新增）。
     /// </summary>
     public string? CloudDocumentId { get; set; }
+
+    /// <summary>云端预设的 10 位分享码（服务端生成，仅云预设存在；本地个人预设为 null）</summary>
+    public string? ShareCode { get; set; }
 }
 
 /// <summary>
@@ -2003,6 +2212,9 @@ public class PresetItem
 /// </summary>
 public static class PresetCloudSyncHelper
 {
+    /// <summary>API 稳定错误码：预设不存在或不属于当前用户（status=404），见用户系统 API 文档</summary>
+    private const string PresetNotFoundCode = "PRESET_NOT_FOUND";
+
     private static readonly JsonSerializerOptions s_jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -2035,28 +2247,70 @@ public static class PresetCloudSyncHelper
             WheelParameters = data.WheelParameters,
             BaseParameters = data.BaseParameters,
             SyncToCloud = true,
-            CloudDocumentId = entry.DocumentId
+            CloudDocumentId = entry.DocumentId,
+            ShareCode = entry.ShareCode
+        };
+    }
+
+    /// <summary>
+    /// 把"凭分享码导入"的响应（ImportedPresetEntry）转为本地个人预设；解析失败返回 null。
+    /// 导入结果落地为本地预设（快照），因此 SyncToCloud=false 且无 CloudDocumentId。
+    /// </summary>
+    public static PresetItem? FromImportEntry(ImportedPresetEntry entry)
+    {
+        if (entry.ConfigData is not JsonElement el || el.ValueKind != JsonValueKind.Object)
+            return null;
+        var data = el.Deserialize<UserPresetConfigData>(s_jsonOptions);
+        if (data == null) return null;
+        return new PresetItem
+        {
+            Name = data.Name,
+            Games = data.Games ?? new List<string>(),
+            DeviceType = (Models.Usb.DeviceType)data.DeviceType,
+            PedalParameters = data.PedalParameters,
+            WheelParameters = data.WheelParameters,
+            BaseParameters = data.BaseParameters,
+            IsPersonal = true
         };
     }
 
     /// <summary>
     /// 同步预设到云端：已有 CloudDocumentId 则更新，否则新建。
-    /// 成功后把服务端返回的 documentId 写回 preset，供后续再次编辑时走更新。
+    /// 若云端文档已被删除（更新返回错误码 PRESET_NOT_FOUND，例如后台或其他设备已删除该预设），
+    /// 自动清除失效的 CloudDocumentId 并降级为重新创建，成功后把新 documentId 写回本地。
     /// </summary>
     public static async Task<bool> SyncToCloudAsync(PresetItem preset)
     {
         if (App.UserApi?.IsLoggedIn != true) return false;
         var configData = BuildConfigData(preset);
 
-        ApiResult<UserPresetEntry?> result;
+        // 已有 documentId → 先走更新；云端文档不存在（错误码 PRESET_NOT_FOUND）时降级为创建
         if (!string.IsNullOrEmpty(preset.CloudDocumentId))
-            result = await App.UserApi.UpdatePresetAsync(preset.CloudDocumentId, configData);
-        else
-            result = await App.UserApi.CreatePresetAsync(configData);
-
-        if (result.IsSuccess && result.Data != null)
         {
-            preset.CloudDocumentId = result.Data.DocumentId;
+            var updateResult = await App.UserApi.UpdatePresetAsync(preset.CloudDocumentId, configData);
+            if (updateResult.IsSuccess && updateResult.Data != null)
+            {
+                preset.CloudDocumentId = updateResult.Data.DocumentId;
+                preset.ShareCode = updateResult.Data.ShareCode;
+                preset.SyncToCloud = true;
+                return true;
+            }
+            if (updateResult.ErrorCode == PresetNotFoundCode)
+            {
+                Debug.WriteLine($"[PresetCloudSync] 云端预设已被删除，降级重建: {preset.Name}");
+                preset.CloudDocumentId = null;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        var createResult = await App.UserApi.CreatePresetAsync(configData);
+        if (createResult.IsSuccess && createResult.Data != null)
+        {
+            preset.CloudDocumentId = createResult.Data.DocumentId;
+            preset.ShareCode = createResult.Data.ShareCode;
             preset.SyncToCloud = true;
             return true;
         }

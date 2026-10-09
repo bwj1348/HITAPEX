@@ -649,6 +649,16 @@ public partial class BaseParameterControl : UserControl
             }
         }
 
+        // 分享按钮状态：云预设可用（红色），其他预设灰色，但点击仍可弹出提示
+        if (ShareButtonPath != null)
+        {
+            if (IsAppliedPresetCloud())
+                ShareButtonPath.ClearValue(System.Windows.Shapes.Path.FillProperty);
+            else
+                ShareButtonPath.Fill = new SolidColorBrush(Color.FromArgb(0x33, 0xEE, 0xEE, 0xEE));
+            ShareButtonPath.Cursor = System.Windows.Input.Cursors.Hand;
+        }
+
         // 根据预设类型切换图标：
         // - 设备内置（Onboard）→ 显示 Onboard 图标，隐藏官方和个人图标
         // - 个人预设 → 显示个人图标，隐藏官方和 Onboard 图标
@@ -726,6 +736,129 @@ public partial class BaseParameterControl : UserControl
         // TODO: 实现基座预设导出（需要 BasePresetSnapshot 模型）
         Debug.WriteLine("[BaseControl] 导出功能待实现");
     }
+
+    // ═══════════════════════════════════════════════
+    //  分享（仅云预设可用）
+    // ═══════════════════════════════════════════════
+
+    /// <summary>
+    /// 分享按钮点击：云预设 → 弹出分享码弹窗；官方/个人预设 → 提示仅云预设可分享。
+    /// </summary>
+    private void ShareButton_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (IsAppliedPresetCloud())
+        {
+            var code = GetPresetListPopup()?.FindCloudPreset(_currentPresetName)?.ShareCode;
+            if (string.IsNullOrEmpty(code))
+            {
+                // 兜底：云预设缺少分享码（可能版本较旧），提示重新同步
+                ShowCloudShareHint(LocalizationService.Instance["Preset.ShareCodeMissing"]);
+                return;
+            }
+            ShowShareCodeDialog(code);
+        }
+        else
+        {
+            ShowCloudShareHint(LocalizationService.Instance["Preset.ShareCloudOnlyMessage"]);
+        }
+    }
+
+    /// <summary>显示分享功能相关提示弹窗（仅云可分享 / 分享码缺失兜底）</summary>
+    private void ShowCloudShareHint(string message)
+    {
+        if (Window.GetWindow(this) is not MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.ShareCloudOnlyTitle"];
+        dialog.ShowIcon = true;
+        dialog.ClearButtons();
+        dialog.DialogContent = new TextBlock
+        {
+            Text = message,
+            FontSize = 22,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        dialog.AddButton(LocalizationService.Instance["Common.Confirm"], (_, _) => dialog.Hide(), isPrimary: true);
+        dialog.Show();
+    }
+
+    /// <summary>显示云预设分享码弹窗（5-5 分组展示），提供复制按钮</summary>
+    private void ShowShareCodeDialog(string code)
+    {
+        if (Window.GetWindow(this) is not MainWindow mainWindow) return;
+
+        var dialog = mainWindow.GlobalDialog;
+        dialog.Title = LocalizationService.Instance["Preset.ShareTitle"];
+        dialog.ShowIcon = false;
+        dialog.ShowCloseButton = false;
+        dialog.ClearButtons();
+
+        // 分享码原样展示（10 位，不带分隔符），复制时也是原始码
+        var displayCode = code;
+        var panel = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        panel.Children.Add(new TextBlock
+        {
+            Text = LocalizationService.Instance["Preset.ShareCodeMessage"],
+            FontSize = 18,
+            Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 0xEE, 0xEE, 0xEE)),
+            TextWrapping = TextWrapping.Wrap,
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        });
+        panel.Children.Add(new TextBlock
+        {
+            Text = displayCode,
+            FontSize = 44,
+            FontWeight = FontWeights.Bold,
+            Foreground = new SolidColorBrush(Color.FromRgb(238, 238, 238)),
+            TextAlignment = TextAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 14, 0, 0)
+        });
+        dialog.DialogContent = panel;
+
+        dialog.AddButton(LocalizationService.Instance["Common.Copy"], (_, _) =>
+        {
+            try
+            {
+                Clipboard.SetText(code);
+                dialog.Hide();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[BaseControl] 复制分享码失败: {ex.Message}");
+            }
+        }, isPrimary: true);
+
+        dialog.AddButton(LocalizationService.Instance["Common.Cancel"], (_, _) => dialog.Hide(), isPrimary: false);
+
+        dialog.Show();
+    }
+
+    /// <summary>获取当前设备类型对应的预设列表弹窗（含云预设列表数据）</summary>
+    private PresetListPopup? GetPresetListPopup()
+    {
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            return mainWindow.GetPresetListPopup(Models.Usb.DeviceType.Base);
+        return null;
+    }
+
+    /// <summary>
+    /// 当前应用的是否为云端预设（而非本地个人/官方预设）。
+    /// 必须先排除个人预设：云端预设与本地个人预设可能同名，应用个人副本时不应启用分享等云功能。
+    /// </summary>
+    private bool IsAppliedPresetCloud()
+        => !_isAppliedPresetPersonal
+           && _currentPresetName != null
+           && GetPresetListPopup()?.IsCloudPreset(_currentPresetName) == true;
 
     /// <summary>
     /// 预设列表按钮点击：打开预设选择弹窗。

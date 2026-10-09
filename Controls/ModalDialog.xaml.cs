@@ -277,6 +277,13 @@ public partial class ModalDialog : UserControl
     /// </summary>
     public void Show()
     {
+        // 仅单个按钮时跨两列居中显示；两个按钮时保持"主按钮左、次按钮右"的既定布局
+        if (ButtonPanel.Children.Count == 1 && ButtonPanel.Children[0] is Button onlyButton)
+        {
+            onlyButton.HorizontalAlignment = HorizontalAlignment.Center;
+            onlyButton.Margin = new Thickness(0);
+            Grid.SetColumnSpan(onlyButton, 2);
+        }
         Visibility = Visibility.Visible;
     }
 

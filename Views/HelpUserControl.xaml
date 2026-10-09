@@ -3,95 +3,299 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
              xmlns:lex="clr-namespace:HITAPEX.Helpers"
              mc:Ignorable="d"
-             d:DesignHeight="600" d:DesignWidth="900">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <Grid Margin="40,30">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+             d:DesignHeight="924" d:DesignWidth="1342"
+             Background="Transparent"
+             Focusable="True">
 
-            <StackPanel Grid.Row="0" Margin="0,0,0,30">
-                <TextBlock Text="{lex:Loc Help.Title}" FontSize="32" FontWeight="Bold" Foreground="#FFFFFF"/>
-                <TextBlock Text="{lex:Loc Help.Subtitle}" FontSize="16" Foreground="#8892A0" Margin="0,8,0,0"/>
-            </StackPanel>
+    <UserControl.Resources>
+        <LinearGradientBrush x:Key="TabSelectedGradient" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#C60E0E" Offset="0"/>
+            <GradientStop Color="#600707" Offset="1"/>
+        </LinearGradientBrush>
 
-            <Border Grid.Row="1" Background="#1E2A3A" CornerRadius="12" Padding="24,20" Margin="0,0,0,24">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="{lex:Loc Help.SearchPlaceholder}" FontSize="16" Foreground="#8892A0" VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <Border Grid.Column="1" Background="#00D4FF" CornerRadius="6" Padding="16,8" Cursor="Hand">
-                        <TextBlock Text="{lex:Loc Help.Search}" Foreground="#0D1B2A" FontWeight="SemiBold"/>
-                    </Border>
-                </Grid>
-            </Border>
+        <!-- 选项卡样式（与设置界面一致） -->
+        <Style x:Key="HelpTabButtonStyle" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontFamily" Value="{StaticResource OrbitronFont}"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Width" Value="266"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="266" Height="45">
+                            <Path x:Name="ButtonPath"
+                                  Data="M15.9058 1.5H256.7C257.984 1.5 259.165 2.20315 259.777 3.33203L263.752 10.666C264.245 11.5751 264.31 12.6562 263.931 13.6182L253.025 41.2832C252.498 42.6205 251.207 43.4999 249.769 43.5H8.9751C7.69107 43.4999 6.50985 42.7968 5.89795 41.668L1.92236 34.334C1.42962 33.4249 1.36443 32.3438 1.74365 31.3818L12.6499 3.7168C13.1771 2.37956 14.4684 1.50019 15.9058 1.5Z"
+                                  Stretch="Fill"
+                                  Fill="Transparent"
+                                  Stroke="{StaticResource TabSelectedGradient}"
+                                  StrokeThickness="3"/>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="#FFFFFF"
+                                              TextElement.FontWeight="Bold"
+                                              TextElement.FontSize="22"
+                                              TextElement.FontStyle="Italic"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-            <StackPanel Grid.Row="2">
-                <TextBlock Text="{lex:Loc Help.FAQ}" FontSize="18" FontWeight="SemiBold" Foreground="#FFFFFF" Margin="0,0,0,12"/>
+        <Style x:Key="HelpTabButtonStyle2" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="22"/>
+            <Setter Property="FontFamily" Value="{StaticResource OrbitronFont}"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="Width" Value="264"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="264" Height="45">
+                            <Path x:Name="ButtonPath"
+                                  Data="M12.5693 1.5H254.862C256.146 1.5001 257.328 2.20313 257.939 3.33203L261.914 10.666C262.407 11.575 262.472 12.6553 262.093 13.6172L251.188 41.2832C250.66 42.6205 249.369 43.4998 247.932 43.5H5.00488C2.53554 43.4999 0.843171 41.0117 1.75 38.7148L11.2217 14.7236C11.9285 12.9335 11.8061 10.9222 10.8867 9.23145L9.49512 6.67188C8.22694 4.33976 9.91476 1.5002 12.5693 1.5Z"
+                                  Stretch="Fill"
+                                  Fill="Transparent"
+                                  Stroke="{StaticResource TabSelectedGradient}"
+                                  StrokeThickness="3"/>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="#FFFFFF"
+                                              TextElement.FontWeight="Bold"
+                                              TextElement.FontSize="22"
+                                              TextElement.FontStyle="Italic"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="ButtonPath" Property="Fill" Value="{StaticResource TabSelectedGradient}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <Border Background="#1E2A3A" CornerRadius="12" Padding="20,16" Margin="0,0,0,8" Cursor="Hand">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{lex:Loc Help.FaqConnect}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
-                    </Grid>
-                </Border>
+        <!-- 内容滚动条样式（3px 轨道 + 红色滑块，与游戏"遥测支持"内容滚动条一致） -->
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="3"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid>
+                            <Border x:Name="TrackBackground" Width="3" Background="#EEEEEE" CornerRadius="1.5"/>
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="#C60E0E" CornerRadius="1.5" Width="3"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <Border Background="#1E2A3A" CornerRadius="12" Padding="20,16" Margin="0,0,0,8" Cursor="Hand">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{lex:Loc Help.FaqCalibrate}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
-                    </Grid>
-                </Border>
+        <!-- 滚动区模板：内容列 + 滚动条列分开布局，滚动条显示在背景外侧右侧。
+             滑块长度由 ViewportSize/ScrollableHeight 模板绑定自动按内容高度自适应（同游戏"遥测支持"实现）。 -->
+        <Style x:Key="FaqScrollViewerStyle" TargetType="ScrollViewer">
+            <Setter Property="VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                <Border Background="#1E2A3A" CornerRadius="12" Padding="20,16" Margin="0,0,0,8" Cursor="Hand">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{lex:Loc Help.FaqFFB}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
-                    </Grid>
-                </Border>
+                            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter" Grid.Column="0"
+                                                    Margin="20,20,43,20"
+                                                    CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                    CanHorizontallyScroll="False"
+                                                    CanVerticallyScroll="True"
+                                                    Content="{TemplateBinding Content}"
+                                                    ContentTemplate="{TemplateBinding ContentTemplate}"/>
 
-                <Border Background="#1E2A3A" CornerRadius="12" Padding="20,16" Margin="0,0,0,8" Cursor="Hand">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{lex:Loc Help.FaqGraphics}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
-                    </Grid>
-                </Border>
+                            <ScrollBar x:Name="PART_VerticalScrollBar" Grid.Column="1"
+                                       Cursor="Arrow"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       Minimum="0"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"
+                                       Value="{Binding VerticalOffset, Mode=OneWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Margin="8,0,0,0"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-                <Border Background="#1E2A3A" CornerRadius="12" Padding="20,16" Cursor="Hand">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{lex:Loc Help.FaqMultiplayer}" Foreground="#FFFFFF" FontSize="14" VerticalAlignment="Center"/>
-                        <TextBlock Text="›" Grid.Column="1" Foreground="#8892A0" FontSize="18"/>
-                    </Grid>
-                </Border>
+        <!-- 问答列表样式 -->
+        <Style x:Key="FaqQuestionStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+            <Setter Property="LineHeight" Value="32"/>
+        </Style>
+
+        <Style x:Key="FaqAnswerStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#99EEEEEE"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,20"/>
+            <Setter Property="LineHeight" Value="30"/>
+        </Style>
+
+        <Storyboard x:Key="FadeInStoryboard">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                             From="0" To="1"
+                             Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 第一行：图标 + 标题（与设置界面一致） -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,7">
+            <svgc:SvgViewbox Source="/Assets/Group126547702.svg" Width="27.63" Height="18" Margin="0,0,8.24,3" VerticalAlignment="Bottom"/>
+            <Grid>
+                <TextBlock Text="{lex:Loc Help.Title}" FontSize="26" FontWeight="Bold" Foreground="#EEEEEE" VerticalAlignment="Center"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- 第二行：分隔线 -->
+        <Border Grid.Row="1" Height="1" Background="#99383838" Margin="0"/>
+
+        <!-- 第三行：选项卡 -->
+        <Grid Grid.Row="2" HorizontalAlignment="Left" Margin="0,20,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <RadioButton x:Name="BaseTab"
+                             Content="{lex:Loc Help.TabBase}"
+                             Style="{StaticResource HelpTabButtonStyle}"
+                             GroupName="HelpTabs"
+                             IsChecked="True"
+                             Checked="Tab_Checked"
+                             Tag="Base"
+                             Margin="0,0,-5,0"/>
+                <RadioButton x:Name="WheelTab"
+                             Content="{lex:Loc Help.TabWheel}"
+                             Style="{StaticResource HelpTabButtonStyle2}"
+                             GroupName="HelpTabs"
+                             Checked="Tab_Checked"
+                             Tag="Wheel"
+                             Margin="0,0,-8,0"/>
+                <RadioButton x:Name="PedalTab"
+                             Content="{lex:Loc Help.TabPedal}"
+                             Style="{StaticResource HelpTabButtonStyle2}"
+                             GroupName="HelpTabs"
+                             Checked="Tab_Checked"
+                             Tag="Pedal"
+                             Margin="0,0,-8,0"/>
+                <RadioButton x:Name="SoftwareTab"
+                             Content="{lex:Loc Help.TabSoftware}"
+                             Style="{StaticResource HelpTabButtonStyle2}"
+                             GroupName="HelpTabs"
+                             Checked="Tab_Checked"
+                             Tag="Software"
+                             Margin="3,0,0,0"/>
             </StackPanel>
         </Grid>
-    </ScrollViewer>
+
+        <!-- 第四行：问答内容区域 -->
+        <Grid Grid.Row="3" Margin="0,20,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1279"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- 背景区域（形状：M0 15V766H1264L1279 751V0H15L0 15Z，样式同预设编辑弹窗游戏列表第二列），裁剪形状由代码按实际尺寸重建 -->
+            <Grid x:Name="FaqBackground" Grid.Column="0" SizeChanged="FaqBackground_SizeChanged">
+
+                <Path Data="M0 15V766H1264L1279 751V0H15L0 15Z" Stroke="#33EEEEEE" StrokeThickness="2" Stretch="Fill">
+                    <Path.Fill>
+                        <LinearGradientBrush StartPoint="0,0.5" EndPoint="1.8,0.5">
+                            <GradientStop Color="#33607079" Offset="0"/>
+                            <GradientStop Color="#333F4A50" Offset="0.44"/>
+                            <GradientStop Color="#33282D30" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Path.Fill>
+                </Path>
+
+                <Path Data="M0 15V766H1264L1279 751V0H15L0 15Z" Fill="Transparent" Stroke="#CC232323" StrokeThickness="15" Stretch="Fill">
+                    <Path.Effect>
+                        <!-- RenderingBias=Quality：使用高质量模糊内核，避免大半径下出现阶梯状不平滑过渡 -->
+                        <BlurEffect Radius="45" RenderingBias="Quality"/>
+                    </Path.Effect>
+                    <Path.CacheMode>
+                        <BitmapCache RenderAtScale="1"/>
+                    </Path.CacheMode>
+                </Path>
+            </Grid>
+
+            <!-- 基座 → 常见问题（滚动条在背景外侧右侧，滑块长度随内容自适应；问答内容由代码从 FAQ 文件构建） -->
+            <ScrollViewer x:Name="BaseScrollViewer"
+                          Grid.ColumnSpan="2"
+                          Style="{StaticResource FaqScrollViewerStyle}">
+                <StackPanel x:Name="BaseFaqPanel" Margin="0"/>
+            </ScrollViewer>
+
+            <!-- 方向盘 → 常见问题 -->
+            <ScrollViewer x:Name="WheelScrollViewer"
+                          Grid.ColumnSpan="2"
+                          Style="{StaticResource FaqScrollViewerStyle}"
+                          Visibility="Collapsed">
+                <StackPanel x:Name="WheelFaqPanel" Margin="0"/>
+            </ScrollViewer>
+
+            <!-- 脚踏板 → 常见问题 -->
+            <ScrollViewer x:Name="PedalScrollViewer"
+                          Grid.ColumnSpan="2"
+                          Style="{StaticResource FaqScrollViewerStyle}"
+                          Visibility="Collapsed">
+                <StackPanel x:Name="PedalFaqPanel" Margin="0"/>
+            </ScrollViewer>
+
+            <!-- HITAPEX软件 → 常见问题 -->
+            <ScrollViewer x:Name="SoftwareScrollViewer"
+                          Grid.ColumnSpan="2"
+                          Style="{StaticResource FaqScrollViewerStyle}"
+                          Visibility="Collapsed">
+                <StackPanel x:Name="SoftwareFaqPanel" Margin="0"/>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
 </UserControl>

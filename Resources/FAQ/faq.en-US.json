@@ -1,0 +1,26 @@
+{
+  "Base": [
+    { "Q": "Q1: How do I start using my racing wheel?", "A": "A: Connect the wheel via USB or Bluetooth, confirm it is detected on the Devices page, then calibrate the wheel, pedals, and shifter." },
+    { "Q": "Q2: My base station is connected but not responding. What should I do?", "A": "A: Check that the USB cable is firmly connected, try another USB port or cable, confirm the device is recognized on the Devices page, and restart the software if needed." },
+    { "Q": "Q3: How do I update the base station firmware?", "A": "A: Open the Firmware Update tab in Settings, click Check for Updates and follow the prompts. Do not unplug the device or close the software during the update." },
+    { "Q": "Q4: Why is the base station indicator light off?", "A": "A: Make sure the power adapter and USB cable are connected properly; the indicator should stay on when powered. If it is still off, try another cable or contact support." }
+  ],
+  "Wheel": [
+    { "Q": "Q1: My wheel is not centered when straight. How do I calibrate it?", "A": "A: Open the wheel parameters on the Devices page, keep the wheel as straight as possible and start calibration. The center position will be recorded automatically." },
+    { "Q": "Q2: How do I adjust the force feedback strength?", "A": "A: Adjust the force feedback gain in the wheel parameters or in-game settings. Start from a low level and gradually increase to a comfortable strength." },
+    { "Q": "Q3: Button lights or shift lights are off or showing wrong colors. What can I do?", "A": "A: Check the brightness and light mode settings on the wheel parameters page, and make sure the device is not in standby power-saving mode." },
+    { "Q": "Q4: My shift paddles are not responding. What should I do?", "A": "A: Re-learn the paddle positions in the shift paddle calibration on the wheel parameters page. If they still do not respond, check the paddle wiring or contact support." }
+  ],
+  "Pedal": [
+    { "Q": "Q1: How do I adjust the pedal curve?", "A": "A: Open the pedal parameters on the Devices page. The pedal curve changes the relationship between travel and output; a steeper curve means higher sensitivity." },
+    { "Q": "Q2: My pedal triggers with slight movement. How do I set a dead zone?", "A": "A: Set an appropriate dead zone on the pedal parameters page to filter out false triggers caused by a loose pedal or light touches." },
+    { "Q": "Q3: My throttle, brake or clutch is reversed. How do I fix it?", "A": "A: Enable input reverse for the corresponding pedal on the pedal parameters page to flip its output direction." },
+    { "Q": "Q4: What are the steps to calibrate the pedals?", "A": "A: Start calibration with the pedals released, press each pedal fully and release it one by one. The system records the travel range and finishes calibration automatically." }
+  ],
+  "Software": [
+    { "Q": "Q1: Which platforms and systems does HITAPEX software support?", "A": "A: HITAPEX software currently supports Windows and works with HITAPEX devices connected via USB or through the base station." },
+    { "Q": "Q2: How do I change the software interface language?", "A": "A: Open the language settings on the Settings page and select Chinese or English. The software switches immediately." },
+    { "Q": "Q3: My software cannot detect my device. What should I do?", "A": "A: Make sure the device is properly connected and powered, then refresh the device list on the Devices page. If it still fails, try another cable or restart the software." },
+    { "Q": "Q4: How do I check the software and firmware versions?", "A": "A: Open the Settings page to see the software version. On the Firmware Update tab you can see the firmware version and update status of each connected device." }
+  ]
+}

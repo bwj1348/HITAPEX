@@ -277,7 +277,7 @@
                 </Grid>
 
                 <!-- 导出按钮 -->
-                <Grid MinWidth="80" Height="37"
+                <Grid MinWidth="80" Height="37" Margin="0,0,10,0"
                       MouseLeftButtonDown="ExportButton_Click"
                       SizeChanged="ActionButton_SizeChanged">
                     <Canvas>
@@ -285,6 +285,19 @@
                               Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
                     </Canvas>
                     <TextBlock Text="{lex:Loc Common.Export}" FontSize="18" Foreground="#EEEEEE"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+
+                <!-- 分享按钮（仅云预设可用） -->
+                <Grid x:Name="ShareButtonGrid" MinWidth="80" Height="37"
+                      MouseLeftButtonDown="ShareButton_Click"
+                      SizeChanged="ActionButton_SizeChanged">
+                    <Canvas>
+                        <Path x:Name="ShareButtonPath" Data="M85 5H11L5 11V42H5.32H79L85 36V5Z"
+                              Style="{StaticResource ActionButtonPathStyle}" Cursor="Hand"/>
+                    </Canvas>
+                    <TextBlock Text="{lex:Loc Common.Share}" FontSize="18" Foreground="#EEEEEE"
                                HorizontalAlignment="Center" VerticalAlignment="Center"
                                IsHitTestVisible="False"/>
                 </Grid>

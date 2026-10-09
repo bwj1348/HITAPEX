@@ -1,12 +1,14 @@
 # TelemetrySDK API 文档
 
-> **SDK 版本 1.0.0**（首个正式版）
+> **SDK 版本 1.1.0**
 > 本文档为交付文档，与 `TelemetrySDK.dll` 同版本；C# 侧全部结构体 / 枚举 / 常量定义在文档内可直接粘贴（见 4.4 / 8.2 / 10.3 / 附录 A）。
 
 ## 修订历史
 
 | 文档轮次 | SDK 版本 | 日期 | 说明 |
 |---|---|---|---|
+| 第六轮 | 1.1.0 | 2026-09-17 | 状态机解耦（无新增导出 API，C ABI 不变）：新增 SDK 内部 30Hz 新鲜度采样线程——SHM 游戏的 WAITING_DATA → CONNECTED → STALE 推进不再依赖客户端轮询 GetTelemetryData（与 UDP 收包线程 / iRacing 事件线程行为对齐），GetTelemetryStatus 随 Start 后随时可查；§2.4 / §3.1 / §3.2 / §3.10 / §10.2 相应改写（删除第五轮的"等状态变绿再取数会永久停在 WAITING_DATA"警示——该坑已根除）。勘误：UNKNOWN_AGE 并非不可达——WRC8/9/10 补丁协议无逐帧计数器仍处于该状态（1.0.0 文档表述有误，本轮一并修正） |
+| 第五轮（勘误） | 1.0.0 | 2026-09-17 | 调用模型勘误（SDK 代码与 ABI 零变更，纯文档修正）：新增 2.4 标准调用流程——明确纯拉取模型（Start 只建会话不交付数据）、Start 后立即轮询；勘误 §3.1/§3.2/§3.10/§10.2 四处误导表述——SHM 游戏的连接状态推进（WAITING_DATA → CONNECTED）依赖客户端持续调用 GetTelemetryData，"等状态变绿再取数"会永久停在 WAITING_DATA（UDP 游戏因 SDK 后台收包线程自动刷新状态而不受影响） |
 | 第四轮（交付终轮） | 1.0.0 | 2026-09-05 | 首个正式版（优化阶段 0-4 + SHM 新鲜度统一化收官，无新增导出 API、ABI 不变）：SHM 新鲜度全游戏接入（R3E/AMS2/SCS/RF2/LMU 补齐，全部适配器提供 dataAge，UNKNOWN_AGE 实际不可达、枚举保留为 ABI 兼容）；dataAgeMs 语义按传输方式分家 + 暂停语义差异说明；StartTelemetry 补充 iRacing 游戏进程前置条件与重试模式。交付前调用方视角审视追加：勘误 §3.2 返回值语义（true ≠ 数据已到达）与 §3.5 掩码静/动态表述（GetSupportedFlags 为启动快照、iRacing 实时以 validFlags 为准）；新增 8.1 UDP 默认监听端口表、10.5 恢复语义与重入安全、附录 A C# 声明全集 |
 | 第三轮 | 0.4.0 | 2026-09-03 | 链路健壮性（无新增导出 API，ABI 不变）：UDP 断连恢复——recvfrom 瞬时错误不再永久断流（旧版一次错误即数据冻结），恢复发包自动自愈；SHM 新鲜度采样——AC/ACC/ACRally/ACEvo（physics packetId）与 iRacing（tickCount）脱离 UNKNOWN_AGE，游戏退出/冻结可感知（STALE）；WAITING_DATA 语义扩展到 SHM 空映射。状态机六态不变 |
 | 第二轮 | 0.3.0 | 2026-09-02 | 新增错误处理三 API：GetLastTelemetryError / GetLastTelemetryErrorMessage（中文 UTF-8 消息）/ GetTelemetryStatus（SDK/连接状态机 + 数据新鲜度）。第 10 节占位替换为正式内容。数据契约（NormalizedData 布局 / validFlags 位表）与 0.2.0 一致，无破坏性变更 |
@@ -63,7 +65,7 @@ catch (DllNotFoundException)
 if (!TelemetryAPI.StartTelemetry((int)GameId.F1_2025))
     return; // 启动失败：gameId 非法 / 数据源初始化失败
 
-// 2. 每帧轮询（建议 30-60Hz，与 UI 帧率一致即可）
+// 2. 每帧轮询（30-60Hz，与 UI 帧率一致；Start 后立即开始，不等连接状态——见 2.4）
 var data = new NormalizedData();
 if (TelemetryAPI.GetTelemetryData(ref data))
 {
@@ -79,6 +81,32 @@ TelemetryAPI.StopTelemetry();
 
 切换游戏 = `StopTelemetry()` → `StartTelemetry(新gameId)`。同一时刻只有一个会话。运行中直接再调 `StartTelemetry`（同游戏或换游戏）也是安全的——内部会自动停止旧会话后切换，手动 Stop 只是更显式（详见 10.5）。
 
+### 2.4 标准调用流程（生命周期）
+
+SDK 为**纯拉取模式**：`StartTelemetry` 只建立会话（打开数据源），不向客户端交付任何数据——取数必须轮询 `GetTelemetryData`。连接状态由 SDK 内部自动推进（UDP = 收包线程 / iRacing = 事件线程 / 其余共享内存游戏 = 30Hz 采样线程，**1.1.0 起不依赖客户端轮询**），Start 后随时可查。标准循环 = **Start 成功后立即开始轮询取数，退出前 Stop，全程不中断**。
+
+```
+StartTelemetry(gameId)
+   │
+   ├─ false → GetLastTelemetryError() 查因
+   │           （iRacing GAME_NOT_RUNNING：提示开游戏后重调 Start；其余码提示重试）
+   │
+   └─ true ─→ 立即进入轮询循环（30-60Hz，与 UI 帧率一致）
+        ┌────────────────────────────────────────────────────────┐
+        │ GetTelemetryData(ref data)  ← 每帧必调，唯一取数出口     │
+        │ GetTelemetryStatus(ref st)  ← 可选显示（状态自动推进）   │
+        │（按 st.connState 刷状态灯；按 data.validFlags 判位取值）  │
+        └────────────────────────────────────────────────────────┘
+   退出前 StopTelemetry()（幂等）；切游戏 = Stop → Start(新 gameId)
+```
+
+**规则速记**：
+
+1. **Start 后立即轮询取数，不等任何状态**。取数与状态是两条独立通路：状态灯由 SDK 内部采样自动刷新，取数只能靠本循环（SDK 无推送无回调）。
+2. `GetTelemetryData` 是唯一取数出口。WAITING_DATA 期间调用返回 `true` + 全 0 数据属正常现象，持续调用即可。
+3. `GetTelemetryStatus` 纯只读快照，只做显示，不作为任何取数分支的前置条件。
+4. 轮询频率 ≠ 数据更新频率（适配器缓存最新帧），30-60Hz 足够。
+
 ---
 
 ## 3. API 详解（10 个导出函数）
@@ -93,7 +121,7 @@ bool StartTelemetry(int gameId);
 
 传入 `GameId`，内部创建对应适配器并连接数据源。`true` = 初始化成功（**不代表立即有数据**——数据在游戏开始发送/写入后到达，新鲜度走 3.10 GetTelemetryStatus）。`false` = 失败，失败原因用 `GetLastTelemetryError()` 查询（5 类错误码 + 中文消息，见第 10 节）。**运行中重复调用是安全的**——内部先自动停止当前会话再启动新会话，不会报错或泄漏资源（详见 10.5）。
 
-**iRacing 前置条件**（全 SDK 唯一）：iRacing 要求游戏进程已在运行才能启动成功——sim 未开时返回 `false + TEL_ERR_GAME_NOT_RUNNING`。这是协议本质约束（共享内存与数据有效事件由 sim 进程创建），不是缺陷。客户端处理模式：收到 `GAME_NOT_RUNNING` → 提示用户启动游戏 → 开好后**重调一次 `StartTelemetry`** 即恢复，不要弹致命错误死框（它是"环境未就绪"可重试恢复）。其余游戏 `StartTelemetry` 必成功，游戏后开靠 `WAITING_DATA → CONNECTED` 自动接上，无需重试。
+**iRacing 前置条件**（全 SDK 唯一）：iRacing 要求游戏进程已在运行才能启动成功——sim 未开时返回 `false + TEL_ERR_GAME_NOT_RUNNING`。这是协议本质约束（共享内存与数据有效事件由 sim 进程创建），不是缺陷。客户端处理模式：收到 `GAME_NOT_RUNNING` → 提示用户启动游戏 → 开好后**重调一次 `StartTelemetry`** 即恢复，不要弹致命错误死框（它是"环境未就绪"可重试恢复）。其余游戏 `StartTelemetry` 必成功，游戏后开靠 `WAITING_DATA → CONNECTED` 自动接上（SDK 内部采样线程自动推进，无需客户端干预），无需重试。
 
 ### 3.2 GetTelemetryData
 
@@ -101,9 +129,11 @@ bool StartTelemetry(int gameId);
 bool GetTelemetryData(NormalizedData* outData);
 ```
 
-每帧调用，SDK 将最新归一化数据（含健康层校验）填入 `outData`，同时写入 `validFlags`。**返回值**：`true` = SDK 会话存在（已 StartTelemetry 且未 Stop）；`false` = 未启动或 `outData` 为空指针。**`true` 不代表数据已到达**——数据未到（WAITING_DATA / STALE）时适配器静默返回，`outData` 保持调用方上次传入的内容（首次调用即复用实例的初值），`validFlags` 仍为该游戏支持掩码。数据到达性一律走 3.10 GetTelemetryStatus，两者职责分离。
+由客户端按帧主动调用（建议 30-60Hz，完整流程见 2.4）。SDK 不推送数据——本函数是获取遥测数据的**唯一途径**，不调用则数据不流动。SDK 将最新归一化数据（含健康层校验）填入 `outData`，同时写入 `validFlags`。**返回值**：`true` = SDK 会话存在（已 StartTelemetry 且未 Stop）；`false` = 未启动或 `outData` 为空指针。**`true` 不代表数据已到达**——数据未到（WAITING_DATA / STALE）时适配器静默返回，`outData` 保持调用方上次传入的内容（首次调用即复用实例的初值），`validFlags` 仍为该游戏支持掩码。数据到达性一律走 3.10 GetTelemetryStatus，两者职责分离。
 
 C# 侧传 `ref NormalizedData`；建议固定一个结构体实例反复复用（`new` 即零初始化），不要每帧 new。
+
+**连接状态推进与本调用无关**（1.1.0 起）：SHM 游戏的状态由 SDK 内部 30Hz 采样线程自动刷新，只查 `GetTelemetryStatus` 不取数也能正常报 CONNECTED / STALE；但取数仍然只有本调用这一条路（见 2.4）。
 
 ### 3.3 StopTelemetry
 
@@ -190,6 +220,8 @@ bool GetTelemetryStatus(TelemetryStatus* outStatus);
 SDK/连接状态快照（20 字节结构体，字段语义见第 10 节状态机）。**每帧现算、无内部状态变量**；未启动（IDLE）时返回 `true` + 全默认字段；仅 `outStatus = null` 返回 `false`。
 
 与 `GetTelemetryData` 的职责分离：后者的 bool 返回值**语义不变**（适配器断连时 Update 静默返回、outData 保持上一帧数据仍返回 `true`，ABI 兼容）——数据新鲜度/连接状态一律走本接口。
+
+本函数是**纯只读快照**——1.1.0 起全部游戏的状态推进均由 SDK 内部自动完成（UDP = 收包线程 / iRacing = 事件线程 / 其余共享内存游戏 = 30Hz 采样线程），Start 后随时调用随时有效，不依赖 `GetTelemetryData` 轮询（完整流程见 2.4）。注意状态反映的是**数据链路**而非客户端消费：`CONNECTED` 只代表游戏正在写入数据，不代表客户端已通过 `GetTelemetryData` 取到过帧——"是否已收到首帧"这类语义由客户端自行记录。
 
 ---
 
@@ -558,12 +590,12 @@ IDLE ──StartTelemetry 成功──→ ┌─ !IsConnected ──→ DISCONNE
                                                   卡死、暂停、回菜单都会停更，如实上报）
 ```
 
-`UNKNOWN_AGE` 枚举值保留为 **ABI 兼容**：1.0.0 起全部游戏提供 `dataAge`，该状态实际不可达——旧客户端的 switch 分支可安全保留，新客户端无需处理。
+`UNKNOWN_AGE`：仅 **WRC8/9/10**（第三方遥测补丁协议无逐帧计数器）会处于此状态，SDK 不评估其新鲜度；其余游戏均提供 `dataAge`。旧客户端的 switch 分支可安全保留。
 
 **`dataAgeMs` 语义按传输方式分两类**（对客户端用法完全一致：与 `staleTimeoutMs` 比较即可）：
 
 - **UDP 游戏** = 收包年龄——收到新的 UDP 数据即刷新；
-- **SHM 游戏** = 数据更新年龄——SDK 检测到共享内存数据被游戏写入即刷新。
+- **SHM 游戏** = 数据更新年龄——SDK 内部采样线程（30Hz）检测到共享内存数据被游戏写入即刷新，与客户端是否轮询无关（1.1.0 起；UDP 游戏由后台收包线程刷新）。
 
 **暂停语义差异**：多数游戏（AC 系 / R3E / SCS / AMS2 / iRacing）在游戏暂停、回菜单时数据冻结，超阈值报 STALE——属正常表现；RF2/LMU 在暂停期间引擎通常仍在刷新数据 → 保持 CONNECTED。客户端对 RF2/LMU 不应依赖 STALE 提示暂停状态。
 
@@ -572,12 +604,12 @@ IDLE ──StartTelemetry 成功──→ ┌─ !IsConnected ──→ DISCONNE
 | 字段 | 类型 | 语义 |
 |---|---|---|
 | `sdkState` | int32 | `TEL_SDK_IDLE(0)` / `TEL_SDK_RUNNING(1)` |
-| `connState` | int32 | 连接状态机六态（语义见 10.2 图）：IDLE(0) / WAITING_DATA(1) / CONNECTED(2) / STALE(3) / DISCONNECTED(4) / UNKNOWN_AGE(5，兼容保留、1.0.0 起实际不可达) |
+| `connState` | int32 | 连接状态机六态（语义见 10.2 图）：IDLE(0) / WAITING_DATA(1) / CONNECTED(2) / STALE(3) / DISCONNECTED(4) / UNKNOWN_AGE(5，仅 WRC8/9/10 使用) |
 | `lastError` | int32 | 错误槽透传（同 `GetLastTelemetryError()`） |
 | `dataAgeMs` | uint32 | 数据年龄（UDP = 收包年龄；SHM = 数据更新年龄）；`0xFFFFFFFF` = 未知/尚无数据 |
 | `staleTimeoutMs` | uint32 | STALE 判定阈值（默认 5000ms；透传给客户端可展示） |
 
-UI 态建议：`WAITING_DATA` 显示"等待游戏数据"（黄）而非报错；`CONNECTED` 绿 / `STALE` 橙（"超 X ms 无数据"——注意暂停/菜单中 STALE 属正常表现，RF2/LMU 除外见上方暂停语义）/ `UNKNOWN_AGE` 灰白（1.0.0 起实际不可达，兼容保留）/ `DISCONNECTED` 红。
+UI 态建议：`WAITING_DATA` 显示"等待游戏数据"（黄）而非报错；`CONNECTED` 绿 / `STALE` 橙（"超 X ms 无数据"——注意暂停/菜单中 STALE 属正常表现，RF2/LMU 除外见上方暂停语义）/ `UNKNOWN_AGE` 灰白（仅 WRC8/9/10 使用）/ `DISCONNECTED` 红。
 
 ### 10.3 C# P/Invoke（可直接粘贴）
 
@@ -589,7 +621,7 @@ public enum TelemetryConnState          // connState 字段取值（六态）
     Connected = 2,                      // 数据新鲜（dataAgeMs ≤ staleTimeoutMs）
     Stale = 3,                          // 超阈值无新数据（游戏退出/暂停/回菜单）
     Disconnected = 4,                   // 传输层失效（如 iRacing sim 退出）
-    UnknownAge = 5                      // ABI 兼容保留，1.0.0 起实际不可达
+    UnknownAge = 5                      // 仅 WRC8/9/10（补丁协议无逐帧计数器）使用
 }
 
 [StructLayout(LayoutKind.Sequential, Pack = 4)]
@@ -622,7 +654,7 @@ string msg = Encoding.UTF8.GetString(buf, 0, written - 1);   // 去尾 null
 ### 10.4 验收与边界
 
 - SDK 侧经 13 场景错误注入验收（无需游戏；含 STALE 自愈 / 跨游戏切换 / 新鲜度全链路）；
-- SHM 数据新鲜度 1.0.0 起全游戏覆盖（此前部分 SHM 游戏不评估新鲜度）；UDP 断连自愈已内建——瞬时网络错误不断流，游戏恢复发包自动回 CONNECTED；
+- SHM 数据新鲜度 1.0.0 起覆盖除 WRC8/9/10（补丁协议无逐帧计数器）外的全部游戏；1.1.0 起状态推进由 SDK 内部采样线程自动完成、不依赖客户端轮询；UDP 断连自愈已内建——瞬时网络错误不断流，游戏恢复发包自动回 CONNECTED；
 - 已知边界（接受不修）：AMS2 圈数制站立发车过渡窗口可能短暂误报 STALE（起步后自愈，消费端可加迟滞过滤）；明确不做：`GetTelemetryData` 返回值语义变更（ABI 兼容约定）。
 
 ### 10.5 恢复语义与重入安全

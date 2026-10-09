@@ -17,6 +17,13 @@ public class TelemetryService : IDisposable
     private int _currentGameId = -1;
     private bool _disposed;
 
+    // 360Hz 力反馈扭矩下发（仅 iRacing）：独立线程，与 60Hz 采集循环并存
+    private readonly object _telemetrySendLock = new();   // 60Hz 三包与 360Hz 扭矩包的串口发送互斥
+    private readonly object _torqueSnapshotLock = new();  // 保护 _latestSteeringTorque 快照
+    private float[]? _latestSteeringTorque;               // 最新一帧的方向盘力反馈扭矩快照
+    private Thread? _torqueThread;                        // 360Hz 独立下发线程
+    private CancellationTokenSource? _torqueCts;
+
     // 时间戳：自遥测启动以来的累计模拟时间（毫秒）
     private long _telemetryStartTick;
 
@@ -36,6 +43,9 @@ public class TelemetryService : IDisposable
 
     // 目标循环间隔 ~16ms (60Hz)
     private static readonly TimeSpan LoopInterval = TimeSpan.FromMilliseconds(16);
+
+    // 力反馈扭矩下发间隔（360Hz ≈ 2.78ms；单包耗时导致实际频率略低属预期，无补偿逻辑）
+    private static readonly TimeSpan TorqueLoopInterval = TimeSpan.FromMilliseconds(1000d / 360);
 
     // 进程存活检测间隔（每 300 帧 ≈ 5 秒检查一次）
     private const int ProcessCheckIntervalFrames = 300;
@@ -225,6 +235,19 @@ public class TelemetryService : IDisposable
         };
         _loopThread.Start(_cts.Token);
 
+        // iRacing 专属：启动 360Hz 力反馈扭矩独立下发线程（steeringWheelTorqueST → 0x6104）
+        if (gameId == (int)TelemetryAPI.GameId.IRacing)
+        {
+            _torqueCts = new CancellationTokenSource();
+            _torqueThread = new Thread(TorqueLoopProc)
+            {
+                Name = "TelemetryTorqueLoop",
+                IsBackground = true
+            };
+            _torqueThread.Start(_torqueCts.Token);
+            Debug.WriteLine("[Telemetry] iRacing 力反馈扭矩 360Hz 下发已启动");
+        }
+
         Debug.WriteLine($"[Telemetry] 遥测采集已启动，GameId={gameId}, 支持字段=0x{TelemetryAPI.GetSupportedFlags():X16}");
         OnStarted?.Invoke(gameId);
         return true;
@@ -262,6 +285,25 @@ public class TelemetryService : IDisposable
             _loopThread = null;
         }
 
+        // 停止 360Hz 力反馈扭矩下发线程（仅 iRacing 启动，但停止时无条件清理，幂等）
+        _torqueCts?.Cancel();
+        _torqueCts?.Dispose();
+        _torqueCts = null;
+
+        if (_torqueThread != null && _torqueThread.IsAlive)
+        {
+            if (!_torqueThread.Join(500))
+            {
+                Debug.WriteLine("[Telemetry] 扭矩下发线程未能及时退出");
+            }
+            _torqueThread = null;
+        }
+
+        lock (_torqueSnapshotLock)
+        {
+            _latestSteeringTorque = null;
+        }
+
         if (_isRunning)
         {
             TelemetryAPI.StopTelemetry();
@@ -293,20 +335,26 @@ public class TelemetryService : IDisposable
 
                 // 读取连接状态：仅 CONNECTED（数据新鲜）时才取数并下发，
                 // WAITING_DATA / STALE / DISCONNECTED 时不下发（设备端保持无数据状态）。
-                var status = new TelemetryAPI.TelemetryStatus();
-                if (TelemetryAPI.GetTelemetryStatus(ref status))
-                {
-                    UpdateStatus(status);
+                // var status = new TelemetryAPI.TelemetryStatus();
+                // if (TelemetryAPI.GetTelemetryStatus(ref status))
+                // {
+                //     UpdateStatus(status);
 
-                    if (TelemetryAPI.IsDataFresh(status))
-                    {
-                        if (TelemetryAPI.GetTelemetryData(ref data))
-                        {
-                            // 自适应最大转速追踪（LFS/RBR/BeamNG 不提供 maxRpm）
-                            ApplyAdaptiveMaxRpm(ref data);
-                            ProcessFrame(data);
-                        }
-                    }
+                //     if (TelemetryAPI.IsDataFresh(status))
+                //     {
+                //         if (TelemetryAPI.GetTelemetryData(ref data))
+                //         {
+                //             // 自适应最大转速追踪（LFS/RBR/BeamNG 不提供 maxRpm）
+                //             ApplyAdaptiveMaxRpm(ref data);
+                //             ProcessFrame(data);
+                //         }
+                //     }
+                // }
+                if (TelemetryAPI.GetTelemetryData(ref data))
+                {
+                    // 自适应最大转速追踪（LFS/RBR/BeamNG 不提供 maxRpm）
+                    ApplyAdaptiveMaxRpm(ref data);
+                    ProcessFrame(data);
                 }
 
                 // 每 ProcessCheckIntervalFrames 帧（~5 秒）检查一次目标游戏进程是否仍在运行
@@ -341,6 +389,49 @@ public class TelemetryService : IDisposable
         catch (Exception ex)
         {
             Debug.WriteLine($"[Telemetry] 采集循环异常: {ex}");
+        }
+    }
+
+    /// <summary>
+    /// 360Hz 力反馈扭矩下发循环（仅 iRacing 启动时创建）。
+    /// 每帧轮流发送 steeringWheelTorqueST 数组中的一个值（0x6104 包，下标 0→5 循环），
+    /// 每个值实际刷新率 60Hz、合计 360 包/秒/设备。
+    /// </summary>
+    private void TorqueLoopProc(object? state)
+    {
+        var token = (CancellationToken)state!;
+        var index = 0;
+
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                float[]? torque;
+                lock (_torqueSnapshotLock)
+                {
+                    torque = _latestSteeringTorque;
+                }
+
+                // 快照为 null（尚未取到数据帧或已停止）时跳过，不阻碍节拍
+                if (torque != null)
+                {
+                    var torqueValue = torque[index % torque.Length];
+                    var timestampMs = (uint)Stopwatch.GetElapsedTime(_telemetryStartTick).TotalMilliseconds;
+                    var packet = TelemetryPacketBuilder.BuildVehicleInfo4Packet(torqueValue, timestampMs);
+                    SendTorquePacket(packet);
+                }
+
+                index++;
+                token.WaitHandle.WaitOne(TorqueLoopInterval);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // 预期退出路径
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Telemetry] 力反馈扭矩循环异常: {ex}");
         }
     }
 
@@ -411,6 +502,17 @@ public class TelemetryService : IDisposable
     {
         try
         {
+            // 更新力反馈扭矩快照（供 360Hz 独立线程读取）
+            if (data.steeringWheelTorqueST != null)
+            {
+                lock (_torqueSnapshotLock)
+                {
+                    _latestSteeringTorque ??= new float[6];
+                    Array.Copy(data.steeringWheelTorqueST, _latestSteeringTorque,
+                        Math.Min(_latestSteeringTorque.Length, data.steeringWheelTorqueST.Length));
+                }
+            }
+
             // 计算模拟时间戳（自启动以来的毫秒数）
             var timestampMs = (uint)Stopwatch.GetElapsedTime(_telemetryStartTick).TotalMilliseconds;
 
@@ -469,21 +571,72 @@ public class TelemetryService : IDisposable
     /// <summary>
     /// 向所有已连接的设备广播遥测数据包（共 3 包：0x6101~0x6103）。
     /// 基座、面盘、踏板可能各自独立直连到电脑，不是只能通过基座中转。
+    /// 与 360Hz 力反馈扭矩包共用 _telemetrySendLock，避免串口写交错。
     /// </summary>
     private void DispatchPackets(byte[][] packets)
+    {
+        lock (_telemetrySendLock)
+        {
+            var targetDevices = GetTargetDevices();
+            if (targetDevices == null) return;
+
+            foreach (var device in targetDevices)
+            {
+                foreach (var packet in packets)
+                {
+                    if (!App.UsbManager.SendToDevice(device.DeviceKey, packet))
+                    {
+                        Debug.WriteLine($"[Telemetry] 下发失败 → {device.DeviceKey}");
+                        break; // 该设备发送失败，跳过剩余包，继续下一个设备
+                    }
+                }
+            }
+
+            var timestampMs = packets.Length > 0
+                ? BitConverter.ToUInt32(packets[0].AsSpan(3, 4))
+                : 0;
+            OnPacketsDispatched?.Invoke(timestampMs);
+        }
+    }
+
+    /// <summary>
+    /// 单包下发力反馈扭矩（0x6104，逐设备发送）。
+    /// 不触发 OnPacketsBuilt/OnPacketsDispatched（发包计数语义保持"三包批次"不变）。
+    /// </summary>
+    private void SendTorquePacket(byte[] packet)
+    {
+        lock (_telemetrySendLock)
+        {
+            var targetDevices = GetTargetDevices(log: false); // 360Hz 高频，失败时静默避免刷日志
+            if (targetDevices == null) return;
+
+            foreach (var device in targetDevices)
+            {
+                if (!App.UsbManager.SendToDevice(device.DeviceKey, packet))
+                {
+                    Debug.WriteLine($"[Telemetry] 力反馈扭矩下发失败 → {device.DeviceKey}");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取已连接且处于正常模式的设备列表（USB Manager 未运行 / 无设备 / 无正常模式设备时返回 null）。
+    /// </summary>
+    private List<Models.Usb.UsbDeviceInfo>? GetTargetDevices(bool log = true)
     {
         var manager = App.UsbManager;
         if (manager is not { IsRunning: true })
         {
-            Debug.WriteLine("[Telemetry] USB Manager 未运行，跳过数据下发");
-            return;
+            if (log) Debug.WriteLine("[Telemetry] USB Manager 未运行，跳过数据下发");
+            return null;
         }
 
         var devices = manager.ConnectedDevices;
         if (devices is not { Count: > 0 })
         {
-            Debug.WriteLine("[Telemetry] 无已连接设备，跳过数据下发");
-            return;
+            if (log) Debug.WriteLine("[Telemetry] 无已连接设备，跳过数据下发");
+            return null;
         }
 
         // 只向处于正常模式的设备广播（跳过更新模式）
@@ -495,26 +648,11 @@ public class TelemetryService : IDisposable
 
         if (targetDevices.Count == 0)
         {
-            Debug.WriteLine("[Telemetry] 无正常模式设备，跳过数据下发");
-            return;
+            if (log) Debug.WriteLine("[Telemetry] 无正常模式设备，跳过数据下发");
+            return null;
         }
 
-        foreach (var device in targetDevices)
-        {
-            foreach (var packet in packets)
-            {
-                if (!manager.SendToDevice(device.DeviceKey, packet))
-                {
-                    Debug.WriteLine($"[Telemetry] 下发失败 → {device.DeviceKey}");
-                    break; // 该设备发送失败，跳过剩余包，继续下一个设备
-                }
-            }
-        }
-
-        var timestampMs = packets.Length > 0
-            ? BitConverter.ToUInt32(packets[0].AsSpan(3, 4))
-            : 0;
-        OnPacketsDispatched?.Invoke(timestampMs);
+        return targetDevices;
     }
 
     // ════════════════════════════════════════════════════════════════
